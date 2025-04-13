@@ -1,0 +1,10 @@
+[workspace]
+members = ["server/src-tauri", "client", "common"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+# [profile.release.package.server]
+# debug = true
+# debug-assertions = true

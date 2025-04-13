@@ -1,0 +1,26 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+tauri = { version = "1", features = ["shell-open", "dialog-all", "window-all"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.20.1", features = ["rt", "full"] }
+lazy_static = "1.4.0"
+base64 = "0.22.0"
+common = { path = "../../common" }
+rsa = "0.9.6"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+anyhow = "1.0.82"
+rmp-serde = "1.2.0"
+object = "0.35.0"
+winapi = { version = "0.3.9", features = [ "winuser" ] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

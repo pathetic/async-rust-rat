@@ -1,0 +1,54 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "server",
+    "version": "0.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "dialog": {
+        "all": true,
+        "ask": true,
+        "confirm": true,
+        "message": true,
+        "open": true,
+        "save": true
+      },
+      "window": {
+        "all": true
+      }
+    },
+    "windows": [
+      {
+        "title": "RAT Server",
+        "width": 1480,
+        "height": 920
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.rat.server",
+      "icon": [
+        "icons/16x16.png",
+        "icons/32x32.png",
+        "icons/192x192.png",
+        "icons/512x512.png",
+        "icons/icon.ico"
+      ]
+    }
+  }
+}
