@@ -43,3 +43,4 @@ server/*.sw?
 kill_all_clients.bat
 launch_100_clients.bat
 
+accord/

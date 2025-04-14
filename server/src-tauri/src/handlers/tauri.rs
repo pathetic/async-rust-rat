@@ -1,6 +1,6 @@
 use tauri::State;
 use crate::handlers::{ SharedServer, SharedTauriState, FrontClient, TauriState };
-use common::commands::{ Command, File as FileData, Process, VisitWebsiteData, MessageBoxData };
+use common::commands::{ Command};
 
 use serde::Serialize;
 use object::{ Object, ObjectSection };
