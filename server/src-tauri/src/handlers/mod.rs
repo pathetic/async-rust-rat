@@ -1,10 +1,11 @@
 use serde::Serialize;
-use crate::server::Server;
 use std::sync::{ Arc, Mutex };
-
 pub mod tauri;
+use tokio::sync::mpsc::{Sender, Receiver};
+use tokio::task::JoinHandle;
+use once_cell::sync::OnceCell;
+use crate::commands::{ServerCommand, ClientCommand};
 
-pub struct SharedServer(pub Arc<Mutex<Server>>);
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 
 #[derive(Debug, Clone, Serialize)]
@@ -23,8 +24,10 @@ pub struct FrontClient {
     pub is_elevated: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct TauriState {
+    channel_rx: OnceCell<Arc<Mutex<Receiver<ServerCommand>>>>,
+    channel_tx: OnceCell<Sender<ServerCommand>>,
     pub port: String,
     pub running: bool,
 }
@@ -34,6 +37,8 @@ impl Default for TauriState {
         TauriState {
             port: "1337".to_string(),
             running: false,
+            channel_tx: OnceCell::new(),
+            channel_rx: OnceCell::new(),
         }
     }
 }

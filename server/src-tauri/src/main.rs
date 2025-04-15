@@ -2,9 +2,12 @@
 use std::sync::{ Arc, Mutex };
 use tauri::Manager;
 
-mod client;
-mod server;
+// mod client;
+// mod server;
 mod handlers;
+mod new_server;
+mod commands;
+mod new_client;
 
 use handlers::{
     tauri::{
@@ -16,7 +19,6 @@ use handlers::{
         take_screenshot
     },
     SharedTauriState,
-    SharedServer,
     TauriState,
 };
 
@@ -25,14 +27,6 @@ async fn main() {
     tauri::Builder
         ::default()
         .manage(SharedTauriState(Arc::new(Mutex::new(TauriState::default()))))
-        .setup(move |app| {
-            let app_handle = app.handle().clone();
-            let shared_server = SharedServer(Arc::new(Mutex::new(server::Server::new(app_handle))));
-
-            app.manage(shared_server);
-
-            Ok(())
-        })
         .invoke_handler(
             tauri::generate_handler![
                 start_server,

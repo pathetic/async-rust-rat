@@ -1,5 +1,5 @@
 use tauri::State;
-use crate::handlers::{ SharedServer, SharedTauriState, FrontClient, TauriState };
+use crate::handlers::{ SharedTauriState, FrontClient, TauriState };
 use common::commands::{ Command};
 
 use serde::Serialize;
@@ -10,28 +10,66 @@ use std::vec;
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
 
+use tokio::net::TcpListener;
+use tokio::sync::mpsc;
+use crate::commands::ServerCommand;
+use crate::new_server::ServerWrapper;
+
+use std::sync::Arc;
+use std::sync::Mutex;
+
 use rmp_serde::Serializer;
 
 #[tauri::command]
-pub fn start_server(
+pub async fn start_server(
     port: &str,
-    server_state: State<'_, SharedServer>,
     tauri_state: State<'_, SharedTauriState>
-) -> String {
-    let mut server = server_state.0.lock().unwrap();
-    let running = server.listen_port(port.to_string());
+) -> Result<String, String> {
+    let tauri_state: std::sync::MutexGuard<'_, TauriState> = tauri_state.0.lock().unwrap();
+    
+    let (ctx, crx) = mpsc::channel::<ServerCommand>(32);
 
-    let mut tauri_state = tauri_state.0.lock().unwrap();
-
-    if !running {
-        tauri_state.running = false;
-        return "false".to_string();
+    if tauri_state.channel_tx.set(ctx.clone()).is_err() {
+        return Err("false".to_string());
     }
 
-    tauri_state.port = port.to_string();
-    tauri_state.running = true;
+    tauri_state.channel_rx.set(Arc::new(Mutex::new(crx)));
 
-    "true".to_string()
+    let server_task = tokio::spawn(async move {
+        match ServerWrapper::spawn(crx).await {
+            Ok(_) => println!("Server started successfully"),
+            Err(e) => eprintln!("Failed to start server: {}", e),
+        }
+    });
+
+    let ctx_for_listener = ctx.clone();
+
+    let port = port.parse::<u16>().unwrap();
+
+    let listener_task = tokio::spawn(async move {
+        match TcpListener::bind(("0.0.0.0", port)).await {
+            Ok(listener) => {
+                println!("Listening on port {}", port);
+                loop {
+                    match listener.accept().await {
+                        Ok((socket, addr)) => {
+                            let ctx = ctx_for_listener.clone();
+                            ClientWrapper::spawn(socket, addr, ctx).await;
+                        },
+                        Err(e) => {
+                            eprintln!("Error accepting connection: {}", e);
+                            break;
+                        }
+                    }
+                }
+            },
+            Err(e) => {
+                eprintln!("Failed to bind to port {}: {}", port, e);
+            }
+        }
+    });
+
+    Ok("true".to_string())
 }
 
 #[tauri::command]

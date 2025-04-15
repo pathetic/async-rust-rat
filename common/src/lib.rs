@@ -2,6 +2,7 @@ use serde::{ Serialize, Deserialize };
 
 pub mod buffers;
 pub mod commands;
+pub mod async_impl;
 
 pub const RSA_BITS: usize = 1024;
 pub const ENC_TOK_LEN: usize = 32;
