@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::sync::{ Arc, Mutex };
 pub mod tauri;
-use tokio::sync::mpsc::{Sender, Receiver};
+use tokio::sync::mpsc::Sender;
 use once_cell::sync::OnceCell;
 use crate::commands::ServerCommand;
 

@@ -131,7 +131,6 @@ impl ClientReaderWrapper {
             },
             
             ScreenshotResult(screenshot_data) => {
-                println!("Received screenshot from {} ({} bytes)", self.addr, screenshot_data.len());
                 self.server_sender
                     .send(ServerCommand::ScreenshotData(self.addr, screenshot_data))
                     .await

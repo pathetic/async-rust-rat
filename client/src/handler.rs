@@ -3,8 +3,15 @@ use crate::features::other::{take_screenshot, client_info};
 use common::async_impl::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
+use tokio::sync::mpsc;
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
 
 use common::async_impl::connection::{ConnectionReader, ConnectionWriter};
+
+static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
+    Mutex::new(None)
+});
 
 pub async fn reading_loop(
     mut reader: ConnectionReader<ClientboundPacket>,
@@ -15,13 +22,11 @@ pub async fn reading_loop(
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
-                println!("InitClient");
                 let client_info = client_info();
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
                     Err(e) => {
                         println!("Error sending client info: {}", e);
-                        // Wait a moment and retry once
                         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                         match send_packet(ServerboundPacket::ClientInfo(client_info)).await {
                             Ok(_) => println!("Sent client info to server on retry"),
@@ -32,7 +37,6 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
-                println!("Taking screenshot of display: {}", display);
                 match display.parse::<i32>() {
                     Ok(display_id) => {
                         let screenshot_data = take_screenshot(display_id);
@@ -46,13 +50,13 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::Disconnect)) => {
-                println!("Server requested disconnect");
+                println!("Received disconnect command from server");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
 
             Ok(Some(ClientboundPacket::Reconnect)) => {
-                println!("Server requested reconnect - exiting to allow client to restart");
+                println!("Received reconnect command from server");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
@@ -62,18 +66,20 @@ pub async fn reading_loop(
             }
             
             Err(e) => {
-                println!("{}", e);
+                println!("Connection error: {}", e);
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
             
             _ => {
-                println!("Connection closed(?)\nPress Enter to exit.");
+                println!("Connection closed");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
         }
     }
+    
+    clear_packet_sender();
 }
 
 pub async fn writing_loop(
@@ -82,18 +88,19 @@ pub async fn writing_loop(
     secret: Option<Vec<u8>>,
     mut nonce_generator: Option<ChaCha20Rng>,
 ) {
-    let (packet_tx, mut packet_rx) = tokio::sync::mpsc::channel::<ServerboundPacket>(32);
+    let (packet_tx, mut packet_rx) = mpsc::channel::<ServerboundPacket>(32);
     
-    PACKET_SENDER.set(packet_tx).unwrap();
+    {
+        let mut sender = PACKET_SENDER.lock().unwrap();
+        *sender = Some(packet_tx);
+    }
     
     loop {
         tokio::select! {
-            // Check if it's time to close
             _ = &mut rx => {
                 println!("Closing writing loop");
                 break;
             },
-            // Process packets from the channel
             Some(packet) = packet_rx.recv() => {
                 if let Err(e) = writer.write_packet(
                     packet,
@@ -108,16 +115,25 @@ pub async fn writing_loop(
     }
 }
 
-static PACKET_SENDER: once_cell::sync::OnceCell<tokio::sync::mpsc::Sender<ServerboundPacket>> = once_cell::sync::OnceCell::new();
+// Helper function to clear the packet sender
+fn clear_packet_sender() {
+    let mut sender = PACKET_SENDER.lock().unwrap();
+    *sender = None;
+}
 
 pub async fn send_packet(packet: ServerboundPacket) -> Result<(), String> {
     for _ in 0..5 {
-        if let Some(sender) = PACKET_SENDER.get() {
+        // Try to get the packet sender
+        let sender_opt = {
+            let sender_guard = PACKET_SENDER.lock().unwrap();
+            sender_guard.clone()
+        };
+        
+        if let Some(sender) = sender_opt {
             return sender.send(packet).await.map_err(|e| e.to_string());
         }
+        
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-    }
-    
-    // If we get here, the sender is still not initialized after retries
+    }    
     Err("Packet sender not initialized after multiple attempts".to_string())
 }

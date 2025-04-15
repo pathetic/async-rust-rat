@@ -60,42 +60,21 @@ impl ServerWrapper {
                 .unwrap()
                 .emit_all("client_connected", client_info.username.clone())
                 .unwrap_or_else(|e| println!("Failed to emit client_connected event: {}", e));
-        } else {
-            println!("Cannot send client_connected event: Tauri handle not set");
         }
     }
     
     async fn emit_client_disconnected(&self, addr: &SocketAddr) {
-        println!("Emitting client_disconnected event for {}", addr);
-        
         let username = if let Some(client_info) = self.connected_users.get(addr) {
-            println!("Found client info for {}: username={}", addr, client_info.username);
             client_info.username.clone()
         } else {
-            println!("No client info found for {}, using IP as username", addr);
-            addr.to_string() // Fallback to IP if client info not found
+            addr.to_string()
         };
         
         if let Some(handle) = &self.tauri_handle {
-            println!("Emitting client_disconnected event with username: {}", username);
             match handle.lock().unwrap().emit_all("client_disconnected", username.clone()) {
                 Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
                 Err(e) => println!("Failed to emit client_disconnected event: {}", e),
             }
-        } else {
-            println!("Cannot send client_disconnected event: Tauri handle not set");
-        }
-    }
-    
-    async fn test_event_emission(&self, message: &str) {
-        println!("Testing event emission with message: {}", message);
-        if let Some(handle) = &self.tauri_handle {
-            match handle.lock().unwrap().emit_all("client_test_event", message) {
-                Ok(_) => println!("Successfully emitted test event: {}", message),
-                Err(e) => println!("Failed to emit test event: {}", e),
-            }
-        } else {
-            println!("Cannot send test event: Tauri handle not set");
         }
     }
 
@@ -154,54 +133,29 @@ impl ServerWrapper {
                             .unwrap();
                     }
                 }
-                RegisterClient(tx, addr, client_info) => {
-                    println!("Registering client: {} from {}", client_info.hostname, addr);
-                    // Store the client's connection sender
+                RegisterClient(tx, addr, client_info) => {                    // Store the client's connection sender
                     self.txs.insert(addr, tx);
-                    // Store the client info
                     self.connected_users.insert(addr, client_info.clone());
-                    
-                    println!("New client registered: {:?}", client_info);
-                    
+                                        
                     self.emit_client_connected(&client_info).await;
-                    
-                    // Test event emission to verify Tauri events
-                    self.test_event_emission("New client registered test event").await;
                 }
-                ScreenshotData(addr, screenshot_data) => {
-                    println!("Received screenshot from {}, size: {} bytes", addr, screenshot_data.len());
-                    
-                    // Convert screenshot data to base64 for sending to frontend
+                ScreenshotData(_addr, screenshot_data) => {                    
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
                     
-                    // Send to Tauri frontend if handle exists
                     if let Some(handle) = &self.tauri_handle {
-                        println!("Sending screenshot to frontend");
-                        if let Err(e) = handle.lock().unwrap().emit_all("client_screenshot", base64_img) {
-                            println!("Error sending screenshot to frontend: {}", e);
-                        } else {
-                            println!("Screenshot sent to frontend successfully");
-                        }
+                        handle.lock().unwrap().emit_all("client_screenshot", base64_img).unwrap_or_else(|e| println!("Failed to emit client_screenshot event: {}", e));
                     } else {
-                        println!("Cannot send screenshot to frontend: Tauri handle not set");
-                    }
-                    
-                    if let Some(client_info) = self.connected_users.get(&addr) {
-                        println!("Screenshot from client: {}", client_info.hostname);
+                        println!("Cannot send client_screenshot event: Tauri handle not set");
                     }
                 }
                 TakeScreenshot(addr, display) => {
-                    println!("Taking screenshot from client at {}, display {}", addr, display);
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ScreenshotDisplay(display)))
                             .await
                             .unwrap_or_else(|e| println!("Failed to send screenshot request: {}", e));
-                    } else {
-                        println!("Client at {} not found", addr);
                     }
                 }
                 GetClients(resp) => {
-                    // Convert our internal client representation to FrontClient
                     let mut clients = Vec::new();
                     
                     for (addr, client_info) in self.connected_users.iter() {
@@ -246,12 +200,9 @@ impl ServerWrapper {
                     }
                 }
                 SetTauriHandle(handle) => {
-                    println!("Setting Tauri AppHandle");
                     self.tauri_handle = Some(Arc::new(Mutex::new(handle)));
                 }
                 ClientDisconnected(addr) => {
-                    println!("Client disconnected: {}", addr);
-                    
                     self.txs.remove(&addr);
                     
                     let client_info = self.connected_users.remove(&addr);
@@ -263,11 +214,8 @@ impl ServerWrapper {
                                 Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
                                 Err(e) => println!("Failed to emit client_disconnected event: {}", e),
                             }
-                        } else {
-                            println!("Cannot send client_disconnected event: Tauri handle not set");
                         }
                     } else {
-                        println!("No client info found for {}", addr);
                         self.emit_client_disconnected(&addr).await;
                     }
                 },

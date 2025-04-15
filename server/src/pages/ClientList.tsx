@@ -236,7 +236,7 @@ export const Clients: React.FC = () => {
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="avatar">
-                            <div className="mask w-12 h-12">
+                            <div className="mask w-8 h-8">
                               <img
                                 src={
                                   client.os.includes("Windows")
@@ -248,9 +248,8 @@ export const Clients: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <div className="font-bold">{client.username}</div>
-                            <div className="text-sm opacity-50">
-                              {client.hostname}
+                            <div className="font-bold">
+                              {client.username}@{client.hostname}
                             </div>
                           </div>
                         </div>

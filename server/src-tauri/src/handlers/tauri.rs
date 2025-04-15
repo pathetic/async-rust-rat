@@ -54,7 +54,6 @@ pub async fn start_server(
     let _listener_task = tokio::spawn(async move {
         match TcpListener::bind(("0.0.0.0", port)).await {
             Ok(listener) => {
-                println!("Listening on port {}", port);
                 loop {
                     match listener.accept().await {
                         Ok((socket, addr)) => {
@@ -77,10 +76,19 @@ pub async fn start_server(
     Ok("true".to_string())
 }
 
+#[derive(Serialize)]
+pub struct FrontRATState {
+    running: bool,
+    port: String
+}
+
 #[tauri::command]
-pub async fn fetch_state(tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn fetch_state(tauri_state: State<'_, SharedTauriState>) -> Result<FrontRATState, FrontRATState> {
     let tauri_state = tauri_state.0.lock().unwrap();
-    Ok(tauri_state.running.to_string())
+    Ok(FrontRATState {
+        running: tauri_state.running.clone(),
+        port: tauri_state.port.clone()
+    })
 }
 
 #[tauri::command]
@@ -172,13 +180,11 @@ pub async fn fetch_client(
             return Err("Server not running".to_string());
         }
         
-        // Clone the sender if it exists
         if let Some(tx) = tauri_state.channel_tx.get() {
             tx.clone()
         } else {
             return Err("Server channel not initialized".to_string());
         }
-        // MutexGuard is dropped here
     };
     
     let (tx, rx) = tokio::sync::oneshot::channel();
