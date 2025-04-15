@@ -33,9 +33,9 @@ export const fetchStateCmd = async (): Promise<RATState> => {
 };
 
 export const fetchClientCmd = async (
-  id: string | undefined
+  addr: string | undefined
 ): Promise<RATClient> => {
-  return invoke("fetch_client", { id });
+  return invoke("fetch_client", { addr });
 };
 
 export const manageClientCmd = async (
@@ -46,10 +46,10 @@ export const manageClientCmd = async (
 };
 
 export const takeScreenshotCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   display: number
 ): Promise<void> => {
-  return invoke("take_screenshot", { id, display });
+  return invoke("take_screenshot", { addr, display });
 };
 
 export const handleSystemCommandCmd = async (

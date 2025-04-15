@@ -12,23 +12,17 @@ use rand_chacha::ChaCha20Rng;
 
 use encryption::*;
 
-/// Connection that is later split into separate reader and writer.
-///
-/// I = Incoming Packets
-/// O = Outgoing Packets
 pub struct Connection<I, O> {
     stream: TcpStream,
     _marker: PhantomData<(I, O)>,
 }
 
-/// Reading half of the connection.
 pub struct ConnectionReader<P: Packet> {
     stream: OwnedReadHalf,
     buffer: BytesMut,
     _marker: PhantomData<P>,
 }
 
-/// Writing half of the connection.
 pub struct ConnectionWriter<P: Packet> {
     stream: BufWriter<OwnedWriteHalf>,
     _marker: PhantomData<P>,
@@ -39,7 +33,6 @@ where
     I: Packet,
     O: Packet,
 {
-    /// New connection over TCP stream.
     pub fn new(stream: TcpStream) -> Self {
         Self {
             stream,
@@ -47,7 +40,6 @@ where
         }
     }
 
-    /// Splits stream to separate handles so they can be used in separate threads.
     pub fn split(self) -> (ConnectionReader<I>, ConnectionWriter<O>) {
         let (read, write) = self.stream.into_split();
         let read = ConnectionReader::<I> {
@@ -64,8 +56,6 @@ where
 }
 
 impl<P: Packet> ConnectionReader<P> {
-    /// Tries to read incoming packet on TCP stream
-    /// and decrypts if secret and nonce_generator are `Some`
     pub async fn read_packet(
         &mut self,
         secret: &Option<Vec<u8>>,
@@ -93,7 +83,6 @@ impl<P: Packet> ConnectionReader<P> {
                     }
                 }
             } else if let Ok((p, b)) = P::deserialized(&self.buffer) {
-                // Effectively move buffer past what we already read
                 self.buffer = BytesMut::from(b);
                 return Ok(Some(p));
             }
@@ -111,8 +100,6 @@ impl<P: Packet> ConnectionReader<P> {
 }
 
 impl<P: Packet> ConnectionWriter<P> {
-    /// Tries to write the packet to TCP stream
-    /// and encrypts it if secret and nonce_generator are `Some`
     pub async fn write_packet(
         &mut self,
         packet: P,
@@ -147,9 +134,6 @@ mod encryption {
 
     use crate::{NONCE_LEN, SECRET_LEN};
 
-    /// Encrypts the packet using [`XChaCha20Poly1305`].
-    ///
-    /// [u8; n] -> [u8;n+4] (1st 4 bytes is len)
     pub fn encrypt_frame(
         packet_bytes: &[u8],
         key: &[u8; SECRET_LEN],
@@ -169,9 +153,6 @@ mod encryption {
         ret
     }
 
-    /// Decrypts the packet using [`XChaCha20Poly1305`].
-    ///
-    /// [u8; n] -> [u8;n+4] (1st 4 bytes is len)
     pub fn decrypt_frame<'a>(
         encrypted_bytes: &mut &'a [u8],
         key: &[u8; SECRET_LEN],
@@ -186,7 +167,6 @@ mod encryption {
             return Err("Not full frame".to_string());
         }
 
-        // This maybe could use some unsafe pointer magic to be more optimal?
         let cipher = XChaCha20Poly1305::new(key.into());
         let (packet_bytes, rest) = encrypted_bytes.split_at(data_len as usize);
         let ret = cipher.decrypt(nonce.into(), packet_bytes).unwrap();
@@ -194,7 +174,6 @@ mod encryption {
     }
 }
 
-/// Reads big endian u32 from bytes, advancing input head by the size of u32
 fn read_be_u32(input: &mut &[u8]) -> u32 {
     let (int_bytes, rest) = input.split_at(std::mem::size_of::<u32>());
     *input = rest;

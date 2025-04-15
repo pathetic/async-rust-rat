@@ -3,7 +3,7 @@ use common::ClientConfig;
 pub fn get_config() -> ClientConfig {
     let mut config: ClientConfig = ClientConfig {
         ip: "127.0.0.1".to_string(),
-        port: "13723".to_string(),
+        port: "1337".to_string(),
         mutex_enabled: true,
         mutex: "TEST123".to_string(),
         unattended_mode: false,

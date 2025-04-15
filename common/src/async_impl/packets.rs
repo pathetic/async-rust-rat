@@ -26,11 +26,8 @@ pub trait Packet {
 pub enum ServerboundPacket {
     EncryptionRequest,
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token
-
-
-    InitClient,
-    ScreenshotDisplay(String),
-
+    ClientInfo(ClientInfo),
+    ScreenshotResult(Vec<u8>),
 }
 
 impl Packet for ServerboundPacket {
@@ -51,9 +48,8 @@ impl Packet for ServerboundPacket {
 pub enum ClientboundPacket {
     EncryptionResponse(Vec<u8>, Vec<u8>), // channel's public key and token
     EncryptionAck,
-    ClientInfo(ClientInfo),
-    ScreenshotResult(Vec<u8>),
-
+    InitClient,
+    ScreenshotDisplay(String),
     Reconnect,
     Disconnect,
 }

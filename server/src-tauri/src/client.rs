@@ -1,161 +1,237 @@
-use std::net::TcpStream;
-use std::sync::{ Arc, Mutex };
-use base64::{ engine::general_purpose, Engine as _ };
-use tauri::{ AppHandle, Manager };
+use crate::commands::*;
+use common::async_impl::connection::*;
+use common::async_impl::packets::*;
+use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::oneshot;
 
-use common::buffers::{ read_buffer, write_buffer };
-use common::commands::{ Command };
+use rand::SeedableRng;
+use rand_chacha::ChaCha20Rng;
+use common::async_impl::packets::ClientboundPacket;
 
-#[derive(Debug)]
-pub struct Client {
-    tauri_handle: Arc<Mutex<AppHandle>>,
-    write_stream: TcpStream,
-    read_stream: Arc<Mutex<TcpStream>>,
-    secret: Vec<u8>,
+pub struct ClientWrapper; // Maybe this shouldn't be a struct?
 
-    username: String,
-    hostname: String,
-    os: String,
-    ram: String,
-    cpu: String,
-    gpus: Vec<String>,
-    storage: Vec<String>,
-    displays: i32,
-    ip: String,
-
-    is_elevated: bool,
-
-    disconnected: Arc<Mutex<bool>>,
-
-    pub is_handled: bool,
+impl ClientWrapper {
+    /// Handles incoming connection and spawns reading and writing loops.
+    pub async fn spawn(
+        socket: tokio::net::TcpStream,
+        addr: std::net::SocketAddr,
+        ctx: Sender<ServerCommand>,
+    ) {
+        let (tx, rx) = mpsc::channel::<ClientCommand>(32);
+        println!("Connection from: {:?}", addr);
+        let connection = Connection::<ServerboundPacket, ClientboundPacket>::new(socket);
+        let (reader, writer) = connection.split();
+        let reader_wrapped = ClientReaderWrapper::new(reader, addr, tx.clone(), ctx);
+        tokio::spawn(reader_wrapped.spawn_loop());
+        let writer_wrapped = ClientWriterWrapper::new(writer, rx);
+        tokio::spawn(writer_wrapped.spawn_loop());
+    }
 }
 
-impl Client {
-    pub fn new(
-        tauri_handle: Arc<Mutex<AppHandle>>,
-        write_stream: TcpStream,
-        secret: Vec<u8>,
-        username: String,
-        hostname: String,
-        os: String,
-        ram: String,
-        cpu: String,
-        gpus: Vec<String>,
-        storage: Vec<String>,
-        displays: i32,
-        ip: String,
-        is_elevated: bool
+pub struct ClientReaderWrapper {
+    reader: ConnectionReader<ServerboundPacket>,
+    addr: std::net::SocketAddr,
+    client_sender: Sender<ClientCommand>,
+    server_sender: Sender<ServerCommand>,
+    secret: Option<Vec<u8>>,
+    nonce_generator: Option<ChaCha20Rng>,
+}
+
+impl ClientReaderWrapper {
+    fn new(
+        reader: ConnectionReader<ServerboundPacket>,
+        addr: std::net::SocketAddr,
+        client_sender: Sender<ClientCommand>,
+        server_sender: Sender<ServerCommand>,
     ) -> Self {
-        Client {
-            tauri_handle,
-            write_stream: write_stream.try_clone().unwrap(),
-            read_stream: Arc::new(Mutex::new(write_stream.try_clone().unwrap())),
-            secret,
-            username,
-            hostname,
-            os,
-            ram,
-            cpu,
-            gpus,
-            storage,
-            displays,
-            ip,
-            is_elevated,
-            disconnected: Arc::new(Mutex::new(false)),
-            is_handled: false,
+        Self {
+            reader,
+            addr,
+            client_sender,
+            server_sender,
+            secret: None,
+            nonce_generator: None,
         }
     }
 
-    pub fn write_buffer(&mut self, command: Command, secret: &Option<Vec<u8>>) {
-        write_buffer(&mut self.write_stream, command, &secret);
-    }
+    async fn handle_encryption_request(&mut self) {
+        use ServerboundPacket::*;
 
-    pub fn handle_client(&mut self) {
-        let username_clone = self.username.clone();
-        let stream_clone = Arc::clone(&self.read_stream);
-        let disconnected = Arc::clone(&self.disconnected);
-        let tauri_handle = Arc::clone(&self.tauri_handle);
-        let secret = self.get_secret();
-        
-        std::thread::spawn(move || {
-            loop {
-                let mut locked_stream = stream_clone.lock().unwrap();
-                let received_data = read_buffer(&mut locked_stream, &Some(secret.clone()));
+        let (otx, orx) = oneshot::channel();
 
-                match received_data {
-                    Ok(received) => {
-                        match received {
-                            Command::ScreenshotResult(screenshot) => {
-                                let base64_img = general_purpose::STANDARD.encode(screenshot);
-                                let _ = tauri_handle
-                                    .lock()
-                                    .unwrap()
-                                    .emit_all("client_screenshot", base64_img);
-                            }
-                            _ => {
-                                println!("Received unknown or unhandled data.");
-                            }
-                        }
+        self.server_sender
+            .send(ServerCommand::EncryptionRequest(
+                self.client_sender.clone(),
+                otx,
+            ))
+            .await
+            .unwrap();
+
+        let expect_token = orx.await.unwrap();
+
+        match self
+            .reader
+            .read_packet(&self.secret, self.nonce_generator.as_mut())
+            .await
+        {
+            Ok(Some(EncryptionConfirm(s, t))) => {
+                let (otx, orx) = oneshot::channel();
+                self.server_sender
+                    .send(ServerCommand::EncryptionConfirm(
+                        self.client_sender.clone(),
+                        otx,
+                        s.clone(),
+                        t,
+                        expect_token,
+                    ))
+                    .await
+                    .unwrap();
+
+                match orx.await.unwrap() {
+                    Ok(s) => {
+                        self.secret = Some(s.clone());
+                        let mut seed = [0u8; common::SECRET_LEN];
+                        seed.copy_from_slice(&s);
+
+                        self.nonce_generator = Some(ChaCha20Rng::from_seed(seed));
                     }
                     Err(_) => {
-                        let _ = tauri_handle
-                            .lock()
-                            .unwrap()
-                            .emit_all("client_disconnected", username_clone);
-                        println!("Disconnected!");
-                        break;
+                        self.client_sender
+                            .send(ClientCommand::Close)
+                            .await
+                            .ok(); // it's ok if already closed
                     }
                 }
             }
-            *disconnected.lock().unwrap() = true;
-        });
+            Ok(_) => {
+                self.client_sender
+                    .send(ClientCommand::Close)
+                    .await
+                    .ok(); // it's ok if already closed
+            }
+            Err(_) => {
+                self.client_sender
+                    .send(ClientCommand::Close)
+                    .await
+                    .ok(); // it's ok if already closed
+            }
+        };
     }
 
-    pub fn get_username(&self) -> String {
-        self.username.clone()
+    async fn handle_packet(&mut self, packet: ServerboundPacket) {
+        use ServerboundPacket::*;
+        match packet {
+            EncryptionRequest => self.handle_encryption_request().await,
+            
+            ClientInfo(info) => {
+                self.server_sender
+                    .send(ServerCommand::RegisterClient(self.client_sender.clone(), self.addr, info))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send client info to server"));
+            },
+            
+            ScreenshotResult(screenshot_data) => {
+                println!("Received screenshot from {} ({} bytes)", self.addr, screenshot_data.len());
+                self.server_sender
+                    .send(ServerCommand::ScreenshotData(self.addr, screenshot_data))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send screenshot data to server"));
+            },
+            
+            EncryptionConfirm(_, _) => {
+                println!("Received unexpected EncryptionConfirm packet");
+            },
+
+            #[allow(unreachable_patterns)]
+            _ => {
+                println!("Unhandled packet type: {:?}", packet);
+            }
+        };
     }
 
-    pub fn get_hostname(&self) -> String {
-        self.hostname.clone()
+    async fn spawn_loop(mut self) {
+        loop {
+            match self
+                .reader
+                .read_packet(&self.secret, self.nonce_generator.as_mut())
+                .await
+            {
+                Ok(p) => {
+                    match &p {
+                        Some(packet) => println!("Got packet from {}: {:?}", self.addr, packet),
+                        None => println!("Got None packet from {}", self.addr),
+                    }
+                    if let Some(p) = p {
+                        self.handle_packet(p).await;
+                    }
+                }
+                Err(e) => {
+                    println!("Error reading from client {}: {:?}", self.addr, e);
+                    if e == "Connection reset by peer" {
+                        match self.server_sender
+                            .send(ServerCommand::ClientDisconnected(self.addr))
+                            .await
+                        {
+                            Ok(_) => println!("Successfully sent disconnect notification for {}", self.addr),
+                            Err(e) => println!("Failed to send disconnect notification: {}", e),
+                        }
+                    } else {
+                        match self.server_sender
+                            .send(ServerCommand::ClientDisconnected(self.addr))
+                            .await
+                        {
+                            Ok(_) => println!("Successfully sent disconnect notification for {} (after error)", self.addr),
+                            Err(e) => println!("Failed to send disconnect notification after error: {}", e),
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
+pub struct ClientWriterWrapper {
+    writer: ConnectionWriter<ClientboundPacket>,
+    connection_receiver: Receiver<ClientCommand>,
+    secret: Option<Vec<u8>>,
+    nonce_generator: Option<ChaCha20Rng>,
+}
+
+impl ClientWriterWrapper {
+    fn new(
+        writer: ConnectionWriter<ClientboundPacket>,
+        connection_receiver: Receiver<ClientCommand>,
+    ) -> Self {
+        Self {
+            writer,
+            connection_receiver,
+            secret: None,
+            nonce_generator: None,
+        }
     }
 
-    pub fn get_os(&self) -> String {
-        self.os.clone()
-    }
-
-    pub fn get_ram(&self) -> String {
-        self.ram.clone()
-    }
-
-    pub fn get_cpu(&self) -> String {
-        self.cpu.clone()
-    }
-
-    pub fn get_gpus(&self) -> Vec<String> {
-        self.gpus.clone()
-    }
-
-    pub fn get_storage(&self) -> Vec<String> {
-        self.storage.clone()
-    }
-
-    pub fn get_displays(&self) -> i32 {
-        self.displays
-    }
-
-    pub fn get_ip(&self) -> String {
-        self.ip.clone()
-    }
-
-    pub fn is_elevated(&self) -> bool {
-        self.is_elevated
-    }
-
-    pub fn is_disconnect(&self) -> bool {
-        *self.disconnected.lock().unwrap()
-    }
-
-    pub fn get_secret(&self) -> Vec<u8> {
-        self.secret.clone()
+    async fn spawn_loop(mut self) {
+        loop {
+            if let Some(com) = self.connection_receiver.recv().await {
+                use ClientCommand::*;
+                match com {
+                    Close => break,
+                    SetSecret(s) => {
+                        self.secret = s.clone();
+                        if let Some(ref secret) = self.secret {
+                            let mut seed = [0u8; common::SECRET_LEN];
+                            seed.copy_from_slice(&secret[..]);
+                            self.nonce_generator = Some(ChaCha20Rng::from_seed(seed));
+                        }
+                    }
+                    Write(p) => self
+                        .writer
+                        .write_packet(p, &self.secret, self.nonce_generator.as_mut())
+                        .await
+                        .unwrap_or_else(|e| println!("Error writing packet: {}", e)),
+                }
+            }
+        }
     }
 }

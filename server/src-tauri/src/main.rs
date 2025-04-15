@@ -1,13 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::sync::{ Arc, Mutex };
-use tauri::Manager;
 
-// mod client;
-// mod server;
 mod handlers;
-mod new_server;
+mod server;
 mod commands;
-mod new_client;
+mod client;
 
 use handlers::{
     tauri::{

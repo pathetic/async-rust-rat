@@ -39,7 +39,7 @@ export interface RATProviderProps {
 }
 
 export type RATClient = {
-  id: string;
+  addr: string;
   username: string;
   hostname: string;
   ip: string;
@@ -56,14 +56,14 @@ export type RATClient = {
 export type ContextMenuType = {
   x: number;
   y: number;
-  id: string;
+  addr: string;
   clientFullName: string;
 };
 
 export interface ContextMenuProps {
   x: number;
   y: number;
-  id: string;
+  addr: string;
   onClose: () => void;
   clientFullName: string;
 }
@@ -84,7 +84,7 @@ interface SubMenuProps {
   items: MenuOptionType[];
   top: number;
   left: number;
-  id: string;
+  addr: string;
   navigate: (string) => void;
   onClose: () => void;
 }
@@ -95,7 +95,7 @@ export interface ShellCommandType {
 }
 
 export interface CommandProps {
-  id: string;
+  addr: string;
   shellStatus: string;
 }
 

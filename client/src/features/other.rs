@@ -15,7 +15,6 @@ use winapi::shared::minwindef::{ BOOL, LPARAM };
 use std::ptr;
 
 
-use common::buffers::write_buffer;
 use common::async_impl::packets::ClientInfo;
 
 pub fn client_info() -> ClientInfo{

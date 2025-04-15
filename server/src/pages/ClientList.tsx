@@ -27,15 +27,15 @@ export const Clients: React.FC = () => {
 
   const handleContextMenu = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    id: string,
+    addr: string,
     clientFullName: string
   ) => {
     event.preventDefault();
-    setSelectedClient(id);
+    setSelectedClient(addr);
     setContextMenu({
       x: event.pageX,
       y: event.pageY,
-      id: id,
+      addr: addr,
       clientFullName,
     });
   };
@@ -209,7 +209,7 @@ export const Clients: React.FC = () => {
           <table className="table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Address</th>
                 <th>PC Name</th>
                 <th>Account Type</th>
                 <th>Operating System</th>
@@ -221,17 +221,17 @@ export const Clients: React.FC = () => {
                 <>
                   {clientList.map((client) => (
                     <tr
-                      key={client.id}
+                      key={client.addr}
                       onContextMenu={(e) =>
                         handleContextMenu(
                           e,
-                          client.id,
+                          client.addr,
                           `${client.username}@${client.hostname}`
                         )
                       }
                     >
                       <th>
-                        <p>{client.id}</p>
+                        <p>{client.addr}</p>
                       </th>
                       <td>
                         <div className="flex items-center gap-3">
@@ -290,7 +290,7 @@ export const Clients: React.FC = () => {
             <ContextMenu
               x={contextMenu.x}
               y={contextMenu.y}
-              id={contextMenu.id}
+              addr={contextMenu.addr}
               onClose={handleClose}
               clientFullName={contextMenu.clientFullName}
             />

@@ -12,6 +12,7 @@ import { RATContext } from "../rat/RATContext";
 
 export const ClientView: React.FC = () => {
   const { id } = useParams();
+  const addr = id;
   const [client, setClient] = useState<RATClient | null>(null);
   const [loaded, setLoaded] = useState<boolean>(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
@@ -25,7 +26,8 @@ export const ClientView: React.FC = () => {
   const navigate = useNavigate();
 
   async function fetchClient() {
-    let ok: RATClient = await fetchClientCmd(id);
+    console.log("Fetching client", addr);
+    let ok: RATClient = await fetchClientCmd(addr);
     setClient(ok);
     setLoaded(true);
   }
@@ -37,22 +39,23 @@ export const ClientView: React.FC = () => {
   }
 
   async function takeScreenshot(display: number) {
-    await takeScreenshotCmd(id, display);
+    console.log("Taking screenshot", addr, display);
+    await takeScreenshotCmd(addr, display);
   }
 
   async function handleSystem(cmd: string) {
-    await handleSystemCommandCmd(id, cmd);
+    await handleSystemCommandCmd(addr, cmd);
   }
 
   // Open Remote Desktop window using the simplified approach
   async function openRemoteDesktop() {
-    if (!id || !client) return;
+    if (!addr || !client) return;
 
     // Open remote desktop window - configuration will happen in the window itself
     const title = `Remote Desktop - ${client.username}@${client.hostname}`;
 
     await openClientWindow(
-      id,
+      addr,
       "remote-desktop",
       "/remote-desktop-window",
       title
@@ -69,7 +72,7 @@ export const ClientView: React.FC = () => {
       // Just navigate away from this page
       navigate("/clients");
     }
-  }, [client, id]);
+  }, [client, addr]);
 
   const fetchVec = (vec: string[]) => {
     let vecString = "\n";
@@ -83,7 +86,7 @@ export const ClientView: React.FC = () => {
 
   useEffect(() => {
     fetchClient();
-  }, [id]);
+  }, [addr]);
 
   return (
     <div className="client p-8 flex flex-1 flex-col overflow-auto w-full items-center">
@@ -106,19 +109,19 @@ export const ClientView: React.FC = () => {
                 <div className="card-body">
                   <h2 className="card-title">Remote Management</h2>
                   <a
-                    onClick={() => navigate(`/clients/${id}/files`)}
+                    onClick={() => navigate(`/clients/${addr}/files`)}
                     className="btn btn-active"
                   >
                     File Manager
                   </a>
                   <a
-                    onClick={() => navigate(`/clients/${id}/shell`)}
+                    onClick={() => navigate(`/clients/${addr}/shell`)}
                     className="btn btn-active"
                   >
                     Remote Shell
                   </a>
                   <a
-                    onClick={() => navigate(`/clients/${id}/process`)}
+                    onClick={() => navigate(`/clients/${addr}/process`)}
                     className="btn btn-active"
                   >
                     Process List

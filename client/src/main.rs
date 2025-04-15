@@ -19,7 +19,7 @@ use winapi::um::winuser::SetProcessDPIAware;
 pub mod features;
 pub mod service;
 // pub mod handler;
-pub mod new_handler;
+pub mod handler;
 
 /////// NEW ///////
 use tokio::net::TcpStream;
@@ -44,20 +44,15 @@ static SECRET: Lazy<Mutex<[u8; common::SECRET_LEN]>> = Lazy::new(||
 async fn main() {
     let config = service::config::get_config();
 
-
-    println!("Connecting to: {}", format!("{}:{}", config.ip, config.port));
     let socket = TcpStream::connect(format!("{}:{}", config.ip, config.port)).await.unwrap();
 
-    println!("Connected!");
     let connection = Connection::<ClientboundPacket, ServerboundPacket>::new(socket);
     let (mut reader, mut writer) = connection.split();
 
-    println!("Establishing encryption...");
     let secret = None;
     let mut nonce_generator_write = None;
     let mut nonce_generator_read = None;
 
-    println!("Requesting encryption...");
     writer
     .write_packet(
         ServerboundPacket::EncryptionRequest,
@@ -75,26 +70,21 @@ async fn main() {
     {
         match p {
             ClientboundPacket::EncryptionResponse(pub_key_der, token_) => {
-                println!("Encryption step 1 successful");
                 pub_key = rsa::pkcs8::FromPublicKey::from_public_key_der(&pub_key_der).unwrap();
                 assert_eq!(common::ENC_TOK_LEN, token_.len());
                 token_
             }
             _ => {
-                println!("Encryption failed. Server response: {:?}", p);
                 std::process::exit(1)
             }
         }
     } else {
-        println!("Failed to establish encryption");
         std::process::exit(1)
     };
 
-    // Generate secret
     let mut secret = [0u8; common::SECRET_LEN];
     OsRng.fill(&mut secret);
 
-        // Encrypt and send
         let padding = PaddingScheme::new_pkcs1v15_encrypt();
         let enc_secret = pub_key
             .encrypt(&mut OsRng, padding, &secret[..])
@@ -112,7 +102,6 @@ async fn main() {
             .await
             .unwrap();
 
-        // From this point onward we assume everything is encrypted
         let secret = Some(secret.to_vec());
         SECRET.lock().unwrap().copy_from_slice(&secret.as_ref().unwrap()[..]);
         let mut seed = [0u8; common::SECRET_LEN];
@@ -126,10 +115,8 @@ async fn main() {
             .await;
         match p {
             Ok(Some(ClientboundPacket::EncryptionAck)) => {
-                println!("Encryption handshake successful!");
             }
             Ok(_) => {
-                println!("Failed encryption step 2. Server response: {:?}", p);
                 std::process::exit(1);
             }
             Err(e) => {
@@ -138,14 +125,19 @@ async fn main() {
             }
         }
 
-    // To send close command when tcpstream is closed
     let (tx, rx) = oneshot::channel::<()>();
 
-    tokio::join!(
-        new_handler::reading_loop(reader, tx, secret.clone(), nonce_generator_read),
-        new_handler::writing_loop(writer, rx, secret.clone(), nonce_generator_write)
+    let write_task = tokio::spawn(
+        handler::writing_loop(writer, rx, secret.clone(), nonce_generator_write)
     );
-
+    
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    
+    handler::reading_loop(reader, tx, secret.clone(), nonce_generator_read).await;
+    
+    if let Err(e) = write_task.await {
+        println!("Write task error: {}", e);
+    }
 
     // let is_connected = Arc::new(Mutex::new(false));
     // let is_connecting = Arc::new(Mutex::new(false));
