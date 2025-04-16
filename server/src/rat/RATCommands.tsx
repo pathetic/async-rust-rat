@@ -39,10 +39,10 @@ export const fetchClientCmd = async (
 };
 
 export const manageClientCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string
 ): Promise<void> => {
-  return invoke("manage_client", { id: id, run });
+  return invoke("manage_client", { addr, run });
 };
 
 export const takeScreenshotCmd = async (
@@ -53,65 +53,67 @@ export const takeScreenshotCmd = async (
 };
 
 export const handleSystemCommandCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string
 ): Promise<void> => {
-  return invoke("handle_system_command", { id, run });
+  return invoke("handle_system_command", { addr, run });
 };
 
 export const readFilesCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string,
   path: string
 ): Promise<Array<string>> => {
-  return invoke("read_files", { id, run, path });
+  return invoke("read_files", { addr, run, path });
 };
 
 export const manageFileCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string,
   file: string
 ): Promise<void> => {
-  return invoke("manage_file", { id, run, file });
+  return invoke("manage_file", { addr, run, file });
 };
 
-export const processListCmd = async (id: string | undefined): Promise<void> => {
-  return invoke("process_list", { id });
+export const processListCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("process_list", { addr });
 };
 
 export const killProcessCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   pid: number,
   name: string
 ): Promise<void> => {
-  return invoke("kill_process", { id, pid, name });
+  return invoke("kill_process", { addr, pid, name });
 };
 
 export const manageShellCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string
 ): Promise<string> => {
-  return invoke("manage_shell", { id, run });
+  return invoke("manage_shell", { addr, run });
 };
 
 export const executeShellCommandCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   run: string
 ): Promise<void> => {
-  return invoke("execute_shell_command", { id, run });
+  return invoke("execute_shell_command", { addr, run });
 };
 
 export const visitWebsiteCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   url: string
 ): Promise<void> => {
-  return invoke("visit_website", { id, url });
+  return invoke("visit_website", { addr, url });
 };
 
 export const handleElevateCmd = async (
-  id: string | undefined
+  addr: string | undefined
 ): Promise<void> => {
-  return invoke("elevate_client", { id });
+  return invoke("elevate_client", { addr });
 };
 
 export const testMessageBoxCmd = async (
@@ -124,11 +126,11 @@ export const testMessageBoxCmd = async (
 };
 
 export const sendMessageBoxCmd = async (
-  id: string | undefined,
+  addr: string | undefined,
   title: string,
   message: string,
   button: string,
   icon: string
 ): Promise<void> => {
-  return invoke("send_messagebox", { id, title, message, button, icon });
+  return invoke("send_messagebox", { addr, title, message, button, icon });
 };

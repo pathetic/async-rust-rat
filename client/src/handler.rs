@@ -50,13 +50,12 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::Disconnect)) => {
-                println!("Received disconnect command from server");
-                close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
-                break 'l;
+                println!("Server requested disconnection. Exiting program.");
+                std::process::exit(0);
             }
 
             Ok(Some(ClientboundPacket::Reconnect)) => {
-                println!("Received reconnect command from server");
+                println!("Server requested reconnection. Reconnecting...");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
@@ -92,6 +91,7 @@ pub async fn writing_loop(
     
     {
         let mut sender = PACKET_SENDER.lock().unwrap();
+        *sender = None;
         *sender = Some(packet_tx);
     }
     

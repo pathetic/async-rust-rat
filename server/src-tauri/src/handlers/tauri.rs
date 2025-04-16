@@ -229,3 +229,39 @@ pub async fn take_screenshot(
         
     Ok("Screenshot requested".to_string())
 }
+
+#[tauri::command]
+pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, SharedTauriState>) -> Result<(), String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+    
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+        
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    match run {
+        "disconnect" => {
+            channel_tx.send(ServerCommand::DisconnectClient(socket_addr))
+                .await
+                .map_err(|e| format!("Failed to send DisconnectClient command: {}", e))?;
+        }
+        "reconnect" => {
+            channel_tx.send(ServerCommand::ReconnectClient(socket_addr))
+                .await
+                .map_err(|e| format!("Failed to send ReconnectClient command: {}", e))?;
+        }
+        _ => {}
+    }
+
+    Ok(())
+}

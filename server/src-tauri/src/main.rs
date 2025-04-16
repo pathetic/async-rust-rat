@@ -13,7 +13,8 @@ use handlers::{
         fetch_state,
         fetch_clients,
         start_server,
-        take_screenshot
+        take_screenshot,
+        manage_client
     },
     SharedTauriState,
     TauriState,
@@ -31,7 +32,8 @@ async fn main() {
                 build_client,
                 fetch_clients,
                 fetch_client,
-                take_screenshot
+                take_screenshot,
+                manage_client
             ]
         )
         .run(tauri::generate_context!())

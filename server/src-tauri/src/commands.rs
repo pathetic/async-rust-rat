@@ -27,7 +27,8 @@ pub enum ServerCommand {
     ),
     RegisterClient(Sender<ClientCommand>, SocketAddr, ClientInfo),
     ScreenshotData(SocketAddr, Vec<u8>),
-
+    DisconnectClient(SocketAddr),
+    ReconnectClient(SocketAddr),
     TakeScreenshot(SocketAddr, String),
     GetClients(OSender<Vec<FrontClient>>),
     GetClient(SocketAddr, OSender<Option<FrontClient>>),

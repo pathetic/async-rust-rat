@@ -219,6 +219,20 @@ impl ServerWrapper {
                         self.emit_client_disconnected(&addr).await;
                     }
                 },
+                DisconnectClient(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::Disconnect))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send disconnect request: {}", e));
+                    }
+                }
+                ReconnectClient(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::Reconnect))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send reconnect request: {}", e));
+                    }
+                }   
             }
         }
     }
