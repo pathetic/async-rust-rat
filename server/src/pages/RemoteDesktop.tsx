@@ -4,6 +4,12 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { getCurrent, WebviewWindow } from "@tauri-apps/api/window";
 import { useParams } from "react-router-dom";
 
+import {
+  IconHandClick,
+  IconKeyboard,
+  IconAdjustmentsAlt,
+} from "@tabler/icons-react";
+
 interface RemoteDesktopFramePayload {
   addr: string;
   timestamp: number;
@@ -242,37 +248,29 @@ export const RemoteDesktop: React.FC = () => {
 
   const displayOptions = displays.map((displayId) => (
     <option key={displayId} value={displayId}>
-      Display {displayId}
+      {displayId}
     </option>
   ));
 
   return (
     <div className="relative w-screen h-screen bg-black flex flex-col items-center p-0 m-0">
-      <div className="fixed top-2 left-2 z-10 bg-gray-900 bg-opacity-70 text-white p-2 rounded-full transition-opacity flex flex-col gap-2">
+      <div className="fixed top-2 left-2 z-10 bg-primarybg bg-opacity-70 text-white p-2 rounded-full transition-opacity flex flex-col gap-2">
         <button
           className={`text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
-            !showControls ? "bg-gray-600" : "bg-green-600"
+            !showControls ? "bg-secondarybg" : "bg-white"
           }`}
           onClick={toggleControls}
           title={showControls ? "Hide Controls" : "Show Controls"}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <IconAdjustmentsAlt
+            size={22}
+            color={!showControls ? "white" : "black"}
+          />
         </button>
 
         <button
           className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
-            mouseControlEnabled ? "bg-green-600" : "bg-gray-600"
+            mouseControlEnabled ? "bg-white" : "bg-secondarybg"
           }`}
           onClick={toggleMouseControl}
           title={
@@ -281,23 +279,15 @@ export const RemoteDesktop: React.FC = () => {
               : "Enable Mouse Control"
           }
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.415l.707-.708zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <IconHandClick
+            size={22}
+            color={mouseControlEnabled ? "black" : "white"}
+          />
         </button>
 
         <button
           className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
-            keyboardControlEnabled ? "bg-green-600" : "bg-gray-600"
+            keyboardControlEnabled ? "bg-white" : "bg-secondarybg"
           }`}
           onClick={toggleKeyboardControl}
           title={
@@ -306,35 +296,31 @@ export const RemoteDesktop: React.FC = () => {
               : "Enable Keyboard Control"
           }
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 0H6v8h8V5zm-9 6h1v1H5v-1zm3 0h1v1H8v-1zm3 0h1v1h-1v-1z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <IconKeyboard
+            size={22}
+            color={keyboardControlEnabled ? "black" : "white"}
+          />
         </button>
       </div>
 
       {showControls && (
-        <div className="absolute top-2 z-10 bg-gray-800 bg-opacity-80 p-3 rounded-lg flex flex-col items-center gap-3 text-white min-w-[300px]">
+        <div className="absolute top-2 z-10 bg-primarybg bg-opacity-80 p-3 rounded-2xl flex flex-col items-center gap-3 text-white min-w-[300px]">
           <div className="flex w-full justify-between items-center">
-            <h3 className="text-sm font-medium">Remote Desktop Control</h3>
-            <span className="text-xs px-2 py-1 rounded bg-gray-700">
+            <h3 className="text-sm font-medium">Remote Desktop</h3>
+            <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accent">
               {connectionStatus}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 w-full">
-            <div>
-              <label className="block text-xs font-medium mb-1">Display</label>
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
+              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+                Display
+              </div>
               <select
-                className="bg-gray-700 text-white text-sm rounded px-2 py-1 w-full"
+                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
+                  streaming ? "text-accent" : "text-white"
+                }`}
                 value={selectedDisplay}
                 onChange={(e) => switchDisplay(Number(e.target.value))}
                 disabled={streaming}
@@ -343,11 +329,15 @@ export const RemoteDesktop: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium mb-1">Quality</label>
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
+              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+                Quality
+              </div>
               <input
                 type="number"
-                className="bg-gray-700 text-white text-sm rounded px-2 py-1 w-full"
+                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
+                  streaming ? "text-accent" : "text-white"
+                }`}
                 min="1"
                 max="100"
                 value={quality}
@@ -356,30 +346,33 @@ export const RemoteDesktop: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium mb-1">FPS</label>
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
+              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+                FPS:
+              </div>
               <input
                 type="number"
-                className="bg-gray-700 text-white text-sm rounded px-2 py-1 w-full"
+                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
+                  streaming ? "text-accent" : "text-white"
+                }`}
                 min="1"
                 max="30"
                 value={fps}
                 onChange={(e) => setFps(Number(e.target.value))}
-                disabled={streaming}
               />
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end text-sm">
               {!streaming ? (
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded w-full whitespace-nowrap"
+                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accent bg-active text-white hover:bg-white hover:text-black transition"
                   onClick={handleStartStreaming}
                 >
                   Start Streaming
                 </button>
               ) : (
                 <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded w-full whitespace-nowrap"
+                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accent bg-inactive text-white hover:bg-white hover:text-black transition"
                   onClick={handleStopStreaming}
                 >
                   Stop Streaming

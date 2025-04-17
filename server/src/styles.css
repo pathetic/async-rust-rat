@@ -6,6 +6,8 @@
     --color-secondarybg: #0e0e0e;
     --color-accent: #535353;
     --color-hover-icon: #1f1f1f;
+    --color-active: #009000;
+    --color-inactive: #D22B2B;
 }
 
 /* Scrollbar styles */
