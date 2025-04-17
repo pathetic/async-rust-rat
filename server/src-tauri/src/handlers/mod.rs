@@ -4,6 +4,7 @@ pub mod tauri;
 use tokio::sync::mpsc::Sender;
 use once_cell::sync::OnceCell;
 use crate::commands::ServerCommand;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 
@@ -27,6 +28,8 @@ pub struct TauriState {
     pub port: String,
     pub running: bool,
     channel_tx: OnceCell<Sender<ServerCommand>>,
+    server_task: Option<tokio::task::JoinHandle<()>>,
+    listener_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl Default for TauriState {
@@ -35,6 +38,8 @@ impl Default for TauriState {
             port: "1337".to_string(),
             running: false,
             channel_tx: OnceCell::new(),
+            server_task: None,
+            listener_task: None,
         }
     }
 }

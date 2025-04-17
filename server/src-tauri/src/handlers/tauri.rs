@@ -16,6 +16,10 @@ use crate::client::ClientWrapper;
 use rmp_serde::Serializer;
 use tauri::AppHandle;
 
+use once_cell::sync::OnceCell;
+
+use common::async_impl::packets::{RemoteDesktopConfig, MouseClickData};
+
 #[tauri::command]
 pub async fn start_server(
     port: &str,
@@ -39,7 +43,7 @@ pub async fn start_server(
        .await
        .map_err(|e| format!("Failed to set Tauri handle: {}", e))?;
     
-    let _server_task = tokio::spawn(async move {
+    let server_task = tokio::spawn(async move {
         match ServerWrapper::spawn(crx).await {
             Ok(_) => println!("Server started successfully"),
             Err(e) => eprintln!("Failed to start server: {}", e),
@@ -51,7 +55,7 @@ pub async fn start_server(
     let port = port.parse::<u16>().unwrap();
 
 
-    let _listener_task = tokio::spawn(async move {
+    let listener_task = tokio::spawn(async move {
         match TcpListener::bind(("0.0.0.0", port)).await {
             Ok(listener) => {
                 loop {
@@ -73,7 +77,37 @@ pub async fn start_server(
         }
     });
 
+
+    {
+        let mut tauri_state = tauri_state.0.lock().unwrap();
+        tauri_state.server_task = Some(server_task);
+        tauri_state.listener_task = Some(listener_task);
+    }
+
     Ok("true".to_string())
+}
+
+
+#[tauri::command]
+pub async fn stop_server(tauri_state: State<'_, SharedTauriState>) -> Result<(), String> {
+    {
+        let mut tauri_state = tauri_state.0.lock().unwrap();
+        tauri_state.running = false;
+
+        if let Some(server_task) = tauri_state.server_task.take() {
+            server_task.abort();
+        }
+
+        if let Some(listener_task) = tauri_state.listener_task.take() {
+            listener_task.abort();
+        }
+
+        tauri_state.channel_tx = OnceCell::new();
+        tauri_state.server_task = None;
+        tauri_state.listener_task = None;
+    }
+
+    Ok(())
 }
 
 #[derive(Serialize)]
@@ -264,4 +298,107 @@ pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, Share
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn start_remote_desktop(
+    addr: &str, 
+    display: i32, 
+    quality: u8, 
+    fps: u8, 
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+        
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::StartRemoteDesktop(socket_addr, RemoteDesktopConfig {
+        display,
+        quality,
+        fps,
+    }))
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok("Remote desktop started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_remote_desktop(
+    addr: &str, 
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+        
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::StopRemoteDesktop(socket_addr))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Remote desktop stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn send_mouse_click(
+    addr: &str,
+    display: i32,
+    x: i32,
+    y: i32,
+    click_type: i32,
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+        
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::MouseClick(socket_addr, MouseClickData {
+        display,
+        x: x as i32,
+        y: y as i32,
+        click_type,
+    }))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Mouse click sent".to_string())
 }

@@ -5,10 +5,6 @@ export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });
 };
 
-export const stopServerCmd = async (): Promise<string> => {
-  return invoke("stop_server");
-};
-
 export const buildClientCmd = async (
   ip: string,
   port: string,

@@ -6,14 +6,6 @@ export type RATState = {
   port: string;
 };
 
-// Client window interface for tracking windows associated with clients
-export interface ClientWindow {
-  windowId: string;
-  window: WebviewWindow;
-  type: string;
-  clientId: string;
-}
-
 export type RATContextType = {
   port: string;
   setPort: (port: string) => void;
@@ -27,10 +19,9 @@ export type RATContextType = {
   notificationClient: boolean;
   // Simple window opening function - no tracking
   openClientWindow: (
-    clientId: string,
+    addr: string,
     type: string,
-    url: string,
-    title?: string
+    clientFullName: string
   ) => Promise<WebviewWindow | undefined>;
 };
 
@@ -53,6 +44,11 @@ export type RATClient = {
   disconnected: boolean;
 };
 
+export type ClientWindowType = {
+  window: WebviewWindow;
+  addr: string;
+};
+
 export type ContextMenuType = {
   x: number;
   y: number;
@@ -71,6 +67,8 @@ export interface ContextMenuProps {
 export type MenuOptionType = {
   label: string;
   icon: React.ReactNode;
+  window?: boolean;
+  type?: string;
   navigate?: boolean;
   path?: string;
   options?: MenuOptionType[];
@@ -85,6 +83,7 @@ interface SubMenuProps {
   top: number;
   left: number;
   addr: string;
+  clientFullName: string;
   navigate: (string) => void;
   onClose: () => void;
 }

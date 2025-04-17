@@ -7,15 +7,7 @@ mod commands;
 mod client;
 
 use handlers::{
-    tauri::{
-        build_client,
-        fetch_client,
-        fetch_state,
-        fetch_clients,
-        start_server,
-        take_screenshot,
-        manage_client
-    },
+    tauri::*,
     SharedTauriState,
     TauriState,
 };
@@ -28,12 +20,16 @@ async fn main() {
         .invoke_handler(
             tauri::generate_handler![
                 start_server,
+                stop_server,
                 fetch_state,
                 build_client,
                 fetch_clients,
                 fetch_client,
                 take_screenshot,
-                manage_client
+                manage_client,
+                start_remote_desktop,
+                stop_remote_desktop,
+                send_mouse_click,
             ]
         )
         .run(tauri::generate_context!())

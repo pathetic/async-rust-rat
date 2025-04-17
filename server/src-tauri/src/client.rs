@@ -136,6 +136,13 @@ impl ClientReaderWrapper {
                     .await
                     .unwrap_or_else(|_| println!("Failed to send screenshot data to server"));
             },
+
+            RemoteDesktopFrame(frame) => {
+                self.server_sender
+                    .send(ServerCommand::RemoteDesktopFrame(self.addr, frame))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send remote desktop frame to server"));
+            },
             
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");

@@ -4,7 +4,7 @@ pub fn get_config() -> ClientConfig {
     let mut config: ClientConfig = ClientConfig {
         ip: "127.0.0.1".to_string(),
         port: "1337".to_string(),
-        mutex_enabled: true,
+        mutex_enabled: false,
         mutex: "TEST123".to_string(),
         unattended_mode: false,
         startup: false,

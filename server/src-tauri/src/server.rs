@@ -20,6 +20,14 @@ use crate::commands::*;
 
 use common::{ENC_TOK_LEN, RSA_BITS};
 
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+struct FrontClientNotification {
+    pub username: String,
+    pub addr: String,
+}
+
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -53,12 +61,12 @@ impl ServerWrapper {
         Ok(())
     }
     
-    async fn emit_client_connected(&self, client_info: &ClientInfo) {
+    async fn emit_client_connected(&self, client_info: &ClientInfo, addr: &SocketAddr) {
         if let Some(handle) = &self.tauri_handle {
             let _ = handle
                 .lock()
                 .unwrap()
-                .emit_all("client_connected", client_info.username.clone())
+                .emit_all("client_connected", FrontClientNotification { username: client_info.username.clone(), addr: addr.to_string() })
                 .unwrap_or_else(|e| println!("Failed to emit client_connected event: {}", e));
         }
     }
@@ -71,7 +79,7 @@ impl ServerWrapper {
         };
         
         if let Some(handle) = &self.tauri_handle {
-            match handle.lock().unwrap().emit_all("client_disconnected", username.clone()) {
+            match handle.lock().unwrap().emit_all("client_disconnected", FrontClientNotification { username: username.clone(), addr: addr.to_string() }) {
                 Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
                 Err(e) => println!("Failed to emit client_disconnected event: {}", e),
             }
@@ -137,7 +145,7 @@ impl ServerWrapper {
                     self.txs.insert(addr, tx);
                     self.connected_users.insert(addr, client_info.clone());
                                         
-                    self.emit_client_connected(&client_info).await;
+                    self.emit_client_connected(&client_info, &addr).await;
                 }
                 ScreenshotData(_addr, screenshot_data) => {                    
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
@@ -153,6 +161,43 @@ impl ServerWrapper {
                         tx.send(ClientCommand::Write(ClientboundPacket::ScreenshotDisplay(display)))
                             .await
                             .unwrap_or_else(|e| println!("Failed to send screenshot request: {}", e));
+                    }
+                }
+                StartRemoteDesktop(addr, config) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::StartRemoteDesktop(config)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send start remote desktop request: {}", e));
+                    }
+                }
+                StopRemoteDesktop(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::StopRemoteDesktop))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send stop remote desktop request: {}", e));
+                    }
+                }  
+                MouseClick(addr, click_data) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::MouseClick(click_data)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send mouse click request: {}", e));
+                    }
+                }
+                RemoteDesktopFrame(addr, frame) => {
+                    let base64_img = general_purpose::STANDARD.encode(&frame.data);
+
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "timestamp": frame.timestamp,
+                        "display": frame.display,
+                        "data": base64_img
+                    });
+                    
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("remote_desktop_frame", payload).unwrap_or_else(|e| println!("Failed to emit remote_desktop_frame event: {}", e));
+                    } else {
+                        println!("Cannot send remote_desktop_frame event: Tauri handle not set");
                     }
                 }
                 GetClients(resp) => {
@@ -210,7 +255,7 @@ impl ServerWrapper {
                     if let Some(client_info) = client_info.clone() {
                         let username = client_info.username.clone();                        
                         if let Some(handle) = &self.tauri_handle {
-                            match handle.lock().unwrap().emit_all("client_disconnected", username.clone()) {
+                            match handle.lock().unwrap().emit_all("client_disconnected", FrontClientNotification { username: username.clone(), addr: addr.to_string() }) {
                                 Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
                                 Err(e) => println!("Failed to emit client_disconnected event: {}", e),
                             }
@@ -232,7 +277,7 @@ impl ServerWrapper {
                             .await
                             .unwrap_or_else(|e| println!("Failed to send reconnect request: {}", e));
                     }
-                }   
+                }
             }
         }
     }
