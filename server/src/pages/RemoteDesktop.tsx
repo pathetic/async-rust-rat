@@ -256,7 +256,7 @@ export const RemoteDesktop: React.FC = () => {
     <div className="relative w-screen h-screen bg-black flex flex-col items-center p-0 m-0">
       <div className="fixed top-2 left-2 z-10 bg-primarybg bg-opacity-70 text-white p-2 rounded-full transition-opacity flex flex-col gap-2">
         <button
-          className={`text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
+          className={`text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
             !showControls ? "bg-secondarybg" : "bg-white"
           }`}
           onClick={toggleControls}
@@ -269,7 +269,7 @@ export const RemoteDesktop: React.FC = () => {
         </button>
 
         <button
-          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
+          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
             mouseControlEnabled ? "bg-white" : "bg-secondarybg"
           }`}
           onClick={toggleMouseControl}
@@ -286,7 +286,7 @@ export const RemoteDesktop: React.FC = () => {
         </button>
 
         <button
-          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity ${
+          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
             keyboardControlEnabled ? "bg-white" : "bg-secondarybg"
           }`}
           onClick={toggleKeyboardControl}
@@ -307,19 +307,19 @@ export const RemoteDesktop: React.FC = () => {
         <div className="absolute top-2 z-10 bg-primarybg bg-opacity-80 p-3 rounded-2xl flex flex-col items-center gap-3 text-white min-w-[300px]">
           <div className="flex w-full justify-between items-center">
             <h3 className="text-sm font-medium">Remote Desktop</h3>
-            <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accent">
+            <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accentx">
               {connectionStatus}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 w-full">
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
-              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
+              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
                 Display
               </div>
               <select
                 className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accent" : "text-white"
+                  streaming ? "text-accentx" : "text-white"
                 }`}
                 value={selectedDisplay}
                 onChange={(e) => switchDisplay(Number(e.target.value))}
@@ -329,14 +329,14 @@ export const RemoteDesktop: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
-              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
+              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
                 Quality
               </div>
               <input
                 type="number"
                 className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accent" : "text-white"
+                  streaming ? "text-accentx" : "text-white"
                 }`}
                 min="1"
                 max="100"
@@ -346,14 +346,14 @@ export const RemoteDesktop: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
-              <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
+              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
                 FPS:
               </div>
               <input
                 type="number"
                 className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accent" : "text-white"
+                  streaming ? "text-accentx" : "text-white"
                 }`}
                 min="1"
                 max="30"
@@ -365,14 +365,14 @@ export const RemoteDesktop: React.FC = () => {
             <div className="flex items-end text-sm">
               {!streaming ? (
                 <button
-                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accent bg-active text-white hover:bg-white hover:text-black transition"
+                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-active text-white hover:bg-white hover:text-black transition"
                   onClick={handleStartStreaming}
                 >
                   Start Streaming
                 </button>
               ) : (
                 <button
-                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accent bg-inactive text-white hover:bg-white hover:text-black transition"
+                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-inactive text-white hover:bg-white hover:text-black transition"
                   onClick={handleStopStreaming}
                 >
                   Stop Streaming

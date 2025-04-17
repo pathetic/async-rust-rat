@@ -45,8 +45,10 @@ export type RATClient = {
 };
 
 export type ClientWindowType = {
-  window: WebviewWindow;
+  id: string;
   addr: string;
+  window: WebviewWindow;
+  type: string;
 };
 
 export type ContextMenuType = {

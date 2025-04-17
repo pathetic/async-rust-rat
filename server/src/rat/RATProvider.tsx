@@ -20,9 +20,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const notificationClientRef = useRef(false);
   const [listenClientNotif, setListenClientNotif] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [clientWindows, setClientWindows] = useState<
-    Record<string, ClientWindowType>
-  >({});
+  const [clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
 
   async function fetchClients() {
     setClientList(await fetchClientsCmd());
@@ -56,31 +54,31 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     });
   };
 
-  const cleanupClientWindow = async (addr: string) => {
+  const cleanupClientWindowByType = async (addr: string, type: string) => {
     Object.values(clientWindows).forEach((window) => {
-      if (window.addr?.includes(addr)) {
+      if (window.addr?.includes(addr) && window.type === type) {
         window.window.close();
       }
     });
 
     setClientWindows((prevWindows) => {
-      const newWindows = { ...prevWindows };
-      delete newWindows[addr];
+      const newWindows = prevWindows.filter(
+        (window) => window.addr !== addr && window.type !== type
+      );
       return newWindows;
     });
   };
 
-  const cleanupRemoteDesktop = async (addr: string) => {
-    try {
-      await invoke("stop_remote_desktop", { addr }).catch((err) =>
-        console.error(`Error stopping remote desktop for client ${addr}:`, err)
-      );
-    } catch (error) {
-      console.error(
-        `Failed to cleanup remote desktop for client ${addr}:`,
-        error
-      );
-    }
+  const cleanupClientWindows = async (addr: string) => {
+    setClientWindows((prevWindows) => {
+      prevWindows.forEach((window) => {
+        if (window.addr.includes(addr)) {
+          window.window.close();
+        }
+      });
+
+      return prevWindows.filter((window) => window.addr !== addr);
+    });
   };
 
   const openClientWindow = async (
@@ -106,23 +104,21 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
       console.log(window);
 
-      setClientWindows((prevWindows) => ({
-        ...prevWindows,
-        [addr]: { window, addr },
-      }));
+      let newWindow: ClientWindowType = { window, addr, type, id: windowId };
 
-      if (type === "remote-desktop") {
-        window.once("tauri://close-requested", async () => {
-          await cleanupRemoteDesktop(addr);
-        });
-      }
-      console.log("??");
+      setClientWindows((prevWindows) => [...prevWindows, newWindow]);
+
+      window.once("tauri://close-requested", async () => {
+        await cleanupClientWindowByType(addr, type);
+      });
 
       return window;
     } catch (error) {
       console.error(`Failed to open ${type} window for client ${addr}:`, error);
     }
   };
+
+  console.log(clientWindows);
 
   async function waitNotification(type: string) {
     listen(type, async (event) => {
@@ -132,14 +128,12 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       };
       let icon = type == "client_connected" ? "🤙" : "👋";
       let message = type == "client_connected" ? "connected" : "disconnected";
-      let style =
-        type == "client_connected"
-          ? "!bg-primary !text-primary-content"
-          : "!bg-neutral !text-neutral-content";
+      let style = "!bg-white !text-black !rounded-2xl !border-accentx";
+
       let toast_message = `Client ${username} has ${message}!`;
 
       if (type == "client_disconnected") {
-        await cleanupClientWindow(addr);
+        await cleanupClientWindows(addr);
       }
 
       fetchClients();

@@ -56,6 +56,9 @@ pub enum ClientboundPacket {
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
     MouseClick(MouseClickData),
+    VisitWebsite(VisitWebsiteData),
+    ShowMessageBox(MessageBoxData),
+    ElevateClient,
 }
 
 impl Packet for ClientboundPacket {
@@ -91,4 +94,18 @@ pub struct MouseClickData {
     pub display: i32,
     pub x: i32,
     pub y: i32,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct VisitWebsiteData {
+    pub visit_type: String,
+    pub url: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MessageBoxData {
+    pub title: String,
+    pub message: String,
+    pub button: String,
+    pub icon: String,
 }

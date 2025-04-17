@@ -40,11 +40,12 @@ const SidebarBurger = ({ color, icon: Icon }: any) => {
   return (
     <div className="flex flex-col items-center gap-1 mb-2">
       <button className="p-2 rounded-xl hover:text-white">
-        <Icon size={24} color={color} />
+        <Icon size={28} color={color} />
       </button>
     </div>
   );
 };
+
 export const Layout = () => {
   const location = useLocation();
 
@@ -56,13 +57,13 @@ export const Layout = () => {
 
     if (serverMessage === "true") {
       toast.success("Server started successfully!", {
-        className: `!bg-secondary !text-secondary-content text-lg`,
+        className: `!bg-white !text-black !rounded-2xl !border-accentx`,
       });
 
       setRunning(true);
     } else {
       toast.error("Server failed to start!", {
-        className: `!bg-secondary !text-secondary-content text-lg`,
+        className: `!bg-white !text-black !rounded-2xl !border-accentx`,
       });
     }
   }
@@ -72,13 +73,13 @@ export const Layout = () => {
 
     if (serverMessage === "true") {
       toast.success("Server stopped successfully!", {
-        className: `!bg-secondary !text-secondary-content text-lg`,
+        className: `!bg-white !text-black !rounded-2xl !border-accentx`,
       });
 
       setRunning(false);
     } else {
       toast.error("Server failed to stop!", {
-        className: `!bg-secondary !text-secondary-content text-lg`,
+        className: `!bg-white !text-black !rounded-2xl !border-accentx`,
       });
     }
   }
@@ -124,8 +125,8 @@ export const Layout = () => {
       <div className="flex flex-col flex-1">
         {/* Top Bar */}
         <header className="h-14 bg-primarybg px-4 flex items-center pt-2 gap-3">
-          <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accent h-9">
-            <div className="shrink-0 text-base text-accent select-none sm:text-sm/6">
+          <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
+            <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
               Port:
             </div>
             <input
@@ -134,7 +135,7 @@ export const Layout = () => {
               id="username"
               disabled={running}
               className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                running ? "text-accent" : "text-white"
+                running ? "text-accentx" : "text-white"
               }`}
               placeholder="1337"
               value={port}
@@ -151,13 +152,13 @@ export const Layout = () => {
                 startServer();
               }
             }}
-            className="cursor-pointer rounded-full px-4 py-1.5 border border-accent bg-secondarybg text-white hover:bg-white hover:text-black transition"
+            className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-secondarybg text-white hover:bg-white hover:text-black transition"
           >
             {running ? "Stop" : "Start"}
           </button>
 
           {/* Connected Clients box */}
-          <div className="ml-auto flex items-center gap-2 rounded-full bg-secondarybg px-4 py-1.5 border border-accent text-white">
+          <div className="ml-auto flex items-center gap-2 rounded-full bg-secondarybg px-4 py-1.5 border border-accentx text-white">
             <IconUsers size={18} className="text-white" />
             <span className="text-white">Connected:</span>
             <span className="font-semibold text-white">

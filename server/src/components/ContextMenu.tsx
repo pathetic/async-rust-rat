@@ -141,7 +141,7 @@ const SubMenu: React.FC<SubMenuProps> = ({
   return (
     <div
       style={{ top: `${top}px`, left: `${left + 2}px` }}
-      className="context-menu fixed shadow-lg border border-accent rounded-md list-none flex flex-col text-center bg-primarybg text-white z-50"
+      className="context-menu fixed shadow-lg border border-accentx rounded-md list-none flex flex-col text-center bg-primarybg text-white z-50"
     >
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
@@ -175,8 +175,8 @@ const SubMenu: React.FC<SubMenuProps> = ({
               }
               onClose();
             }}
-            className={`context-menu flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accent transition-all ${
-              isLast ? "" : "border-b border-accent "
+            className={`context-menu flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accentx transition-all ${
+              isLast ? "" : "border-b border-accentx "
             }`}
           >
             {item.icon}
@@ -254,7 +254,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     <>
       <div
         ref={menuRef}
-        className="fixed context-menu bg-primarybg border border-accent rounded-md list-none flex flex-col text-center text-white z-50"
+        className="fixed context-menu bg-primarybg border border-accentx rounded-md list-none flex flex-col text-center text-white z-50"
         style={{
           top: `${y}px`,
           left: `${x}px`,
@@ -267,8 +267,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           return (
             <div
               key={index}
-              className={`flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accent transition-all ${
-                isLast ? "" : "border-b border-accent"
+              className={`flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accentx transition-all ${
+                isLast ? "" : "border-b border-accentx"
               }`}
               onMouseEnter={(e) => handleMouseEnter(index, e)}
             >

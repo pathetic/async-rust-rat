@@ -38,4 +38,7 @@ pub enum ServerCommand {
     GetClient(SocketAddr, OSender<Option<FrontClient>>),
     SetTauriHandle(AppHandle),
     ClientDisconnected(SocketAddr),
+    VisitWebsite(SocketAddr, VisitWebsiteData),
+    ShowMessageBox(SocketAddr, MessageBoxData),
+    ElevateClient(SocketAddr),
 }

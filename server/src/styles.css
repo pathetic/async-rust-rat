@@ -1,15 +1,23 @@
 @import "tailwindcss";
-
+@plugin "daisyui";
 
 @theme {
     --color-primarybg: #171717;
     --color-secondarybg: #0e0e0e;
-    --color-accent: #535353;
+    --color-accentx: #535353;
     --color-hover-icon: #1f1f1f;
     --color-active: #009000;
     --color-inactive: #D22B2B;
 }
 
+body {
+    background-color: var(--color-primarybg) !important;
+}
+
+html {
+  background-color: var(--color-primarybg) !important;
+}
+  
 /* Scrollbar styles */
 ::-webkit-scrollbar {
     width: 8px;
@@ -23,3 +31,5 @@
     background-color: #b1b1b1; /* light thumb */
     border-radius: 8px;
   }
+
+  
