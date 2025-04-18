@@ -87,6 +87,20 @@ export const RemoteDesktop: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    let cleanupFn: (() => void) | undefined;
+
+    listen("close_window", () => {
+      window.close();
+    }).then((unlisten) => {
+      cleanupFn = unlisten;
+    });
+
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
+  }, []);
+
+  useEffect(() => {
     const unlisten = listen("remote_desktop_frame", (event) => {
       const payload = event.payload as RemoteDesktopFramePayload;
 

@@ -57,7 +57,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const cleanupClientWindowByType = async (addr: string, type: string) => {
     Object.values(clientWindows).forEach((window) => {
       if (window.addr?.includes(addr) && window.type === type) {
-        window.window.close();
+        window.window.emit("close_window");
       }
     });
 
@@ -73,7 +73,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     setClientWindows((prevWindows) => {
       prevWindows.forEach((window) => {
         if (window.addr.includes(addr)) {
-          window.window.close();
+          window.window.emit("close_window");
         }
       });
 
@@ -91,8 +91,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
       const windowId = `${type}-${Date.now()}`;
 
-      console.log(fullUrl);
-
       const window = new WebviewWindow(windowId, {
         url: fullUrl,
         title: `Remote Desktop - ${clientFullName} - ${addr}`,
@@ -101,8 +99,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         resizable: true,
         center: true,
       });
-
-      console.log(window);
 
       let newWindow: ClientWindowType = { window, addr, type, id: windowId };
 
@@ -117,8 +113,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       console.error(`Failed to open ${type} window for client ${addr}:`, error);
     }
   };
-
-  console.log(clientWindows);
 
   async function waitNotification(type: string) {
     listen(type, async (event) => {

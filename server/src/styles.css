@@ -33,3 +33,6 @@ html {
   }
 
   
+  * {
+    user-select: none;
+  }

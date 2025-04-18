@@ -90,7 +90,7 @@ function ClientDetails({
               onClick={() => takeScreenshot(client, index)}
               className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-secondarybg text-white hover:bg-white hover:text-black transition"
             >
-              SS Display {index}
+              Capture Display {index}
             </a>
           ))}
       </div>
