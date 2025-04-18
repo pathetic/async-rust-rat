@@ -17,7 +17,7 @@ export const App: React.FC = () => {
     <RATProvider>
       <Routes>
         <Route path="/reverse-proxy/:addr" element={<ReverseProxy />} />
-        <Route path="/reverse-shell/:addr" element={<ReverseShell />} />
+        <Route path="/remote-shell/:addr" element={<ReverseShell />} />
         <Route path="/remote-desktop/:addr" element={<RemoteDesktop />} />
         <Route path="/process-viewer/:addr" element={<ProcessViewer />} />
         <Route path="/file-manager/:addr" element={<FileManager />} />
