@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use rand::{rngs::OsRng, Rng, SeedableRng};
 use rsa::{PaddingScheme, PublicKey, RsaPublicKey};
 use rand_chacha::ChaCha20Rng;
-use common::async_impl::{connection::{Connection, ConnectionReader, ConnectionWriter}, packets::*};
+use common::{connection::{Connection, ConnectionReader, ConnectionWriter}, packets::*};
 
 pub static SECRET: Lazy<Mutex<[u8; common::SECRET_LEN]>> = Lazy::new(||
     Mutex::new([0u8; common::SECRET_LEN])

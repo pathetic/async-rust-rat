@@ -1,12 +1,12 @@
 use crate::commands::*;
-use common::async_impl::connection::*;
-use common::async_impl::packets::*;
+use common::connection::*;
+use common::packets::*;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::oneshot;
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
-use common::async_impl::packets::ClientboundPacket;
+use common::packets::ClientboundPacket;
 
 pub struct ClientWrapper; // Maybe this shouldn't be a struct?
 
@@ -143,6 +143,49 @@ impl ClientReaderWrapper {
                     .await
                     .unwrap_or_else(|_| println!("Failed to send remote desktop frame to server"));
             },
+
+            ShellOutput(output) => {
+                self.server_sender
+                    .send(ServerCommand::ShellOutput(self.addr, output))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send shell output to server"));
+            },
+
+            ProcessList(process_list) => {
+                self.server_sender
+                    .send(ServerCommand::ProcessList(self.addr, process_list))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send process list to server"));
+            },
+
+            DisksResult(disks) => {
+                self.server_sender
+                    .send(ServerCommand::DisksResult(self.addr, disks))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send disks result to server"));
+            },
+
+            FileList(files) => {
+                self.server_sender
+                    .send(ServerCommand::FileList(self.addr, files))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send file list to server"));
+            },
+
+            CurrentFolder(path) => {
+                self.server_sender
+                    .send(ServerCommand::CurrentFolder(self.addr, path))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send current folder to server"));
+            },
+
+            DonwloadFileResult(file_data) => {
+                self.server_sender
+                    .send(ServerCommand::DownloadFileResult(self.addr, file_data))
+                    .await
+                    .unwrap_or_else(|_| println!("Failed to send download file result to server"));
+            },
+            
             
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");

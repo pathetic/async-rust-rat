@@ -34,6 +34,15 @@ async fn main() {
                 send_messagebox,
                 test_messagebox,
                 elevate_client,
+                handle_system_command,
+                process_list,
+                kill_process,
+                manage_shell,
+                execute_shell_command,
+                read_files,
+                manage_file,
+                start_reverse_proxy,
+                stop_reverse_proxy
             ]
         )
         .run(tauri::generate_context!())

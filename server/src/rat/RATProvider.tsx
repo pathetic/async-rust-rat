@@ -12,6 +12,21 @@ import { fetchClientsCmd, fetchStateCmd } from "./RATCommands";
 import { WebviewWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/tauri";
 
+const translateWindowType = (type: string) => {
+  switch (type) {
+    case "process-viewer":
+      return "Process Viewer";
+    case "remote-desktop":
+      return "Remote Desktop";
+    case "file-manager":
+      return "File Manager";
+    case "reverse-shell":
+      return "Reverse Shell";
+    default:
+      return type;
+  }
+};
+
 export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const [port, setPort] = useState<string>("1337");
   const [running, setRunning] = useState<boolean>(false);
@@ -93,7 +108,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
       const window = new WebviewWindow(windowId, {
         url: fullUrl,
-        title: `Remote Desktop - ${clientFullName} - ${addr}`,
+        title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
         width: 1280,
         height: 720,
         resizable: true,

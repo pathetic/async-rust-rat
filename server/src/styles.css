@@ -36,3 +36,18 @@ html {
   * {
     user-select: none;
   }
+  
+  .reverse-shell, 
+  .reverse-shell * {
+    user-select: text;
+  }
+
+  .table-zebra {
+    & tbody {
+        & tr {
+            &:nth-child(even) {
+                background-color: var(--color-primarybg) !important;
+            }
+        }
+    }
+  }

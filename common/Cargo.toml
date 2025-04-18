@@ -16,3 +16,4 @@ winapi = { version = "0.3.9", features = ["winuser"] }
 tokio = { version = "1.20.1", features = ["rt", "full"] }
 bytes = "1.1"
 rand = "0.8.4"
+net2 = "0.2.39"

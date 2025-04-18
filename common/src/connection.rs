@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufWriter};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 
-use crate::async_impl::packets::*;
+use crate::packets::*;
 
 use rand::RngCore;
 use rand_chacha::ChaCha20Rng;

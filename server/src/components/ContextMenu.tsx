@@ -24,6 +24,7 @@ import {
   IconPlugConnectedX,
   IconPlug,
   IconShareplay,
+  IconNetwork,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -41,22 +42,25 @@ const menuOptions = [
         label: "File Manager",
         type: "file-manager",
         icon: <IconFolder size={24} />,
-        navigate: true,
-        path: "/[addr]/files",
+        window: true,
       },
       {
         label: "Reverse Shell",
         type: "reverse-shell",
         icon: <IconTerminal2 size={24} />,
-        navigate: true,
-        path: "/clients/[addr]/shell",
+        window: true,
+      },
+      {
+        label: "Reverse Proxy",
+        type: "reverse-proxy",
+        icon: <IconNetwork size={24} />,
+        window: true,
       },
       {
         label: "Process Viewer",
         type: "process-viewer",
         icon: <IconCpu2 size={24} />,
-        navigate: true,
-        path: "/clients/[addr]/process",
+        window: true,
       },
       {
         label: "Visit Website",

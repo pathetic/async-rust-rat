@@ -1,7 +1,9 @@
 use serde::{ Serialize, Deserialize };
 
-pub mod commands;
-pub mod async_impl;
+pub mod connection;
+pub mod packets;
+pub mod shell;
+pub mod socks;
 
 pub const RSA_BITS: usize = 1024;
 pub const ENC_TOK_LEN: usize = 32;

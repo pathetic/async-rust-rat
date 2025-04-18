@@ -18,7 +18,7 @@ use winapi::Interface;
 
 use crate::service::install::is_elevated;
 
-use common::async_impl::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
+use common::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
 
 pub fn client_info() -> ClientInfo{
     let mut s = System::new_all();
@@ -89,6 +89,7 @@ pub fn client_info() -> ClientInfo{
         storage: storage.clone(),
         displays: display_count,
         is_elevated: is_elevated(),
+        reverse_proxy_port: "".to_string(),
     };
 
     client_data

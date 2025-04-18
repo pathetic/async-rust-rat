@@ -97,7 +97,6 @@ export interface ShellCommandType {
 
 export interface CommandProps {
   addr: string;
-  shellStatus: string;
 }
 
 export type ProcessType = {

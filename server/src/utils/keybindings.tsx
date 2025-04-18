@@ -8,12 +8,11 @@ export const keybindings = async (
   setCurrentCommand: React.Dispatch<React.SetStateAction<string>>,
   currentCommand: string,
   command: ShellCommandType[],
-  id: string,
-  shellStatus: string,
+  addr: string,
   upArrowKeyPressed: number
 ) => {
   if (e.key === "Enter") {
-    const output = await getOutput(currentCommand, setCommand, shellStatus, id);
+    const output = await getOutput(currentCommand, setCommand, addr);
     setCommand((prevCommand) => [
       ...prevCommand,
       {
@@ -21,6 +20,7 @@ export const keybindings = async (
         output,
       },
     ]);
+
     setCurrentCommand("");
     setUpArrowKeyPressed(0);
   } else if (e.keyCode === 38) {

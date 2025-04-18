@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use screenshots::{image, Screen};
 use std::io::Cursor;
 
-use common::async_impl::packets::{RemoteDesktopConfig, RemoteDesktopFrame, MouseClickData, ServerboundPacket};
+use common::packets::{RemoteDesktopConfig, RemoteDesktopFrame, MouseClickData, ServerboundPacket};
 use crate::handler::send_packet;
 
 use winapi::um::winuser::{

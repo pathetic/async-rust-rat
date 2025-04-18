@@ -138,3 +138,17 @@ export const sendMessageBoxCmd = async (
 ): Promise<void> => {
   return invoke("send_messagebox", { addr, title, message, button, icon });
 };
+
+export const startReverseProxyCmd = async (
+  addr: string | undefined,
+  port: string,
+  localport: string
+): Promise<void> => {
+  return invoke("start_reverse_proxy", { addr, port, localport });
+};
+
+export const stopReverseProxyCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_reverse_proxy", { addr });
+};
