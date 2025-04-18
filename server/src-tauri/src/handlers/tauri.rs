@@ -92,25 +92,48 @@ pub async fn start_server(
 
 
 #[tauri::command]
-pub async fn stop_server(tauri_state: State<'_, SharedTauriState>) -> Result<(), String> {
+pub async fn stop_server(tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+    { 
+        let channel_tx = {
+            let mut tauri_state = tauri_state.0.lock().unwrap();
+            
+            if !tauri_state.running {
+                return Ok("false".to_string());
+            }
+            
+            tauri_state.running = false;
+
+            if let Some(tx) = tauri_state.channel_tx.get() {
+                tx.clone()
+            } else {
+                return Err("Server channel not initialized".to_string());
+            }
+        };
+        
+        channel_tx.send(ServerCommand::CloseClientSessions())
+            .await
+            .map_err(|e| format!("Failed to send CloseClientSessions command: {}", e))?;
+        
+    }
+
     {
         let mut tauri_state = tauri_state.0.lock().unwrap();
-        tauri_state.running = false;
-
-        if let Some(server_task) = tauri_state.server_task.take() {
-            server_task.abort();
-        }
 
         if let Some(listener_task) = tauri_state.listener_task.take() {
             listener_task.abort();
         }
 
+
+        if let Some(listener_task) = tauri_state.listener_task.take() {
+            listener_task.abort();
+        }
+        
         tauri_state.channel_tx = OnceCell::new();
         tauri_state.server_task = None;
         tauri_state.listener_task = None;
     }
 
-    Ok(())
+    Ok("true".to_string())
 }
 
 #[derive(Serialize)]

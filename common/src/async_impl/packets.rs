@@ -47,6 +47,7 @@ impl Packet for ServerboundPacket {
 /// Packets going from the server to client.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub enum ClientboundPacket {
+    CloseClientSession,
     EncryptionResponse(Vec<u8>, Vec<u8>), // channel's public key and token
     EncryptionAck,
     InitClient,

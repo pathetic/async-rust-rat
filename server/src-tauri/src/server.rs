@@ -96,6 +96,14 @@ impl ServerWrapper {
             };
 
             match p {
+                CloseClientSessions() => {
+                    println!("Closing client sessions");
+                    for (addr, tx) in self.txs.iter_mut() {
+                        tx.send(ClientCommand::Close).await.unwrap();
+                    }
+                    self.txs.clear();
+                    self.connected_users.clear();
+                }
                 EncryptionRequest(tx, otx) => {
                     let mut token = [0u8; ENC_TOK_LEN];
                     OsRng.fill(&mut token);

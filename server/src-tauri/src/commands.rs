@@ -41,4 +41,5 @@ pub enum ServerCommand {
     VisitWebsite(SocketAddr, VisitWebsiteData),
     ShowMessageBox(SocketAddr, MessageBoxData),
     ElevateClient(SocketAddr),
+    CloseClientSessions(),
 }

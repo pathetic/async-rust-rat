@@ -164,7 +164,7 @@ impl ClientReaderWrapper {
             {
                 Ok(p) => {
                     match &p {
-                        Some(packet) => println!("Got packet from {}: {:?}", self.addr, packet),
+                        Some(packet) => println!("Got packet from {}", self.addr),
                         None => println!("Got None packet from {}", self.addr),
                     }
                     if let Some(p) = p {
@@ -231,11 +231,17 @@ impl ClientWriterWrapper {
                             self.nonce_generator = Some(ChaCha20Rng::from_seed(seed));
                         }
                     }
-                    Write(p) => self
+                    Write(p) => {
+                        if p == ClientboundPacket::CloseClientSession {
+                            break;
+                        }
+
+                        self
                         .writer
                         .write_packet(p, &self.secret, self.nonce_generator.as_mut())
                         .await
-                        .unwrap_or_else(|e| println!("Error writing packet: {}", e)),
+                        .unwrap_or_else(|e| println!("Error writing packet: {}", e))
+                    }
                 }
             }
         }
