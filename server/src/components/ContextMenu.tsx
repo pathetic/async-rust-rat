@@ -45,8 +45,8 @@ const menuOptions = [
         window: true,
       },
       {
-        label: "Reverse Shell",
-        type: "reverse-shell",
+        label: "Remote Shell",
+        type: "remote-shell",
         icon: <IconTerminal2 size={24} />,
         window: true,
       },

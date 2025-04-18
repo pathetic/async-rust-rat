@@ -123,27 +123,6 @@ export const ReverseProxy = () => {
           </p>
         </div>
       </div>
-
-      <div className="bg-secondarybg p-5 rounded-xl shadow-inner">
-        <h2 className="text-lg font-semibold mb-4">Open Connections</h2>
-
-        <div className="overflow-x-auto">
-          <table className="table w-full bg-secondarybg text-white border-collapse">
-            <thead>
-              <tr className="bg-primarybg text-white border-b border-accentx">
-                <th className="p-3 text-left">Client IP</th>
-                <th className="p-3 text-left">Client Country</th>
-                <th className="p-3 text-left">Target Server</th>
-                <th className="p-3 text-left">Target Port</th>
-                <th className="p-3 text-left">Total Received</th>
-                <th className="p-3 text-left">Total Sent</th>
-                <th className="p-3 text-left">Proxy Type</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 };
