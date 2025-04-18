@@ -12,17 +12,13 @@ pub mod features;
 pub mod service;
 pub mod handler;
 
-use tokio::net::TcpStream;
-use common::async_impl::connection::Connection;
-use common::async_impl::packets::*;
-use tokio::sync::oneshot;
-use tokio::time::sleep;
+use tokio::{net::TcpStream, sync::oneshot, time::sleep};
+use common::async_impl::{connection::Connection, packets::*};
 
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 use features::encryption;
-use features::tray_icon::TrayIcon;
 
 static MUTEX_SERVICE: Lazy<Mutex<service::mutex::MutexLock>> = Lazy::new(||
     Mutex::new(service::mutex::MutexLock::new())
@@ -65,8 +61,7 @@ async fn main() {
         
         match encryption_result {
             Ok((encryption_state, reader, writer)) => {
-                println!("Encryption handshake successful!");
-                
+                // println!("Encryption handshake successful!");
                 // Setup communication channel between reader and writer
                 let (tx, rx) = oneshot::channel::<()>();
 
@@ -92,15 +87,15 @@ async fn main() {
                 ).await;
                 
                 // Wait for writer to complete
-                if let Err(e) = write_task.await {
-                    println!("Write task error: {}", e);
+                if let Err(_) = write_task.await {
+                    // println!("Write task error: {}", e);
                 }
                 
-                println!("Connection ended. Reconnecting in 5 seconds...");
+                // println!("Connection ended. Reconnecting in 5 seconds...");
                 sleep(Duration::from_secs(5)).await;
             },
-            Err(e) => {
-                println!("Encryption handshake failed: {}. Retrying in 5 seconds...", e);
+            Err(_) => {
+                // println!("Encryption handshake failed: {}. Retrying in 5 seconds...", e);
                 sleep(Duration::from_secs(5)).await;
             }
         }

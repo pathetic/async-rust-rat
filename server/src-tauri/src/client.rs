@@ -164,12 +164,12 @@ impl ClientReaderWrapper {
             {
                 Ok(p) => {
                     match &p {
-                        Some(packet) => println!("Got packet from {}", self.addr),
+                        Some(packet) => {
+                            self.handle_packet(packet.clone()).await;
+                        },
                         None => println!("Got None packet from {}", self.addr),
                     }
-                    if let Some(p) = p {
-                        self.handle_packet(p).await;
-                    }
+
                 }
                 Err(e) => {
                     println!("Error reading from client {}: {:?}", self.addr, e);

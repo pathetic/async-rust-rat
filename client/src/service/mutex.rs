@@ -1,17 +1,8 @@
 extern crate winapi;
 
-use winapi::um::synchapi::CreateMutexW;
-use winapi::um::errhandlingapi::GetLastError;
-use std::ptr;
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
-use winapi::um::handleapi::CloseHandle;
-use std::process::exit;
-use winapi::shared::winerror::ERROR_ALREADY_EXISTS;
-
-use winapi::shared::ntdef::HANDLE;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
+use winapi::um::{synchapi::CreateMutexW, handleapi::CloseHandle, errhandlingapi::GetLastError};
+use std::{ptr, ffi::OsStr,os::windows::ffi::OsStrExt, process::exit};
+use winapi::shared::{winerror::ERROR_ALREADY_EXISTS, ntdef::HANDLE};
 
 pub struct MutexLock {
     handle: HANDLE,
