@@ -89,6 +89,8 @@ export const RemoteDesktop: React.FC = () => {
   useEffect(() => {
     let cleanupFn: (() => void) | undefined;
 
+    let window = getCurrent();
+
     listen("close_window", () => {
       window.close();
     }).then((unlisten) => {
