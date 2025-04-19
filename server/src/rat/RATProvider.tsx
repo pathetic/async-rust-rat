@@ -7,6 +7,7 @@ import {
   RATClient,
   RATProviderProps,
   ClientWindowType,
+  Log,
 } from "../../types";
 import { fetchClientsCmd, fetchStateCmd } from "./RATCommands";
 import { WebviewWindow } from "@tauri-apps/api/window";
@@ -61,6 +62,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const [listenClientNotif, setListenClientNotif] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
+  const [serverLogs, setServerLogs] = useState<Log[]>([]);
 
   async function fetchClients() {
     setClientList(await fetchClientsCmd());
@@ -156,23 +158,31 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
   async function waitNotification(type: string) {
     listen(type, async (event) => {
-      const { username, addr } = event.payload as {
-        username: string;
-        addr: string;
-      };
-      let icon = type == "client_connected" ? "🤙" : "👋";
-      let message = type == "client_connected" ? "connected" : "disconnected";
-      let style = "!bg-white !text-black !rounded-2xl !border-accentx";
+      if (type == "client_connected" || type == "client_disconnected") {
+        const { username, addr } = event.payload as {
+          username: string;
+          addr: string;
+        };
+        let icon = type == "client_connected" ? "🤙" : "👋";
+        let message = type == "client_connected" ? "connected" : "disconnected";
+        let style = "!bg-white !text-black !rounded-2xl !border-accentx";
 
-      let toast_message = `Client ${username} has ${message}!`;
+        let toast_message = `Client ${username} has ${message}!`;
 
-      if (type == "client_disconnected") {
-        await cleanupClientWindows(addr);
+        if (type == "client_disconnected") {
+          await cleanupClientWindows(addr);
+        }
+
+        fetchClients();
+        if (notificationClientRef.current)
+          customToast(icon, toast_message, style);
       }
-
-      fetchClients();
-      if (notificationClientRef.current)
-        customToast(icon, toast_message, style);
+      if (type == "server_log") {
+        const { event_type, message, address, status } = event.payload as Log;
+        let log = { event_type, message, address, status };
+        console.log(log);
+        setServerLogs((prevLogs) => [...prevLogs, log]);
+      }
     });
   }
 
@@ -181,6 +191,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       setListenClientNotif(true);
       waitNotification("client_connected");
       waitNotification("client_disconnected");
+      waitNotification("server_log");
     }
   }, [listenClientNotif]);
 

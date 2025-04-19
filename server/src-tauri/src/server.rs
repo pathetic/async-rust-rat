@@ -32,6 +32,42 @@ struct FrontClientNotification {
     pub addr: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct Log {
+    pub event_type: String,
+    pub message: String,
+    pub address: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone)]
+struct Logger {
+    logs: Vec<Log>,
+    tauri_handle: Option<Arc<Mutex<AppHandle>>>,
+}
+
+impl Logger {
+    pub fn new() -> Self {
+        Self { logs: Vec::new(), tauri_handle: None }
+    }
+    
+    pub async fn log(&mut self, event_type: &str, message: &str, address: &str, status: &str) {
+        let log = Log { event_type: event_type.to_string(), message: message.to_string(), address: address.to_string(), status: status.to_string() };
+        self.logs.push(log.clone());
+
+        if let Some(handle) = &self.tauri_handle {
+            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+        }
+    }
+
+    pub async fn log_once(&mut self, log: Log) {
+        self.logs.push(log.clone());
+
+        if let Some(handle) = &self.tauri_handle {
+            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+        }
+    }
+}
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -41,6 +77,7 @@ pub struct ServerWrapper {
     pub_key: RsaPublicKey,
     tauri_handle: Option<Arc<Mutex<AppHandle>>>,
     reverse_proxy_tasks: HashMap<std::net::SocketAddr, tokio::task::JoinHandle<()>>,
+    log_events: Logger,
 }
 
 impl ServerWrapper {
@@ -60,6 +97,7 @@ impl ServerWrapper {
             pub_key,
             tauri_handle: None,
             reverse_proxy_tasks: HashMap::new(),
+            log_events: Logger::new(),
         };
 
         s.channel_loop().await;
@@ -67,28 +105,9 @@ impl ServerWrapper {
         Ok(())
     }
     
-    async fn emit_client_connected(&self, client_info: &ClientInfo, addr: &SocketAddr) {
+    async fn emit_client_status(&self, username: &str, addr: &SocketAddr, status: &str) {
         if let Some(handle) = &self.tauri_handle {
-            let _ = handle
-                .lock()
-                .unwrap()
-                .emit_all("client_connected", FrontClientNotification { username: client_info.username.clone(), addr: addr.to_string() })
-                .unwrap_or_else(|e| println!("Failed to emit client_connected event: {}", e));
-        }
-    }
-    
-    async fn emit_client_disconnected(&self, addr: &SocketAddr) {
-        let username = if let Some(client_info) = self.connected_users.get(addr) {
-            client_info.username.clone()
-        } else {
-            addr.to_string()
-        };
-        
-        if let Some(handle) = &self.tauri_handle {
-            match handle.lock().unwrap().emit_all("client_disconnected", FrontClientNotification { username: username.clone(), addr: addr.to_string() }) {
-                Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
-                Err(e) => println!("Failed to emit client_disconnected event: {}", e),
-            }
+            handle.lock().unwrap().emit_all(status, FrontClientNotification { username: username.clone().to_string(), addr: addr.to_string() }).unwrap_or_else(|e| println!("Failed to emit client_status event: {}", e));
         }
     }
 
@@ -102,6 +121,9 @@ impl ServerWrapper {
             };
 
             match p {
+                Log(log) => {
+                    self.log_events.log_once(log).await;
+                }
                 CloseClientSessions() => {
                     println!("Closing client sessions");
                     for (addr, tx) in self.txs.iter_mut() {
@@ -110,6 +132,8 @@ impl ServerWrapper {
                     }
                     self.txs.clear();
                     self.connected_users.clear();
+                    self.reverse_proxy_tasks.clear();
+                    self.log_events.log("server_stopped", "Server stopped", "0.0.0.0", "stopped").await;
                 }
                 EncryptionRequest(tx, otx) => {
                     let mut token = [0u8; ENC_TOK_LEN];
@@ -159,8 +183,9 @@ impl ServerWrapper {
                 RegisterClient(tx, addr, client_info) => {                    // Store the client's connection sender
                     self.txs.insert(addr, tx);
                     self.connected_users.insert(addr, client_info.clone());
-                                        
-                    self.emit_client_connected(&client_info, &addr).await;
+                    
+                    self.log_events.log("client_connected", &client_info.username, &addr.to_string(), "connected").await;
+                    self.emit_client_status(&client_info.username, &addr, "client_connected").await;
                 }
                 VisitWebsite(addr, visit_data) => {
                     if let Some(tx) = self.txs.get(&addr) {
@@ -341,25 +366,20 @@ impl ServerWrapper {
                 }
                 SetTauriHandle(handle) => {
                     self.tauri_handle = Some(Arc::new(Mutex::new(handle)));
+                    self.log_events.tauri_handle = Some(self.tauri_handle.clone().unwrap());
                 }
                 ClientDisconnected(addr) => {
                     self.txs.remove(&addr);
-                    
-                    let client_info = self.connected_users.remove(&addr);
-                    
-                    self.reverse_proxy_tasks.remove(&addr);
 
-                    if let Some(client_info) = client_info.clone() {
-                        let username = client_info.username.clone();                        
-                        if let Some(handle) = &self.tauri_handle {
-                            match handle.lock().unwrap().emit_all("client_disconnected", FrontClientNotification { username: username.clone(), addr: addr.to_string() }) {
-                                Ok(_) => println!("Successfully emitted client_disconnected event for {}", username),
-                                Err(e) => println!("Failed to emit client_disconnected event: {}", e),
-                            }
-                        }
-                    } else {
-                        self.emit_client_disconnected(&addr).await;
+                    if let Some(client_info) = self.connected_users.get(&addr) {
+                        let username = client_info.username.clone();
+                        println!("Emitting client_disconnected event for {}", username);
+                        self.emit_client_status(&username, &addr, "client_disconnected").await;
+                        self.log_events.log("client_disconnected", &username, &addr.to_string(), "disconnected").await;
                     }
+                    
+                    self.connected_users.remove(&addr);
+                    self.reverse_proxy_tasks.remove(&addr);
                 },
                 DisconnectClient(addr) => {
                     if let Some(tx) = self.txs.get(&addr) {

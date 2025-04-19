@@ -108,3 +108,10 @@ export type FileType = {
   file_type: string;
   name: string;
 };
+
+export type Log = {
+  event_type: string;
+  message: string;
+  address: string;
+  status: string;
+};

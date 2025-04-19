@@ -4,6 +4,7 @@ use std::net::SocketAddr;
 
 use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
 use crate::handlers::FrontClient;
+use crate::server::Log;
 use tauri::AppHandle;
 
 /// Commands sent to client-server connection handlers.
@@ -32,6 +33,7 @@ pub enum ServerCommand {
 
     DisconnectClient(SocketAddr),
     ReconnectClient(SocketAddr),
+    Log(Log),
 
     StartRemoteDesktop(SocketAddr, RemoteDesktopConfig),
     StopRemoteDesktop(SocketAddr),

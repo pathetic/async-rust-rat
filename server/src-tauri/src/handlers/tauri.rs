@@ -1,6 +1,6 @@
 use tauri::State;
 use crate::handlers::{ SharedTauriState, FrontClient };
-
+use crate::server::Log;
 use serde::Serialize;
 use object::{ Object, ObjectSection };
 use std::fs::{ self, File };
@@ -64,6 +64,10 @@ pub async fn start_server(
     ctx.send(ServerCommand::SetTauriHandle(app_handle))
        .await
        .map_err(|e| format!("Failed to set Tauri handle: {}", e))?;
+
+
+    let log = Log { event_type: "server_started".to_string(), message: "Server started on port ".to_string() + port, address: "0.0.0.0".to_string(), status: "started".to_string() };
+    ctx.send(ServerCommand::Log(log)).await.unwrap();
     
     let server_task = tokio::spawn(async move {
         match ServerWrapper::spawn(crx).await {
@@ -105,6 +109,7 @@ pub async fn start_server(
         tauri_state.server_task = Some(server_task);
         tauri_state.listener_task = Some(listener_task);
     }
+
 
     Ok("true".to_string())
 }
