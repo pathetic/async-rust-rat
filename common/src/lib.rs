@@ -14,8 +14,15 @@ pub const NONCE_LEN: usize = 24;
 pub struct ClientConfig {
     pub ip: String,
     pub port: String,
+    pub group: String,
+
+    pub install: bool,
+    pub file_name: String,
+    pub install_folder: String,
+    pub enable_hidden: bool,
+    
     pub mutex_enabled: bool,
     pub mutex: String,
+
     pub unattended_mode: bool,
-    pub startup: bool
 }

@@ -178,10 +178,10 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
           customToast(icon, toast_message, style);
       }
       if (type == "server_log") {
-        const { event_type, message, address, status } = event.payload as Log;
-        let log = { event_type, message, address, status };
+        const { event_type, message } = event.payload as Log;
+        let log = { event_type, message, time: new Date().toLocaleString() };
         console.log(log);
-        setServerLogs((prevLogs) => [...prevLogs, log]);
+        setServerLogs((prevLogs) => [log, ...prevLogs]);
       }
     });
   }
@@ -206,11 +206,13 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     setRunning,
     running,
     clientList,
+    setClientList,
     setSelectedClient,
     selectedClient,
     setNotificationClient,
     notificationClient,
     openClientWindow,
+    serverLogs,
   };
 
   return <RATContext.Provider value={RATdata}>{children}</RATContext.Provider>;

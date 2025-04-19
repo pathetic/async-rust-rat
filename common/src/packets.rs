@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct ClientInfo {
+    pub group: String,
     pub username: String,
     pub hostname: String,
     pub os: String,

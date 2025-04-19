@@ -13,16 +13,17 @@ export type RATContextType = {
   setRunning: (running: boolean) => void;
   running: boolean;
   clientList: Array<RATClient>;
+  setClientList: (clientList: Array<RATClient>) => void;
   setSelectedClient: (client: string) => void;
   selectedClient: string;
   setNotificationClient: (notificationClient: boolean) => void;
   notificationClient: boolean;
-  // Simple window opening function - no tracking
   openClientWindow: (
     addr: string,
     type: string,
     clientFullName: string
   ) => Promise<WebviewWindow | undefined>;
+  serverLogs: Array<Log>;
 };
 
 export interface RATProviderProps {
@@ -30,6 +31,7 @@ export interface RATProviderProps {
 }
 
 export type RATClient = {
+  group: string;
   addr: string;
   username: string;
   hostname: string;
@@ -112,6 +114,5 @@ export type FileType = {
 export type Log = {
   event_type: string;
   message: string;
-  address: string;
-  status: string;
+  time: string;
 };

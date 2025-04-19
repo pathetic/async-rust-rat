@@ -10,6 +10,7 @@ pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FrontClient {
+    pub group: String,
     pub addr: std::net::SocketAddr,
     pub username: String,
     pub hostname: String,

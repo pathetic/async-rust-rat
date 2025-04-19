@@ -20,7 +20,7 @@ use crate::service::install::is_elevated;
 
 use common::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
 
-pub fn client_info() -> ClientInfo{
+pub fn client_info(group: String) -> ClientInfo{
     let mut s = System::new_all();
 
     let mut storage = Vec::new();
@@ -80,6 +80,7 @@ pub fn client_info() -> ClientInfo{
     s.refresh_cpu();
 
     let client_data = ClientInfo {
+        group,
         username: std::env::var("username").unwrap_or_else(|_| "__UNKNOWN__".to_string()),
         hostname: System::host_name().unwrap().to_string(),
         os: format!("{} {}", System::name().unwrap(), System::os_version().unwrap()),

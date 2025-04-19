@@ -78,4 +78,6 @@ pub enum ServerCommand {
 
     StartReverseProxy(SocketAddr, String, String),
     StopReverseProxy(SocketAddr),
+
+    BuildClient(String, String, bool, String, bool),
 }

