@@ -1,14 +1,14 @@
-![build1](images/build1.png)
+![build1](images/build_1.png)
 
-![build2](images/build2.png)
+![build2](images/build_2.png)
 
-![build3](images/build3.png)
+![build3](images/build_3.png)
 
-![build4](images/build4.png)
+![build4](images/build_4.png)
 
-![build5](images/build5.png)
+![build5](images/build_5.png)
 
-![build6](images/build6.png)
+![build6](images/build_6.png)
 
 ![file_manager](images/file_manager.png)
 
