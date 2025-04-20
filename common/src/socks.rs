@@ -26,7 +26,7 @@ fn format_ip_addr(addr :& Addr) -> Result<String> {
 		},
 		Addr::Domain(addr) => match String::from_utf8(addr.to_vec()) {
 			Ok(p) => Ok(p) ,
-			Err(e) => {
+			Err(_e) => {
 				Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid domain"))
 			},
 		}
@@ -93,7 +93,7 @@ async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &String 
 	reply.push((remote_port >> 8) as u8);
 	reply.push(remote_port as u8);
 
-	if let Err(e) = stream.write_all(&reply).await{
+	if let Err(_e) = stream.write_all(&reply).await{
 		return;
 	};
 
@@ -144,7 +144,7 @@ async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &String 
 pub async fn socksv5_handle(mut stream: TcpStream) {
 	loop {
 		let mut header = [0u8 ; 2];
-		if let Err(e) = stream.read_exact(&mut header).await{
+		if let Err(_e) = stream.read_exact(&mut header).await{
 			break;
 		};
 		
@@ -153,7 +153,7 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 		}
 	
 		let mut methods = vec![0u8; header[1] as usize].into_boxed_slice();
-		if let Err(e) = stream.read_exact(&mut methods).await{
+		if let Err(_e) = stream.read_exact(&mut methods).await{
 			break;
 		};
 	
@@ -161,12 +161,12 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 			break;
 		}
 	
-		if let Err(e) = stream.write_all(&[5, 0]).await{
+		if let Err(_e) = stream.write_all(&[5, 0]).await{
 			break;
 		};
 
 		let mut request =  [0u8; 4];
-		if let Err(e) = stream.read_exact(&mut request).await{
+		if let Err(_e) = stream.read_exact(&mut request).await{
 			break;
 		};
 
@@ -183,25 +183,25 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 		let addr = match request[3] {
 			0x01 => {
 				let mut ipv4 =  [0u8; 4];
-				if let Err(e) = stream.read_exact(&mut ipv4).await{
+				if let Err(_e) = stream.read_exact(&mut ipv4).await{
 					break;
 				};
 				Addr::V4(ipv4)
 			},
 			0x04 => {
 				let mut ipv6 =  [0u8; 16];
-				if let Err(e) = stream.read_exact(&mut ipv6).await{
+				if let Err(_e) = stream.read_exact(&mut ipv6).await{
 					break;
 				};
 				Addr::V6(ipv6)
 			},
 			0x03 => {
 				let mut domain_size =  [0u8; 1];
-				if let Err(e) = stream.read_exact(&mut domain_size).await{
+				if let Err(_e) = stream.read_exact(&mut domain_size).await{
 					break;
 				};
 				let mut domain =  vec![0u8; domain_size[0] as usize].into_boxed_slice();
-				if let Err(e) = stream.read_exact(&mut domain).await{
+				if let Err(_e) = stream.read_exact(&mut domain).await{
 					break;
 				};
 
@@ -213,7 +213,7 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 		};
 	
 		let mut port = [0u8 ; 2];
-		if let Err(e) = stream.read_exact(&mut port).await{
+		if let Err(_e) = stream.read_exact(&mut port).await{
 			break;
 		};
 

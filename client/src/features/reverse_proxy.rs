@@ -1,4 +1,4 @@
-use tokio::{io::{self, AsyncWriteExt, AsyncReadExt}, task, net::{TcpListener, TcpStream}};
+use tokio::{io::AsyncReadExt, task, net::TcpStream};
 use net2::TcpStreamExt;
 use common::socks::MAGIC_FLAG;
 

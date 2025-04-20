@@ -4,7 +4,6 @@ pub mod tauri;
 use tokio::sync::mpsc::Sender;
 use once_cell::sync::OnceCell;
 use crate::commands::ServerCommand;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 

