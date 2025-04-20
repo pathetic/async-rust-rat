@@ -19,7 +19,7 @@ impl FileManager {
     }
 
     pub async fn write_current_folder(&mut self) {
-        println!("Sending current folder: {}", self.current_path.to_string_lossy().to_string());
+        println!("Sending current folder: {}", self.current_path.to_string_lossy());
         let _ = send_packet(
             ServerboundPacket::CurrentFolder(self.current_path.to_string_lossy().to_string()),
         ).await;

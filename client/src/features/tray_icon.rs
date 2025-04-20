@@ -67,7 +67,7 @@ impl TrayIcon {
 
     fn text_to_tooltip(&mut self, text: &str) -> [u16; 128] {
         let mut tray_tool_tip_int: [u16; 128] = [0; 128];
-        let tray_tool_tip_str_step: &str = &*text.to_string();
+        let tray_tool_tip_str_step: &str = &text.to_string();
         let tray_tool_tip_step_os = OsStr::new(tray_tool_tip_str_step);
         let tray_tool_tip_step_utf16 = tray_tool_tip_step_os.encode_wide().collect::<Vec<u16>>();
         tray_tool_tip_int[..tray_tool_tip_step_utf16.len()].copy_from_slice(

@@ -21,7 +21,7 @@ pub fn get_config() -> ClientConfig {
         std::io::Cursor::new(&crate::CONFIG)
     );
 
-    if let Some(config_link_sec) = config_link_sec.as_ref().ok() {
+    if let Ok(config_link_sec) = config_link_sec.as_ref() {
         config = config_link_sec.clone();
     }
 

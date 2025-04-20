@@ -25,6 +25,8 @@ const translateWindowType = (type: string) => {
       return "Remote Shell";
     case "reverse-proxy":
       return "Reverse Proxy";
+    case "av-detection":
+      return "Antivirus Detection";
     default:
       return type;
   }
@@ -50,6 +52,10 @@ const windowTypeSizes = {
   "remote-shell": {
     width: 1280,
     height: 700,
+  },
+  "av-detection": {
+    width: 800,
+    height: 600,
   },
 };
 

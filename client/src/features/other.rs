@@ -125,7 +125,7 @@ pub fn visit_website(
         //println!("Opening URL: {}", url);
         std::process::Command
             ::new("cmd")
-            .args(&["/C", "start", url])
+            .args(["/C", "start", url])
             .creation_flags(HIDE | DETACH)
             .spawn()
             .unwrap();

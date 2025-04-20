@@ -4,28 +4,28 @@ pub fn system_commands(command: &str) {
     const HIDE: u32 = 0x08000000;
     match command {
         "shutdown" => {
-            std::process::Command
+            let _ = std::process::Command
                 ::new("shutdown")
                 .creation_flags(HIDE)
                 .args(["/s", "/t", "0"])
                 .spawn()
-                .expect("Failed to shutdown");
+                .expect("Failed to shutdown").wait();
         }
         "logout" => {
-            std::process::Command
+            let _ = std::process::Command
                 ::new("shutdown")
                 .creation_flags(HIDE)
                 .args(["/l"])
                 .spawn()
-                .expect("Failed to log off");
+                .expect("Failed to log off").wait();
         }
         "restart" => {
-            std::process::Command
+            let _ = std::process::Command
                 ::new("shutdown")
                 .creation_flags(HIDE)
                 .args(["/r", "/t", "0"])
                 .spawn()
-                .expect("Failed to restart");
+                .expect("Failed to restart").wait();
         }
         _ => {}
     }

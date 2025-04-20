@@ -156,3 +156,9 @@ export const stopReverseProxyCmd = async (
 ): Promise<void> => {
   return invoke("stop_reverse_proxy", { addr });
 };
+
+export const getInstalledAVsCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("get_installed_avs", { addr });
+};
