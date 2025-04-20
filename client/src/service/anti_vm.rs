@@ -14,7 +14,7 @@ pub fn detect_manufacturer() -> bool {
         Err(_) => return false,
     };
 
-    let wmi_con = match WMIConnection::new(com_con.into()) {
+    let wmi_con = match WMIConnection::new(com_con) {
         Ok(w) => w,
         Err(_) => return false,
     };
@@ -47,12 +47,12 @@ pub fn detect_manufacturer() -> bool {
 }
 
 
-type HANDLE = *mut c_void;
-type BOOL = i32;
+type Handle = *mut c_void;
+type Bool = i32;
 
 #[link(name = "kernel32")]
 extern "system" {
-    fn GetCurrentProcess() -> HANDLE;
+    fn GetCurrentProcess() -> Handle;
     fn LoadLibraryA(lpLibFileName: *const c_char) -> *mut c_void;
     fn GetProcAddress(hModule: *mut c_void, lpProcName: *const c_char) -> *mut c_void;
 }
@@ -73,11 +73,11 @@ fn detect_debugger() -> bool {
         }
 
         // Function signature: BOOL WINAPI CheckRemoteDebuggerPresent(HANDLE, PBOOL)
-        let check_remote_debugger_present: extern "system" fn(HANDLE, *mut BOOL) -> BOOL =
+        let check_remote_debugger_present: extern "system" fn(Handle, *mut Bool) -> Bool =
             std::mem::transmute(func_ptr);
 
         let handle = GetCurrentProcess();
-        let mut is_debugger_present: BOOL = 0;
+        let mut is_debugger_present: Bool = 0;
 
         let success = check_remote_debugger_present(handle, &mut is_debugger_present);
 
@@ -106,10 +106,8 @@ fn is_small_disk() -> bool {
 
     for disk in disks.list() {
         let mount_point = disk.mount_point();
-        if exe_path.starts_with(mount_point) {
-            if disk.total_space() <= GB_60 {
-                return true;
-            }
+        if exe_path.starts_with(mount_point) && disk.total_space() <= GB_60 {
+            return true;
         }
     }
 

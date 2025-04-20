@@ -79,4 +79,7 @@ pub enum ServerCommand {
 
     StartReverseProxy(SocketAddr, String, String),
     StopReverseProxy(SocketAddr),
+    
+    GetInstalledAVs(SocketAddr),
+    InstalledAVs(SocketAddr, AVList),
 }   

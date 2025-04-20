@@ -33,11 +33,11 @@ fn format_ip_addr(addr :& Addr) -> Result<String> {
 	}
 }
 
-async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &String , port :u16 ){
+async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &str , port :u16 ){
 	let client  = match addr{
 		Addr::V4(_) => {
 			
-			TcpStream::connect(address.clone()).await
+			TcpStream::connect(address.to_owned()).await
 		},
 		Addr::V6(x) => {
 			let ipv6 = Ipv6Addr::new(
@@ -54,7 +54,7 @@ async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &String 
 			TcpStream::connect(v6sock).await
 		},
 		Addr::Domain(_) => {
-			TcpStream::connect(address.clone()).await
+			TcpStream::connect(address.to_owned()).await
 		}
 	};
 
@@ -217,7 +217,7 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 			break;
 		};
 
-		let port = (port[0] as u16) << 8 | port[1] as u16;
+		let port = ((port[0] as u16) << 8) | port[1] as u16;
 		let address_prefix = match format_ip_addr(&addr){
 			Err(_) => {
 				break;
@@ -230,6 +230,5 @@ pub async fn socksv5_handle(mut stream: TcpStream) {
 			tcp_transfer(&mut stream , &addr , &address , port).await;
 		}
 		
-		break;
 	}
 }

