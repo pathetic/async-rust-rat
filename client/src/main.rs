@@ -1,5 +1,5 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![cfg_attr(debug_assertions, windows_subsystem = "windows")]
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// #![cfg_attr(debug_assertions, windows_subsystem = "windows")]
 
 #[no_mangle]
 #[link_section = ".zzz"]

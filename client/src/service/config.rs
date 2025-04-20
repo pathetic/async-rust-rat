@@ -2,7 +2,7 @@ use common::ClientConfig;
 
 pub fn get_config() -> ClientConfig {
     let mut config: ClientConfig = ClientConfig {
-        ip: "192.168.0.143".to_string(),
+        ip: "127.0.0.1".to_string(),
         port: "1337".to_string(),
         group: "Default".to_string(),
 

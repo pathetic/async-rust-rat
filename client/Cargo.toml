@@ -18,7 +18,8 @@ tokio = { version = "1.20.1", features = ["rt", "full"] }
 bytes = "1.1"
 net2 = "0.2.39"
 wmi = "0.17.0"
-windows = { version = "0.61", features = ["Win32_System_Diagnostics_Debug"] }
+windows = { version = "0.61", features = ["Win32_System_Diagnostics_Debug", "Win32_System_Wmi", "Win32_System_Com"] }
+serde = { version = "1.0", features = ["derive"] }
 
 [profile.release]
 lto = true
