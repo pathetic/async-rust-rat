@@ -3,7 +3,7 @@ use common::packets::*;
 use std::net::SocketAddr;
 
 use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
-use crate::handlers::FrontClient;
+use crate::handlers::{FrontClient, AssemblyInfo};
 use crate::server::Log;
 use tauri::AppHandle;
 
@@ -78,6 +78,4 @@ pub enum ServerCommand {
 
     StartReverseProxy(SocketAddr, String, String),
     StopReverseProxy(SocketAddr),
-
-    BuildClient(String, String, bool, String, bool),
-}
+}   

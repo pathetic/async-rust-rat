@@ -68,6 +68,12 @@ export const Logs = () => {
         return <IconCloudDownload className="text-orange-500" size={20} />;
       case "client_disconnected":
         return <IconX className="text-red-500" size={20} />;
+      case "build_client":
+        return <IconInfoCircle className="text-blue-400" size={20} />;
+      case "build_finished":
+        return <IconCheck className="text-green-500" size={20} />;
+      case "build_failed":
+        return <IconX className="text-red-500" size={20} />;
       default:
         return <IconInfoCircle className="text-gray-400" size={20} />;
     }
@@ -88,6 +94,12 @@ export const Logs = () => {
       case "cmd_rcvd":
         return "text-orange-400";
       case "client_disconnected":
+        return "text-red-400";
+      case "build_client":
+        return "text-blue-400";
+      case "build_finished":
+        return "text-green-400";
+      case "build_failed":
         return "text-red-400";
       default:
         return "text-gray-400";

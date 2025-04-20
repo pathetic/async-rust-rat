@@ -116,3 +116,14 @@ export type Log = {
   message: string;
   time: string;
 };
+
+export type AssemblyInfo = {
+  assembly_name: string;
+  assembly_description: string;
+  assembly_company: string;
+  assembly_copyright: string;
+  assembly_trademarks: string;
+  assembly_original_filename: string;
+  assembly_product_version: string;
+  assembly_file_version: string;
+};

