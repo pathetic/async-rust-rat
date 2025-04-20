@@ -8,7 +8,7 @@ use std::{
     fs::{self, File},
     io::{Read, Write},
     path::PathBuf,
-    process::{Command, Stdio},
+    process::Command,
     thread::sleep,
     time::Duration,
 };
