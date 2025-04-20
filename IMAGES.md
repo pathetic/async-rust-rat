@@ -16,6 +16,6 @@
 
 ![remote_desktop](images/remote_desktop.png)
 
-![reverse_shell](images/reverse_shell.png)
+![reverse_shell](images/remote_shell.png)
 
 ![reverse_proxy](images/reverse_proxy.png)
