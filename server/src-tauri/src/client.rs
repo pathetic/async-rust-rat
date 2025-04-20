@@ -118,72 +118,52 @@ impl ClientReaderWrapper {
         };
     }
 
+    async fn send_server_packet(&self, packet: ServerCommand) {
+        self.server_sender
+            .send(packet)
+            .await
+            .unwrap_or_else(|e| println!("Failed to send packet {}", e));
+    }
+
     async fn handle_packet(&mut self, packet: ServerboundPacket) {
         use ServerboundPacket::*;
         match packet {
             EncryptionRequest => self.handle_encryption_request().await,
             
             ClientInfo(info) => {
-                self.server_sender
-                    .send(ServerCommand::RegisterClient(self.client_sender.clone(), self.addr, info))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send client info to server"));
+                self.send_server_packet(ServerCommand::RegisterClient(self.client_sender.clone(), self.addr, info)).await;
             },
             
             ScreenshotResult(screenshot_data) => {
-                self.server_sender
-                    .send(ServerCommand::ScreenshotData(self.addr, screenshot_data))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send screenshot data to server"));
+                self.send_server_packet(ServerCommand::ScreenshotData(self.addr, screenshot_data)).await;
             },
 
             RemoteDesktopFrame(frame) => {
-                self.server_sender
-                    .send(ServerCommand::RemoteDesktopFrame(self.addr, frame))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send remote desktop frame to server"));
+                self.send_server_packet(ServerCommand::RemoteDesktopFrame(self.addr, frame)).await;
             },
 
             ShellOutput(output) => {
-                self.server_sender
-                    .send(ServerCommand::ShellOutput(self.addr, output))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send shell output to server"));
+                self.send_server_packet(ServerCommand::ShellOutput(self.addr, output)).await;
             },
 
             ProcessList(process_list) => {
-                self.server_sender
-                    .send(ServerCommand::ProcessList(self.addr, process_list))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send process list to server"));
+                self.send_server_packet(ServerCommand::ProcessList(self.addr, process_list)).await;
             },
 
             DisksResult(disks) => {
-                self.server_sender
-                    .send(ServerCommand::DisksResult(self.addr, disks))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send disks result to server"));
+                self.send_server_packet(ServerCommand::DisksResult(self.addr, disks)).await;
             },
 
             FileList(files) => {
-                self.server_sender
-                    .send(ServerCommand::FileList(self.addr, files))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send file list to server"));
+                self.send_server_packet(ServerCommand::FileList(self.addr, files)).await;
             },
 
             CurrentFolder(path) => {
-                self.server_sender
-                    .send(ServerCommand::CurrentFolder(self.addr, path))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send current folder to server"));
+                self.send_server_packet(ServerCommand::CurrentFolder(self.addr, path)).await;
             },
 
             DonwloadFileResult(file_data) => {
-                self.server_sender
-                    .send(ServerCommand::DownloadFileResult(self.addr, file_data))
-                    .await
-                    .unwrap_or_else(|_| println!("Failed to send download file result to server"));
+                self.send_server_packet(ServerCommand::DownloadFileResult(self.addr, file_data)).await;
             },
             
             
@@ -217,21 +197,9 @@ impl ClientReaderWrapper {
                 Err(e) => {
                     println!("Error reading from client {}: {:?}", self.addr, e);
                     if e == "Connection reset by peer" {
-                        match self.server_sender
-                            .send(ServerCommand::ClientDisconnected(self.addr))
-                            .await
-                        {
-                            Ok(_) => println!("Successfully sent disconnect notification for {}", self.addr),
-                            Err(e) => println!("Failed to send disconnect notification: {}", e),
-                        }
+                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr)).await;
                     } else {
-                        match self.server_sender
-                            .send(ServerCommand::ClientDisconnected(self.addr))
-                            .await
-                        {
-                            Ok(_) => println!("Successfully sent disconnect notification for {} (after error)", self.addr),
-                            Err(e) => println!("Failed to send disconnect notification after error: {}", e),
-                        }
+                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr)).await;
                     }
                     break;
                 }

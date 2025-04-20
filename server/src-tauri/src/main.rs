@@ -30,6 +30,7 @@ async fn main() {
                 start_remote_desktop,
                 stop_remote_desktop,
                 send_mouse_click,
+                send_keyboard_input,
                 visit_website,
                 send_messagebox,
                 test_messagebox,

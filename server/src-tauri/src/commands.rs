@@ -38,6 +38,7 @@ pub enum ServerCommand {
     StartRemoteDesktop(SocketAddr, RemoteDesktopConfig),
     StopRemoteDesktop(SocketAddr),
     MouseClick(SocketAddr, MouseClickData),
+    KeyboardInput(SocketAddr, KeyboardInputData),
     RemoteDesktopFrame(SocketAddr, RemoteDesktopFrame),
 
     GetClients(OSender<Vec<FrontClient>>),

