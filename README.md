@@ -13,9 +13,7 @@
 
 # 🖼️ Screenshots:
 
-![main](images/main.png)
-
-![context](images/context.png)
+![home](images/home.png)
 
 See [IMAGES.md](IMAGES.md) for more screenshots.
 
@@ -26,12 +24,15 @@ See [IMAGES.md](IMAGES.md) for more screenshots.
 - [x] Remote Desktop
 - [x] File Manager
 - [x] Reverse Shell
+- [x] Reverse Proxy
 - [x] Task Manager
 - [x] Website Visit
 - [x] UAC Elevation
 - [x] Show Message Boxes
 - [x] System Control (Shutdown, Restart, Log Out)
 - [x] Connection Manager
+- [x] Logging
+- [x] Client builder (assembly info, install, antivm, icon, etc)
 - [ ] More Features To Come!
 
 # 🔨 Building and working on the code:
