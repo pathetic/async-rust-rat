@@ -76,6 +76,7 @@ export const Settings = () => {
   });
 
   const [iconPath, setIconPath] = useState<string>("");
+  const [exeClonePath, setExeClonePath] = useState<string>("");
 
   const [iconData, setIconData] = useState<string>("");
 
@@ -87,6 +88,15 @@ export const Settings = () => {
       });
     }
   }, [iconPath]);
+
+  useEffect(() => {
+    if (exeClonePath) {
+      invoke("read_exe", { path: exeClonePath }).then((data) => {
+        console.log(data);
+        setAssemblyInfo(data as AssemblyInfo);
+      });
+    }
+  }, [exeClonePath]);
 
   const steps = [
     { name: "Connection", icon: <IconServerCog /> },
@@ -565,7 +575,23 @@ export const Settings = () => {
                     </div>
                   </div>
 
-                  <button className="mt-4 cursor-pointer bg-purple-700 hover:bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center">
+                  <button
+                    onClick={() => {
+                      open({
+                        filters: [
+                          {
+                            name: "Executable File",
+                            extensions: ["exe"],
+                          },
+                        ],
+                      }).then((path) => {
+                        if (path) {
+                          setExeClonePath(path as string);
+                        }
+                      });
+                    }}
+                    className="mt-4 cursor-pointer bg-purple-700 hover:bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center"
+                  >
                     <IconClipboardText className="mr-2" size={20} />
                     Clone Existing Application
                   </button>
@@ -603,7 +629,7 @@ export const Settings = () => {
                           open({
                             filters: [
                               {
-                                name: "Icon Files",
+                                name: "Icon File",
                                 extensions: ["ico"],
                               },
                             ],

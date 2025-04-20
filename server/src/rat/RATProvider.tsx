@@ -183,17 +183,9 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         console.log(log);
         setServerLogs((prevLogs) => [log, ...prevLogs]);
 
-        if (event_type == "server_stopped") {
+        if (event_type == "server_error") {
           customToast(
             "❌",
-            message,
-            "!bg-white !text-black !rounded-2xl !border-accentx"
-          );
-        }
-
-        if (event_type == "server_started") {
-          customToast(
-            "✅",
             message,
             "!bg-white !text-black !rounded-2xl !border-accentx"
           );

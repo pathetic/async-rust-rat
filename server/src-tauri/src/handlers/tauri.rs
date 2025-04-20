@@ -34,7 +34,7 @@ pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle
         let tauri_state = tauri_state.0.lock().unwrap();
         
         if !tauri_state.running {
-            let log = Log { event_type: "server_stopped".to_string(), message: "Server not running!".to_string() };
+            let log = Log { event_type: "server_error".to_string(), message: "Server not running!".to_string() };
             let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server not running".to_string());
         }
@@ -42,7 +42,7 @@ pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle
         if let Some(tx) = tauri_state.channel_tx.get() {
             tx.clone()
         } else {
-            let log = Log { event_type: "server_stopped".to_string(), message: "Server channel not initialized!".to_string() };
+            let log = Log { event_type: "server_error".to_string(), message: "Server channel not initialized!".to_string() };
             let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server channel not initialized".to_string());
         }
@@ -750,3 +750,47 @@ pub async fn read_icon(path: &str, app_handle: AppHandle) -> Result<String, Stri
     Ok(base64_icon)
 }
 
+#[tauri::command]
+pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
+    let exe = fs::read(path)
+        .map_err(|e| format!("Failed to read exe: {}", e))?;
+
+    let info = get_assembly_info(path, "target/rcedit.exe").unwrap();
+    
+    Ok(info)
+}
+
+pub fn get_assembly_info(exe_path: &str, rcedit_path: &str) -> Result<AssemblyInfo, String> {
+    // Helper closure to get a value or return empty string on failure
+    let get_value = |key: &str| -> String {
+        let output = Command::new(rcedit_path)
+            .arg(exe_path)
+            .arg("--get-version-string")
+            .arg(key)
+            .output();
+
+        match output {
+            Ok(out) if out.status.success() => String::from_utf8_lossy(&out.stdout).trim().to_string(),
+            Ok(out) => {
+                let err = String::from_utf8_lossy(&out.stderr);
+                eprintln!("Failed to get {}: {}", key, err.trim());
+                String::new()
+            }
+            Err(e) => {
+                eprintln!("Command error for {}: {}", key, e);
+                String::new()
+            }
+        }
+    };
+
+    Ok(AssemblyInfo {
+        assembly_name: get_value("ProductName"),
+        assembly_description: get_value("FileDescription"),
+        assembly_company: get_value("CompanyName"),
+        assembly_copyright: get_value("LegalCopyright"),
+        assembly_trademarks: get_value("LegalTrademarks"),
+        assembly_original_filename: get_value("OriginalFilename"),
+        assembly_product_version: get_value("ProductVersion"),
+        assembly_file_version: get_value("FileVersion"),
+    })
+}

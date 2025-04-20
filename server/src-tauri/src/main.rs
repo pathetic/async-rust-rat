@@ -43,7 +43,8 @@ async fn main() {
                 manage_file,
                 start_reverse_proxy,
                 stop_reverse_proxy,
-                read_icon
+                read_icon,
+                read_exe,
             ]
         )
         .run(tauri::generate_context!())
