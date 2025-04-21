@@ -127,3 +127,7 @@ export type AssemblyInfo = {
   assembly_product_version: string;
   assembly_file_version: string;
 };
+
+export type WindowWrapperProps = {
+  feature_cleanup: (params: Record<string, string | undefined>) => void;
+};

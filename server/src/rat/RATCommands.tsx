@@ -97,11 +97,14 @@ export const killProcessCmd = async (
   return invoke("kill_process", { addr, pid, name });
 };
 
-export const manageShellCmd = async (
-  addr: string | undefined,
-  run: string
-): Promise<string> => {
-  return invoke("manage_shell", { addr, run });
+export const stopShellCmd = async (addr: string | undefined): Promise<void> => {
+  return invoke("manage_shell", { addr, run: "stop" });
+};
+
+export const startShellCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("manage_shell", { addr, run: "start" });
 };
 
 export const executeShellCommandCmd = async (
@@ -161,4 +164,59 @@ export const getInstalledAVsCmd = async (
   addr: string | undefined
 ): Promise<void> => {
   return invoke("get_installed_avs", { addr });
+};
+
+export const startRemoteDesktopCmd = async (
+  addr: string | undefined,
+  display: number,
+  quality: number,
+  fps: number
+): Promise<void> => {
+  return invoke("start_remote_desktop", { addr, display, quality, fps });
+};
+
+export const stopRemoteDesktopCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_remote_desktop", { addr });
+};
+
+export const sendKeyboardInputCmd = async (
+  addr: string | undefined,
+  keyCode: number,
+  character: string,
+  isKeydown: boolean,
+  shiftPressed: boolean,
+  ctrlPressed: boolean,
+  capsLock: boolean
+): Promise<void> => {
+  return invoke("send_keyboard_input", {
+    addr,
+    keyCode,
+    character,
+    isKeydown,
+    shiftPressed,
+    ctrlPressed,
+    capsLock,
+  });
+};
+
+export const sendMouseClickCmd = async (
+  addr: string | undefined,
+  display: number,
+  x: number,
+  y: number,
+  clickType: number,
+  actionType: number,
+  scrollAmount: number
+): Promise<void> => {
+  return invoke("send_mouse_click", {
+    addr,
+    display,
+    x,
+    y,
+    clickType,
+    actionType,
+    scrollAmount,
+  });
 };

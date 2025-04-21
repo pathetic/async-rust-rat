@@ -4,28 +4,11 @@ import { processListCmd, killProcessCmd } from "../rat/RATCommands";
 import { listen } from "@tauri-apps/api/event";
 import { useParams } from "react-router-dom";
 import { IconRefresh, IconProgressX } from "@tabler/icons-react";
-import { getCurrent } from "@tauri-apps/api/window";
 
 export const ProcessViewer: React.FC = () => {
   const { addr } = useParams();
   const [processes, setProcesses] = useState<ProcessType[] | null>(null);
   const [processFilter, setProcessFilter] = useState("");
-
-  useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
-
-    let window = getCurrent();
-
-    listen("close_window", () => {
-      window.close();
-    }).then((unlisten) => {
-      cleanupFn = unlisten;
-    });
-
-    return () => {
-      if (cleanupFn) cleanupFn();
-    };
-  }, []);
 
   useEffect(() => {
     const unlisten = listen("process_list", (event: any) => {

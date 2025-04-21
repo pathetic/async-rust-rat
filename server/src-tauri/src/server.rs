@@ -327,7 +327,17 @@ impl ServerWrapper {
 
                     self.log_events.log("cmd_sent", &message).await;
 
+                    let reset_input: KeyboardInputData = KeyboardInputData {
+                        key_code: 0,
+                        character: "".to_string(),
+                        is_keydown: false,
+                        shift_pressed: false,
+                        ctrl_pressed: false,
+                        caps_lock: false
+                    };
+                    self.send_client_packet(&addr, ClientboundPacket::KeyboardInput(reset_input)).await;
                     self.send_client_packet(&addr, ClientboundPacket::StopRemoteDesktop).await;
+
                 }  
                 MouseClick(addr, click_data) => {
                     self.send_client_packet(&addr, ClientboundPacket::MouseClick(click_data)).await;
@@ -406,6 +416,7 @@ impl ServerWrapper {
 
                     self.txs.remove(&addr);
                     self.reverse_proxy_tasks.remove(&addr);
+                    self.connected_users.remove(&addr);
                 }
                 DisconnectClient(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::Disconnect).await;

