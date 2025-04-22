@@ -1,7 +1,9 @@
+import {
+  IconDeviceDesktop,
+  IconBrandWindows,
+  IconBrandUbuntu,
+} from "@tabler/icons-react";
 import { RATClient, FilterCategories } from "../../../types";
-
-import windowsImg from "../../assets/732225.png";
-import linuxImg from "../../assets/pngimg.com - linux_PNG1.png";
 
 import { CpuSvg, GpuSvg, RamSvg, StorageSvg } from "./Svgs";
 
@@ -24,6 +26,19 @@ export const ClientsTable = ({
   searchTerm: string;
   filters: FilterCategories;
 }) => {
+  const getOsIcon = ({ client }: { client: RATClient }) => {
+    if (client.os.toLowerCase().includes("windows")) {
+      return <IconBrandWindows size={20} className="text-blue-400" />;
+    } else if (
+      client.os.toLowerCase().includes("linux") ||
+      client.os.toLowerCase().includes("ubuntu")
+    ) {
+      return <IconBrandUbuntu size={20} className="text-orange-400" />;
+    } else {
+      return <IconDeviceDesktop size={20} className="text-gray-400" />;
+    }
+  };
+
   const fetchGpus = (gpus: string[]) => {
     let gpuString = "";
 
@@ -102,13 +117,7 @@ export const ClientsTable = ({
                 </td>
                 <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
                   <div className="flex items-center gap-3">
-                    <img
-                      className="w-4"
-                      src={
-                        client.os.includes("Windows") ? windowsImg : linuxImg
-                      }
-                      alt="OS"
-                    />
+                    {getOsIcon({ client })}
                     {client.username}@{client.hostname}
                   </div>
                 </td>

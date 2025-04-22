@@ -5,33 +5,21 @@ import {
   IconBellOff,
   IconServerCog,
   IconLock,
-  IconShield,
   IconClipboardText,
   IconInfoCircle,
-  IconBuildingFactory,
   IconPhoto,
-  IconDeviceFloppy,
   IconAlertCircle,
   IconArrowRight,
   IconArrowLeft,
   IconFileCode,
   IconFileSettings,
   IconFolder,
-  IconTerminal,
   IconToggleRight,
   IconToggleLeft,
-  IconUser,
-  IconUsers,
-  IconCode,
   IconDashboard,
-  IconPlus,
-  IconMinus,
   IconSettings,
-  IconStack,
   IconCodeCircle,
-  IconShieldUp,
   IconEyeglassOff,
-  IconFocusAuto,
   IconEyeClosed,
 } from "@tabler/icons-react";
 
@@ -44,8 +32,8 @@ export const Settings = () => {
   const { setNotificationClient, notificationClient } = useContext(RATContext)!;
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [enableAutoSave, setEnableAutoSave] = useState(false);
-  const [enableDebugMode, setEnableDebugMode] = useState(false);
+  // const [enableAutoSave, setEnableAutoSave] = useState(false);
+  // const [enableDebugMode, setEnableDebugMode] = useState(false);
   const [enableIcon, setEnableIcon] = useState(false);
 
   const [buildIp, setBuildIp] = useState<string>("127.0.0.1");
@@ -58,7 +46,7 @@ export const Settings = () => {
   const [enableUnattended, setEnableUnattended] = useState(false);
 
   const [group, setGroup] = useState<string>("Default");
-  const [processCritical, setProcessCritical] = useState(false);
+  const [processCritical, _setProcessCritical] = useState(false);
   const [enableMutex, setEnableMutex] = useState(false);
   const [mutexName, setMutexName] = useState<string>("");
   // const [attemptUacBypass, setAttemptUacBypass] = useState(false);

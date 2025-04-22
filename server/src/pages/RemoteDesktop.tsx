@@ -43,7 +43,7 @@ export const RemoteDesktop: React.FC = () => {
   const currentWindow = useRef<WebviewWindow | null>(null);
   const [mouseControlEnabled, setMouseControlEnabled] = useState(false);
   const [keyboardControlEnabled, setKeyboardControlEnabled] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [activeMouseButton, setActiveMouseButton] = useState<number | null>(
     null
@@ -477,42 +477,6 @@ export const RemoteDesktop: React.FC = () => {
       );
     } catch (error) {
       console.error("Error sending scroll event:", error);
-    }
-  };
-
-  // Legacy click handler for backward compatibility
-  const handleCanvasClick = async (
-    event: React.MouseEvent<HTMLCanvasElement>
-  ) => {
-    event.preventDefault();
-
-    if (!mouseControlEnabled || !canvasRef.current || !addr || !streaming)
-      return;
-
-    if (event.button !== 0 && event.button !== 1 && event.button !== 2) {
-      return;
-    }
-
-    // Only process as a click if we haven't detected a drag operation
-    if (isDragging) return;
-
-    const { targetX, targetY } = getTargetCoordinates(
-      event.clientX,
-      event.clientY
-    );
-
-    try {
-      await sendMouseClickCmd(
-        addr,
-        selectedDisplay,
-        targetX,
-        targetY,
-        event.button,
-        0, // Complete click (down+up)
-        0
-      );
-    } catch (error) {
-      console.error("Error sending mouse click:", error);
     }
   };
 

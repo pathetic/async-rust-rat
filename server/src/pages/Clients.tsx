@@ -1,4 +1,3 @@
-import { IconSearch, IconFilter } from "@tabler/icons-react";
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import { RATContext } from "../rat/RATContext";
 
