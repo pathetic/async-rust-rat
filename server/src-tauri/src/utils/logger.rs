@@ -19,8 +19,8 @@ impl Logger {
         Self { logs: Vec::new(), tauri_handle: None }
     }
     
-    pub async fn log(&mut self, event_type: &str, message: &str) {
-        let log = Log { event_type: event_type.to_string(), message: message.to_string() };
+    pub async fn log(&mut self, event_type: &str, message: String) {
+        let log = Log { event_type: event_type.to_string(), message: message };
         self.logs.push(log.clone());
 
         if let Some(handle) = &self.tauri_handle {
