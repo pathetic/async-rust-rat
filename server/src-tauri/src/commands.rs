@@ -81,4 +81,4 @@ pub enum ServerCommand {
 
     RequestWebcam(SocketAddr),
     WebcamResult(SocketAddr, Vec<u8>),
-}   
+}

