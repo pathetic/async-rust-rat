@@ -12,6 +12,8 @@ import { ClientInfo } from "../components/home/ClientInfo";
 import { ClientsTable } from "../components/home/ClientsTable";
 import { VisitWebsiteModal } from "../components/home/modals/VisitWebsiteModal";
 import { MessageBoxModal } from "../components/home/modals/MessageBoxModal";
+import { TableFilter } from "../components/TableFilter";
+
 export const Clients = () => {
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedClientDetails, setSelectedClientDetails] =
@@ -28,7 +30,6 @@ export const Clients = () => {
     cpu: {},
     gpus: {},
   });
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] =
     useState<keyof FilterCategories>("group");
 
@@ -177,100 +178,18 @@ export const Clients = () => {
 
       <div className="flex flex-col h-full">
         {/* Search and filter bar */}
-        <div className="flex items-center justify-between gap-2 mb-4 pt-1 px-1 z-99">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <IconSearch className="text-white" size={18} />
-            </div>
-            <input
-              type="text"
-              className="bg-secondarybg text-white w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-600"
-              placeholder="Search clients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-              className="p-2 rounded-lg bg-white text-black hover:bg-white/80 cursor-pointer transition-colors flex items-center gap-1 border-accentx"
-            >
-              <IconFilter size={20} />
-              <span>Filter</span>
-            </button>
-
-            {isFilterMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-secondarybg ring-1 ring-black ring-opacity-5 z-50">
-                <div className="py-1 px-2">
-                  {/* Filter tabs */}
-                  <div className="flex border-b border-accentx mb-2">
-                    {(
-                      ["group", "os", "cpu", "gpus"] as Array<
-                        keyof FilterCategories
-                      >
-                    ).map((tab) => (
-                      <button
-                        key={tab}
-                        className={`px-3 py-2 text-sm font-medium ${
-                          activeFilterTab === tab
-                            ? "text-white border-b-2 border-white"
-                            : "text-gray-400 hover:text-white"
-                        }`}
-                        onClick={() => setActiveFilterTab(tab)}
-                      >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Filter options */}
-                  <div className="p-2 text-sm font-medium text-white">
-                    {activeFilterTab.charAt(0).toUpperCase() +
-                      activeFilterTab.slice(1)}
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto">
-                    {Object.keys(filters[activeFilterTab]).map(
-                      (filterValue: string) => (
-                        <div
-                          key={filterValue}
-                          className="flex items-center px-3 py-2"
-                        >
-                          <input
-                            type="checkbox"
-                            id={`${activeFilterTab}-${filterValue}`}
-                            checked={
-                              filters[activeFilterTab][filterValue] !== false
-                            }
-                            onChange={() => {
-                              setFilters((prev) => ({
-                                ...prev,
-                                [activeFilterTab]: {
-                                  ...prev[activeFilterTab],
-                                  [filterValue]:
-                                    !prev[activeFilterTab][filterValue],
-                                },
-                              }));
-                            }}
-                            className="form-checkbox h-4 w-4 mr-2"
-                          />
-                          <label
-                            htmlFor={`${activeFilterTab}-${filterValue}`}
-                            className="ml-2 text-sm text-white cursor-pointer flex-1 truncate"
-                            title={filterValue}
-                          >
-                            {filterValue}
-                          </label>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <TableFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          searchPlaceholder="Search clients..."
+          filters={filters}
+          setFilters={setFilters}
+          filterCategories={["group", "os", "cpu", "gpus"]}
+          activeFilterCategory={activeFilterTab}
+          setActiveFilterCategory={(category) =>
+            setActiveFilterTab(category as keyof FilterCategories)
+          }
+        />
 
         {/* Main content */}
         <div className="flex flex-row flex-1">

@@ -2,8 +2,6 @@ import { useContext, useState, useEffect, useMemo } from "react";
 import { RATContext } from "../rat/RATContext";
 import { Log } from "../../types";
 import {
-  IconSearch,
-  IconFilter,
   IconAlertCircle,
   IconInfoCircle,
   IconCheck,
@@ -12,13 +10,13 @@ import {
   IconClockHour4,
   IconCloudUpload,
 } from "@tabler/icons-react";
+import { TableFilter } from "../components/TableFilter";
 
 export const Logs = () => {
   const ratContext = useContext(RATContext);
   const serverLogs = ratContext?.serverLogs || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<Record<string, boolean>>({});
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   // Initialize filters based on event types in logs
   useEffect(() => {
@@ -109,68 +107,16 @@ export const Logs = () => {
       <div className="flex flex-col">
         <div className="flex items-center justify-between"></div>
 
-        <div className="flex items-center justify-between gap-2 px-1 pt-1">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <IconSearch className="text-white" size={18} />
-            </div>
-            <input
-              type="text"
-              className="bg-secondarybg text-white w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-600"
-              placeholder="Search logs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-              className="p-2 rounded-lg bg-white text-black hover:bg-white/80 cursor-pointer transition-colors flex items-center gap-1 border-accentx"
-            >
-              <IconFilter size={20} />
-              <span>Filter</span>
-            </button>
-
-            {isFilterMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-secondarybg ring-1 ring-black ring-opacity-5 z-50">
-                <div className="py-1 px-2">
-                  <div className="p-2 text-sm font-medium text-white">
-                    Event Types
-                  </div>
-                  {Object.keys(filter).map((eventType) => (
-                    <div
-                      key={eventType}
-                      className="flex items-center px-3 py-2"
-                    >
-                      <input
-                        type="checkbox"
-                        id={eventType}
-                        checked={filter[eventType] !== false}
-                        onChange={() => {
-                          setFilter((prev) => ({
-                            ...prev,
-                            [eventType]: !prev[eventType],
-                          }));
-                        }}
-                        className="form-checkbox h-4 w-4 mr-2"
-                      />
-                      <label
-                        htmlFor={eventType}
-                        className="ml-2 text-sm text-white cursor-pointer flex-1"
-                      >
-                        {eventType}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <TableFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          searchPlaceholder="Search logs..."
+          filters={filter}
+          setFilters={setFilter}
+        />
       </div>
 
-      <div className="mt-4 flex-1 overflow-auto rounded-2xl border bg-secondarybg">
+      <div className="flex-1 overflow-auto rounded-2xl border bg-secondarybg">
         {filteredLogs.length > 0 ? (
           <table className="min-w-full bg-secondarybg divide-y divide-accentx">
             <thead className="bg-white/90">

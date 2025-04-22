@@ -1,4 +1,3 @@
-use common::packets::AVList;
 use wmi::{COMLibrary, WMIConnection};
 use serde::Deserialize;
 
@@ -8,14 +7,7 @@ struct AntivirusProduct {
     display_name: String,
 }
 
-pub fn get_installed_avs() -> AVList {
-    println!("Detecting installed antivirus products...");
-    AVList {
-        avs: antivirus()
-    }
-} 
-
-fn antivirus() -> Vec<String> {
+pub fn get_installed_avs() -> Vec<String> {
     // Initialize COM
     let com_con = match COMLibrary::new() {
         Ok(c) => c,

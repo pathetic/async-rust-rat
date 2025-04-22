@@ -72,14 +72,11 @@ export interface ContextMenuProps {
 export type MenuOptionType = {
   label: string;
   icon: React.ReactNode;
-  window?: boolean;
+  optionType?: OptionType;
   type?: string;
-  navigate?: boolean;
-  path?: string;
   options?: MenuOptionType[];
   run?: string;
   function?: (string?, string?) => void;
-  modal?: boolean;
   modalId?: string;
 };
 
@@ -89,7 +86,6 @@ interface SubMenuProps {
   left: number;
   addr: string;
   clientFullName: string;
-  navigate: (string) => void;
   onClose: () => void;
 }
 
@@ -139,3 +135,14 @@ export type FilterCategories = {
   cpu: Record<string, boolean>;
   gpus: Record<string, boolean>;
 };
+
+export interface TableFilterProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  searchPlaceholder?: string;
+  filters: Record<string, Record<string, boolean>> | Record<string, boolean>;
+  setFilters: (filters: any) => void;
+  filterCategories?: string[];
+  activeFilterCategory?: string;
+  setActiveFilterCategory?: (category: string) => void;
+}

