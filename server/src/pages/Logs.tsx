@@ -6,11 +6,9 @@ import {
   IconFilter,
   IconAlertCircle,
   IconInfoCircle,
-  IconBug,
   IconCheck,
   IconX,
   IconCloudDownload,
-  IconTrash,
   IconClockHour4,
   IconCloudUpload,
 } from "@tabler/icons-react";
@@ -104,26 +102,6 @@ export const Logs = () => {
       default:
         return "text-gray-400";
     }
-  };
-
-  const clearLogs = () => {
-    // Implement clear logs functionality if needed
-    console.log("Clear logs");
-  };
-
-  const exportLogs = () => {
-    if (serverLogs.length === 0) return;
-
-    const logsJson = JSON.stringify(serverLogs, null, 2);
-    const blob = new Blob([logsJson], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `server_logs_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (

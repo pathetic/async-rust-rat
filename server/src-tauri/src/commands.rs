@@ -3,7 +3,6 @@ use common::packets::*;
 use std::net::SocketAddr;
 
 use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
-use crate::handlers::FrontClient;
 use crate::server::Log;
 use tauri::AppHandle;
 
@@ -41,8 +40,8 @@ pub enum ServerCommand {
     KeyboardInput(SocketAddr, KeyboardInputData),
     RemoteDesktopFrame(SocketAddr, RemoteDesktopFrame),
 
-    GetClients(OSender<Vec<FrontClient>>),
-    GetClient(SocketAddr, OSender<Option<FrontClient>>),
+    GetClients(OSender<Vec<ClientInfo>>),
+    GetClient(SocketAddr, OSender<Option<ClientInfo>>),
     SetTauriHandle(AppHandle),
     ClientDisconnected(SocketAddr),
     CloseClientSessions(),

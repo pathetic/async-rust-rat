@@ -1,5 +1,5 @@
 use tauri::{State, Manager};
-use crate::handlers::{ SharedTauriState, FrontClient, AssemblyInfo };
+use crate::handlers::{ SharedTauriState, AssemblyInfo };
 use crate::server::Log;
 use serde::Serialize;
 use std::vec;
@@ -21,7 +21,7 @@ use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process};
+use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, ClientInfo};
 
 use object::{ Object, ObjectSection };
 use std::fs::File;
@@ -286,7 +286,7 @@ pub async fn build_client(
 pub async fn fetch_clients(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
-) -> Result<Vec<FrontClient>, String> {
+) -> Result<Vec<ClientInfo>, String> {
     let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
     let (tx, rx) = tokio::sync::oneshot::channel();
@@ -306,7 +306,7 @@ pub async fn fetch_client(
     addr: String, 
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
-) -> Result<FrontClient, String> {
+) -> Result<ClientInfo, String> {
     let socket_addr = addr.parse()
         .map_err(|e| format!("Invalid socket address: {}", e))?;
 

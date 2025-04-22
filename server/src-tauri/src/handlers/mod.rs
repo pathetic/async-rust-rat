@@ -7,24 +7,6 @@ use crate::commands::ServerCommand;
 
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 
-#[derive(Debug, Clone, Serialize)]
-pub struct FrontClient {
-    pub group: String,
-    pub addr: std::net::SocketAddr,
-    pub username: String,
-    pub hostname: String,
-    pub os: String,
-    pub ram: String,
-    pub cpu: String,
-    pub gpus: Vec<String>,
-    pub storage: Vec<String>,
-    pub displays: i32,
-    pub ip: String,
-    pub disconnected: bool,
-    pub is_elevated: bool,
-    pub installed_avs: Vec<String>,
-}
-
 pub struct TauriState {
     pub port: String,
     pub running: bool,

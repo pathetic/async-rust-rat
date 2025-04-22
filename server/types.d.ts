@@ -9,7 +9,6 @@ export type RATState = {
 export type RATContextType = {
   port: string;
   setPort: (port: string) => void;
-  fetchClients: () => void;
   setRunning: (running: boolean) => void;
   running: boolean;
   clientList: Array<RATClient>;
@@ -31,11 +30,12 @@ export interface RATProviderProps {
 }
 
 export type RATClient = {
+  uuidv4: string;
+  addr: string;
   group: string;
   addr: string;
   username: string;
   hostname: string;
-  ip: string;
   os: string;
   cpu: string;
   ram: string;
@@ -131,4 +131,11 @@ export type AssemblyInfo = {
 
 export type WindowWrapperProps = {
   feature_cleanup: (params: Record<string, string | undefined>) => void;
+};
+
+export type FilterCategories = {
+  group: Record<string, boolean>;
+  os: Record<string, boolean>;
+  cpu: Record<string, boolean>;
+  gpus: Record<string, boolean>;
 };
