@@ -22,6 +22,7 @@ pub struct FrontClient {
     pub ip: String,
     pub disconnected: bool,
     pub is_elevated: bool,
+    pub installed_avs: Vec<String>,
 }
 
 pub struct TauriState {

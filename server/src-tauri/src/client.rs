@@ -166,10 +166,6 @@ impl ClientReaderWrapper {
                 self.send_server_packet(ServerCommand::DownloadFileResult(self.addr, file_data)).await;
             },
             
-            InstalledAVs(av_list) => {
-                self.send_server_packet(ServerCommand::InstalledAVs(self.addr, av_list)).await;
-            },
-            
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");
             },

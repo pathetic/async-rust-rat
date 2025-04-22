@@ -46,7 +46,6 @@ async fn main() {
                 stop_reverse_proxy,
                 read_icon,
                 read_exe,
-                get_installed_avs,
             ]
         )
         .run(tauri::generate_context!())

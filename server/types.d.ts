@@ -44,6 +44,7 @@ export type RATClient = {
   displays: number;
   is_elevated: boolean;
   disconnected: boolean;
+  installed_avs: string[];
 };
 
 export type ClientWindowType = {
