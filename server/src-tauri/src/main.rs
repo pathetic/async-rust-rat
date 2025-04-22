@@ -5,6 +5,7 @@ mod handlers;
 mod server;
 mod commands;
 mod client;
+mod utils;
 
 use handlers::{
     tauri::*,
@@ -26,6 +27,7 @@ async fn main() {
                 fetch_clients,
                 fetch_client,
                 take_screenshot,
+                request_webcam,
                 manage_client,
                 start_remote_desktop,
                 stop_remote_desktop,

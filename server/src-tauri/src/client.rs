@@ -166,6 +166,10 @@ impl ClientReaderWrapper {
                 self.send_server_packet(ServerCommand::DownloadFileResult(self.addr, file_data)).await;
             },
             
+            WebcamResult(webcam_data) => {
+                self.send_server_packet(ServerCommand::WebcamResult(self.addr, webcam_data)).await;
+            },
+            
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");
             },

