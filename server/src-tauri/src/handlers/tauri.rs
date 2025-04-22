@@ -1,6 +1,6 @@
 use tauri::{State, Manager};
 use crate::handlers::{ SharedTauriState, AssemblyInfo };
-use crate::server::Log;
+use crate::utils::logger::Log;
 use serde::Serialize;
 use std::vec;
 use std::fs;
@@ -12,7 +12,6 @@ use tokio::sync::mpsc::Sender;
 use crate::commands::ServerCommand;
 use crate::server::ServerWrapper;
 use crate::client::ClientWrapper;
-use std::net::SocketAddr;
 
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;

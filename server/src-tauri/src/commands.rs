@@ -3,7 +3,7 @@ use common::packets::*;
 use std::net::SocketAddr;
 
 use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
-use crate::server::Log;
+use crate::utils::logger::Log;
 use tauri::AppHandle;
 
 /// Commands sent to client-server connection handlers.

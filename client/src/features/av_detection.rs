@@ -21,7 +21,7 @@ pub fn get_installed_avs() -> Vec<String> {
     println!("Connecting to WMI");
     let wmi_con = match WMIConnection::with_namespace_path(r"root\SecurityCenter2", com_con) {
         Ok(c) => c,
-        Err(e) => {
+        Err(_e) => {
             return Vec::new();
         },
     };
@@ -30,7 +30,7 @@ pub fn get_installed_avs() -> Vec<String> {
     println!("Executing query");
     let results: Vec<AntivirusProduct> = match wmi_con.query() {
         Ok(r) => r,
-        Err(e) => {
+        Err(_e) => {
             return Vec::new();
         },
     };

