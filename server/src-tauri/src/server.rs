@@ -8,17 +8,17 @@ use tauri::{ AppHandle, Manager };
 use common::packets::ClientInfo;
 
 use rand::rngs::OsRng;
-use rand::Rng;
-use rsa::{pkcs8::ToPublicKey, PaddingScheme, RsaPrivateKey, RsaPublicKey};
+use rsa::{pkcs8::ToPublicKey, RsaPrivateKey, RsaPublicKey};
 use base64::{engine::general_purpose, Engine as _};
 
 use common::packets::*;
 
 use anyhow::{Context, Result};
 use crate::commands::*;
-use common::{ENC_TOK_LEN, RSA_BITS};
+use common::RSA_BITS;
 
 use crate::utils::logger::Logger;
+use crate::utils::encryption::{handle_encryption_request, handle_encryption_confirm};
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -132,35 +132,11 @@ impl ServerWrapper {
                 
                 // Client connection handling
                 EncryptionRequest(tx, otx) => {
-                    let mut token = [0u8; ENC_TOK_LEN];
-                    OsRng.fill(&mut token);
-                    tx.send(ClientCommand::Write(
-                        ClientboundPacket::EncryptionResponse(
-                            self.pub_key.to_public_key_der().unwrap().as_ref().to_vec(),
-                            token.to_vec(),
-                        ),
-                    ))
-                    .await
-                    .unwrap();
-                    otx.send(token.to_vec()).unwrap();
+                    handle_encryption_request(tx, otx, self.pub_key.to_public_key_der().unwrap().as_ref().to_vec()).await;
                 }
                 
                 EncryptionConfirm(tx, otx, enc_s, enc_t, exp_t) => {
-                    let padding = PaddingScheme::new_pkcs1v15_encrypt();
-                    let t = self.priv_key.decrypt(padding, &enc_t).expect("Failed to decrypt.");
-                    
-                    if t != exp_t {
-                        eprintln!("Encryption handshake failed!");
-                        tx.send(ClientCommand::Close).await.ok();
-                        otx.send(Err(())).unwrap();
-                    } else {
-                        let padding = PaddingScheme::new_pkcs1v15_encrypt();
-                        let s = self.priv_key.decrypt(padding, &enc_s).expect("Failed to decrypt.");
-                        otx.send(Ok(s.clone())).unwrap();
-                        tx.send(ClientCommand::SetSecret(Some(s.clone()))).await.unwrap();
-                        tx.send(ClientCommand::Write(ClientboundPacket::EncryptionAck)).await.unwrap();
-                        tx.send(ClientCommand::Write(ClientboundPacket::InitClient)).await.unwrap();
-                    }
+                    handle_encryption_confirm(tx, otx, enc_s, enc_t, exp_t, self.priv_key.clone()).await;
                 }
                 
                 RegisterClient(tx, addr, mut client_info) => {
