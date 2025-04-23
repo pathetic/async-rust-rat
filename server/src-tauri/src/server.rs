@@ -154,6 +154,13 @@ impl ServerWrapper {
                         self.log_events.log("client_disconnected", format!("Client [{}] [{}] disconnected", addr, client.username)).await;
                         self.emit_client_status(&client, "client_disconnected").await;
                     }
+
+                    let tx = self.txs.get(&addr);
+
+                    if let Some(tx) = tx {
+                        tx.send(ClientCommand::Close).await.unwrap();
+                    }
+
                     self.txs.remove(&addr);
                     self.reverse_proxy_tasks.remove(&addr);
                     self.connected_users.remove(&addr);
