@@ -146,3 +146,10 @@ export interface TableFilterProps {
   activeFilterCategory?: string;
   setActiveFilterCategory?: (category: string) => void;
 }
+
+export interface RemoteDesktopFramePayload {
+  addr: string;
+  timestamp: number;
+  display: number;
+  data: string;
+}

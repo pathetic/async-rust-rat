@@ -5,7 +5,7 @@ import { ShellCommandType, CommandProps } from "../../types";
 export const Ascii: React.FC = () => {
   return (
     <div>
-      <pre className="text-left text-primary font-bold mb-2 drop-shadow-xl selection:bg-yellow-900 selection:text-white">
+      <pre className="text-blue-400 text-left font-bold mb-2 drop-shadow-xl selection:bg-yellow-900 selection:text-white">
         {`
     __________                       __                _________.__           .__  .__   
     \\______   \\ ____   _____   _____/  |_  ____       /   _____/|  |__   ____ |  | |  |  
@@ -24,7 +24,7 @@ export const Header: React.FC = () => {
     <div className="font-mono text-left ml-10 mb-5  selection:bg-yellow-900">
       Welcome to Remote Shell!
       <br />
-      Type <span className="text-primary">!help</span> to get a list of
+      Type <span className="text-blue-400">!help</span> to get a list of
       available client-side commands. <br />
     </div>
   );
@@ -77,7 +77,7 @@ export const Command: React.FC<CommandProps> = ({ addr }) => {
       {command.map((item, index) => (
         <div key={index}>
           <div className="flex flex-row mb-1">
-            <div className="text-accent font-bold ml-6 selection:bg-yellow-900">
+            <div className="text-green-400 font-bold ml-6 selection:bg-yellow-900">
               remote@shell~$
             </div>
             <div className="ml-2 font-mono selection:bg-yellow-900">
@@ -95,7 +95,7 @@ export const Command: React.FC<CommandProps> = ({ addr }) => {
         </div>
       ))}
       <div className="flex flex-row mb-4">
-        <div className="text-accent font-bold ml-6 selection:bg-yellow-900">
+        <div className="text-green-400 font-bold ml-6 selection:bg-yellow-900">
           remote@shell~$
         </div>
         <input
