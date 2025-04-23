@@ -17,7 +17,13 @@ export const buildClientCmd = async (
   unattendedMode: boolean,
   assemblyInfo: AssemblyInfo,
   enableIcon: boolean,
-  iconPath: string
+  iconPath: string,
+  enableInstall: boolean,
+  installFolder: string,
+  installFileName: string,
+  group: string,
+  enableHidden: boolean,
+  antiVmDetection: boolean
 ): Promise<void> => {
   return invoke("build_client", {
     ip,
@@ -28,6 +34,12 @@ export const buildClientCmd = async (
     assemblyInfo,
     enableIcon,
     iconPath,
+    enableInstall,
+    installFolder,
+    installFileName,
+    group,
+    enableHidden,
+    antiVmDetection,
   });
 };
 
