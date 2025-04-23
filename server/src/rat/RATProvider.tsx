@@ -35,8 +35,8 @@ const translateWindowType = (type: string) => {
 
 const windowTypeSizes = {
   "reverse-proxy": {
-    width: 920,
-    height: 260,
+    width: 1000,
+    height: 700,
   },
   "remote-desktop": {
     width: 1280,
