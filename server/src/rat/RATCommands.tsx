@@ -238,3 +238,10 @@ export const sendMouseClickCmd = async (
     scrollAmount,
   });
 };
+
+export const manageHVNC = async (
+  addr: string | undefined,
+  run: string
+): Promise<void> => {
+  return invoke("manage_hvnc", { addr, run });
+};

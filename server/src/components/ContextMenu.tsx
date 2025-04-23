@@ -46,6 +46,12 @@ const menuOptions = [
         optionType: OptionType.WINDOW,
       },
       {
+        label: "HVNC",
+        type: "hvnc",
+        icon: <IconShareplay size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
         label: "File Manager",
         type: "file-manager",
         icon: <IconFolder size={24} />,

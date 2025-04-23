@@ -16,7 +16,9 @@ import {
   stopRemoteDesktopCmd,
   stopReverseProxyCmd,
   stopShellCmd,
+  manageHVNC,
 } from "./rat/RATCommands";
+import { HVNC } from "./pages/HVNC";
 
 export const App: React.FC = () => {
   return (
@@ -88,9 +90,24 @@ export const App: React.FC = () => {
             </WindowWrapper>
           }
         />
+        <Route
+          path="/hvnc/:addr"
+          element={
+            <WindowWrapper
+              feature_cleanup={(params) => {
+                if (params.addr) {
+                  manageHVNC(params.addr, "stop");
+                }
+              }}
+            >
+              <HVNC />
+            </WindowWrapper>
+          }
+        />
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Clients />} />
           <Route path="/logs" element={<Logs />} />
+          <Route path="/hvnc/:addr" element={<HVNC />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>

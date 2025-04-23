@@ -14,6 +14,8 @@ import { WebviewWindow } from "@tauri-apps/api/window";
 
 const translateWindowType = (type: string) => {
   switch (type) {
+    case "hvnc":
+      return "HVNC";
     case "process-viewer":
       return "Process Viewer";
     case "remote-desktop":
@@ -40,6 +42,10 @@ const windowTypeSizes = {
     width: 1280,
     height: 720,
   },
+  hvnc: {
+    width: 1280,
+    height: 720,
+  },
   "file-manager": {
     width: 1280,
     height: 720,
@@ -51,10 +57,6 @@ const windowTypeSizes = {
   "remote-shell": {
     width: 1280,
     height: 700,
-  },
-  "av-detection": {
-    width: 800,
-    height: 600,
   },
 };
 
