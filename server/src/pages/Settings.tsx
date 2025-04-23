@@ -809,7 +809,13 @@ export const Settings = () => {
                       enableUnattended,
                       assemblyInfo,
                       enableIcon,
-                      iconPath
+                      iconPath,
+                      enableInstall,
+                      installFolder,
+                      installFileName,
+                      group,
+                      enableHidden,
+                      antiVmDetection
                     );
                   }}
                 >

