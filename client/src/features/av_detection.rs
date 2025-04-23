@@ -12,13 +12,11 @@ pub fn get_installed_avs() -> Vec<String> {
     let com_con = match COMLibrary::new() {
         Ok(c) => c,
         Err(e) => {
-            println!("Error initializing COM: {:?}", e);
             return Vec::new();
         },
     };
 
     // Connect to WMI
-    println!("Connecting to WMI");
     let wmi_con = match WMIConnection::with_namespace_path(r"root\SecurityCenter2", com_con) {
         Ok(c) => c,
         Err(_e) => {
@@ -27,7 +25,6 @@ pub fn get_installed_avs() -> Vec<String> {
     };
 
     // Query WMI for antivirus products
-    println!("Executing query");
     let results: Vec<AntivirusProduct> = match wmi_con.query() {
         Ok(r) => r,
         Err(_e) => {

