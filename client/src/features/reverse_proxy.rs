@@ -24,8 +24,7 @@ impl ReverseProxy {
        let task = tokio::spawn(async move {
             let master_stream = match TcpStream::connect(full_ip.clone()).await{
                 Ok(p) => p,
-                Err(e) => {
-                    println!("Error connecting to master: {}", e);
+                Err(_e) => {
                     return;
                 }
             };
@@ -34,13 +33,10 @@ impl ReverseProxy {
             raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
             let mut master_stream = TcpStream::from_std(raw_stream).unwrap();
 
-            println!("Connected to master");
-
             loop {
                 let mut buf = [0u8 ; 1];
                 match master_stream.read_exact(&mut buf).await{
-                    Err(e) => {
-                        println!("Error reading from master: {}", e);
+                    Err(_e) => {
                         return;
                     },
                     Ok(p) => p
@@ -48,8 +44,7 @@ impl ReverseProxy {
     
                 if buf[0] == MAGIC_FLAG[0] {
                     let stream = match TcpStream::connect(full_ip.clone()).await{
-                        Err(e) => {
-                            println!("Error connecting to client: {}", e);
+                        Err(_e) => {
                             return;
                         },
                         Ok(p) => p

