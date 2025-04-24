@@ -11,7 +11,6 @@ tauri = { version = "1", features = ["shell-open", "dialog-all", "window-all"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.20.1", features = ["rt", "full"] }
-lazy_static = "1.4.0"
 base64 = "0.22.0"
 common = { path = "../../common" }
 rsa = "0.5.0"
