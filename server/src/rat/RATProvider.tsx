@@ -158,8 +158,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   async function waitNotification(type: string) {
     listen(type, async (event) => {
       if (type == "client_connected" || type == "client_disconnected") {
-        console.log(event.payload);
-        console.log(type);
         const client = event.payload as RATClient;
         let icon = type == "client_connected" ? "🤙" : "👋";
         let message = type == "client_connected" ? "connected" : "disconnected";
@@ -187,7 +185,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       if (type == "server_log") {
         const { event_type, message } = event.payload as Log;
         let log = { event_type, message, time: new Date().toLocaleString() };
-        console.log(log);
         setServerLogs((prevLogs) => [log, ...prevLogs]);
 
         if (event_type == "server_error") {

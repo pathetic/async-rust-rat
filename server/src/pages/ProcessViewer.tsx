@@ -33,7 +33,6 @@ export const ProcessViewer: React.FC = () => {
 
   useEffect(() => {
     const unlisten = listen("process_list", (event: any) => {
-      console.log(event.payload);
       if (event.payload.addr === addr) {
         const parsedProcesses = event.payload.processes.map(
           (process: { pid: number; name: string }) => ({

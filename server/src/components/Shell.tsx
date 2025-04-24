@@ -70,8 +70,6 @@ export const Command: React.FC<CommandProps> = ({ addr }) => {
     };
   }, []);
 
-  console.log(command);
-
   return (
     <div className="reverse-shell">
       {command.map((item, index) => (

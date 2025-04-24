@@ -35,7 +35,6 @@ export const WindowWrapper = ({
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      console.log("beforeunload");
       feature_cleanup(params);
     };
 

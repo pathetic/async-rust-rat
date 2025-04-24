@@ -64,7 +64,7 @@ export const TableFilter = ({
         </button>
 
         {isFilterMenuOpen && (
-          <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-secondarybg ring-1 ring-black ring-opacity-5 z-50">
+          <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-secondarybg ring-1 ring-black ring-opacity-5 z-[100]">
             <div className="py-1 px-2">
               {isMultiCategory && (
                 <div className="flex border-b border-accentx mb-2">

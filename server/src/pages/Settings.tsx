@@ -71,7 +71,6 @@ export const Settings = () => {
   useEffect(() => {
     if (iconPath) {
       invoke("read_icon", { path: iconPath }).then((data) => {
-        console.log(data);
         setIconData(data as string);
       });
     }
@@ -80,7 +79,6 @@ export const Settings = () => {
   useEffect(() => {
     if (exeClonePath) {
       invoke("read_exe", { path: exeClonePath }).then((data) => {
-        console.log(data);
         setAssemblyInfo(data as AssemblyInfo);
       });
     }
