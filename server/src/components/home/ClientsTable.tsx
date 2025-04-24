@@ -129,26 +129,20 @@ export const ClientsTable = ({
                 </td>
                 <td className="border-b border-accentx px-3 py-4 whitespace-nowrap text-white">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="tooltip z-50 tooltip-left"
-                      data-tip={client.cpu}
-                    >
+                    <div className="tooltip tooltip-left" data-tip={client.cpu}>
                       <CpuSvg />
                     </div>
-                    <div
-                      className="tooltip z-50 tooltip-left"
-                      data-tip={client.ram}
-                    >
+                    <div className="tooltip tooltip-left" data-tip={client.ram}>
                       <RamSvg />
                     </div>
                     <div
-                      className="tooltip z-50 tooltip-left"
+                      className="tooltip tooltip-left"
                       data-tip={fetchGpus(client.gpus)}
                     >
                       <GpuSvg />
                     </div>
                     <div
-                      className="tooltip z-50 tooltip-left"
+                      className="tooltip tooltip-left"
                       data-tip={client.storage}
                     >
                       <StorageSvg />

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["synchapi", "errhandlingapi", "dxgi1_2", "winerror", "wingdi", "winuser", "securitybaseapi", "winuser","wincon","shellapi"] }
+winapi = { version = "0.3.9", features = ["synchapi", "errhandlingapi", "dxgi1_2", "winerror", "wingdi", "wtsapi32", "winuser", "securitybaseapi", "winuser","wincon","shellapi"] }
 screenshots = "0.8.10"
 sysinfo = "0.30.10"
 common = { path = "../common" }
