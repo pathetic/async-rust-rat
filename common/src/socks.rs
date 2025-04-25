@@ -1,6 +1,6 @@
 use std::net::{Ipv6Addr, SocketAddrV6};
 use std::io::*;
-use net2::TcpStreamExt;
+use socket2::{Socket, TcpKeepalive};
 use tokio::{net::TcpStream, io::{AsyncWriteExt, AsyncReadExt}};
 
 pub static MAGIC_FLAG : [u8;2] = [0x37, 0x37];
@@ -66,8 +66,10 @@ async fn tcp_transfer(stream : &mut TcpStream , addr : &Addr, address : &str , p
 	};
 
 	let raw_stream = client.into_std().unwrap();
-	raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-	let mut client = TcpStream::from_std(raw_stream).unwrap();
+	let socket = Socket::from(raw_stream);
+	let keepalive = TcpKeepalive::new().with_time(std::time::Duration::from_secs(10));
+	let _ = socket.set_tcp_keepalive(&keepalive);
+	let mut client = TcpStream::from_std(socket.into()).unwrap();
 
 	let remote_port = client.local_addr().unwrap().port();
 
