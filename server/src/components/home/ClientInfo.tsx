@@ -19,6 +19,7 @@ import {
   IconCameraPlus,
   IconVideo,
   IconRefresh,
+  IconMapPin,
 } from "@tabler/icons-react";
 
 export const ClientInfo = ({
@@ -97,6 +98,14 @@ export const ClientInfo = ({
     } else {
       return <IconDeviceDesktop size={20} className="text-gray-400" />;
     }
+  };
+
+  // Get country flag SVG path based on country code
+  const getCountryFlagPath = (countryCode: string) => {
+    if (!countryCode || countryCode === "N/A") return "";
+    
+    const code = countryCode.toLowerCase();
+    return `/country_flags/${code}.svg`;
   };
 
   return (
@@ -196,6 +205,49 @@ export const ClientInfo = ({
                     ) : (
                       <span className="text-gray-300">Standard User</span>
                     )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Location info */}
+            <div className="bg-primarybg rounded-lg p-3">
+              <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
+                <IconMapPin size={16} />
+                <span>LOCATION</span>
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <div className="text-xs text-gray-400">Country</div>
+                  <div className="text-sm">
+                    {client.country_code && client.country_code !== "N/A" ? (
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={getCountryFlagPath(client.country_code)}
+                          alt={client.country_code}
+                          className="w-6 h-4 object-cover"
+                        />
+                        <span>{client.country_code}</span>
+                      </div>
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Latitude</div>
+                  <div className="text-sm">
+                    {client.latitude && client.latitude !== "N/A" ? 
+                      parseFloat(client.latitude).toFixed(4) : "N/A"
+                    }
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Longitude</div>
+                  <div className="text-sm">
+                    {client.longitude && client.longitude !== "N/A" ? 
+                      parseFloat(client.longitude).toFixed(4) : "N/A"
+                    }
                   </div>
                 </div>
               </div>
