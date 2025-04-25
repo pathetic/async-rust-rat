@@ -13,7 +13,7 @@ pub fn process_list() -> ProcessList {
     for (pid, process) in s.processes() {
         let process: Process = Process {
             pid: pid.as_u32() as usize,
-            name: process.name().to_string(),
+            name: process.name().to_string_lossy().to_string(),
         };
 
         process_list.processes.push(process);

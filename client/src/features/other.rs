@@ -77,7 +77,7 @@ pub fn client_info(group: String) -> ClientInfo{
     }
 
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
-    s.refresh_cpu();
+    s.refresh_cpu_all();
 
     let installed_avs = get_installed_avs();
 
