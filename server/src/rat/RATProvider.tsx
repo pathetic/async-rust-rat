@@ -170,6 +170,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         }
 
         if (type == "client_connected") {
+          console.log(client);
           setClientList((prevClients) => [...prevClients, client]);
         }
 

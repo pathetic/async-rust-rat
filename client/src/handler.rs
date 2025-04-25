@@ -15,7 +15,6 @@ use crate::features::reverse_proxy::ReverseProxy;
 use common::connection::{ConnectionReader, ConnectionWriter};
 use crate::service::config::get_config;
 use crate::REVERSE_SHELL;
-use minreq;
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)
@@ -34,37 +33,7 @@ pub async fn reading_loop(
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
-                let mut client_info = client_info(config.group.clone());
-                
-                // Fetch geolocation data using minreq (blocking, but in an async context)
-                println!("Attempting to fetch geolocation data...");
-                // Need to run blocking HTTP request in a tokio blocking task
-                let geo_result = tokio::task::spawn_blocking(move || {
-                    match minreq::get("http://ip-api.com/json/?fields=66842623&lang=en").send() {
-                        Ok(response) => {
-                            println!("Got response from IP API with status: {}", response.status_code);
-                            match response.as_str() {
-                                Ok(text) => {
-                                    println!("IP API response: {}", text);
-                                    Some(text.to_string())
-                                },
-                                Err(e) => {
-                                    println!("Error getting response text: {}", e);
-                                    None
-                                }
-                            }
-                        },
-                        Err(e) => {
-                            println!("Error fetching geolocation data: {}", e);
-                            None
-                        }
-                    }
-                }).await;
-                
-                // If we got a successful result, parse it
-                if let Ok(Some(text)) = geo_result {
-                    extract_geolocation_data(&text, &mut client_info);
-                }
+                let client_info = client_info(config.group.clone());
                 
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
@@ -239,72 +208,4 @@ pub async fn send_packet(packet: ServerboundPacket) -> Result<(), String> {
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     }    
     Err("Packet sender not initialized after multiple attempts".to_string())
-}
-
-fn extract_geolocation_data(text: &str, client_info: &mut common::packets::ClientInfo) {
-    // Simple manual parsing of the JSON response from ip-api.com
-    // Looking for "countryCode", "lat", and "lon" fields
-    let text = text.trim();
-    
-    // Simple JSON field extraction helper
-    let extract_string_field = |json: &str, field: &str| -> Option<String> {
-        let field_with_quotes = format!("\"{}\"", field);
-        if let Some(idx) = json.find(&field_with_quotes) {
-            let start_idx = idx + field_with_quotes.len();
-            let value_start = json[start_idx..].find(":").map(|i| i + start_idx + 1)?;
-            let value_str = json[value_start..].trim_start();
-            
-            if value_str.starts_with('"') {
-                // String value
-                let content_start = value_start + 1;
-                let content_end = content_start + json[content_start..].find('"')?;
-                return Some(json[content_start..content_end].to_string());
-            }
-        }
-        None
-    };
-    
-    let extract_float_field = |json: &str, field: &str| -> Option<f64> {
-        let field_with_quotes = format!("\"{}\"", field);
-        if let Some(idx) = json.find(&field_with_quotes) {
-            let start_idx = idx + field_with_quotes.len();
-            let value_start = json[start_idx..].find(":").map(|i| i + start_idx + 1)?;
-            let value_str = json[value_start..].trim_start();
-            
-            if !value_str.starts_with('"') {
-                // Number value
-                let end_markers = [',', '}'];
-                let content_end = end_markers.iter()
-                    .filter_map(|&marker| json[value_start..].find(marker).map(|i| i + value_start))
-                    .min()?;
-                let number_str = json[value_start..content_end].trim();
-                return number_str.parse::<f64>().ok();
-            }
-        }
-        None
-    };
-    
-    // Extract the country code
-    if let Some(cc) = extract_string_field(text, "countryCode") {
-        println!("Found country code: {}", cc);
-        client_info.country_code = cc;
-    } else {
-        println!("Country code not found in response");
-    }
-    
-    // Extract latitude
-    if let Some(lat) = extract_float_field(text, "lat") {
-        println!("Found latitude: {}", lat);
-        client_info.latitude = lat;
-    } else {
-        println!("Latitude not found in response");
-    }
-    
-    // Extract longitude
-    if let Some(lon) = extract_float_field(text, "lon") {
-        println!("Found longitude: {}", lon);
-        client_info.longitude = lon;
-    } else {
-        println!("Longitude not found in response");
-    }
 }

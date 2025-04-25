@@ -18,7 +18,6 @@ net2 = "0.2.39"
 wmi = "0.17.0"
 serde = { version = "1.0", features = ["derive"] }
 nokhwa = { version = "0.10.7", features = ["input-native"] }
-minreq = "2.11"
 
 [profile.release]
 lto = true
