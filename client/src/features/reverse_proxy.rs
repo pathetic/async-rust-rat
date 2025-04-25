@@ -1,5 +1,5 @@
 use tokio::{io::AsyncReadExt, task, net::TcpStream};
-use net2::TcpStreamExt;
+use socket2::{Socket, TcpKeepalive};
 use common::socks::MAGIC_FLAG;
 
 pub struct ReverseProxy {
@@ -30,8 +30,10 @@ impl ReverseProxy {
             };
 
             let raw_stream = master_stream.into_std().unwrap();
-            raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-            let mut master_stream = TcpStream::from_std(raw_stream).unwrap();
+            let socket = Socket::from(raw_stream);
+            let keepalive = TcpKeepalive::new().with_time(std::time::Duration::from_secs(10));
+            let _ = socket.set_tcp_keepalive(&keepalive);
+            let mut master_stream = TcpStream::from_std(socket.into()).unwrap();
 
             loop {
                 let mut buf = [0u8 ; 1];
@@ -51,8 +53,10 @@ impl ReverseProxy {
                     };
     
                     let raw_stream = stream.into_std().unwrap();
-                    raw_stream.set_keepalive(Some(std::time::Duration::from_secs(10))).unwrap();
-                    let stream = TcpStream::from_std(raw_stream).unwrap();
+                    let socket = Socket::from(raw_stream);
+                    let keepalive = TcpKeepalive::new().with_time(std::time::Duration::from_secs(10));
+                    let _ = socket.set_tcp_keepalive(&keepalive);
+                    let stream = TcpStream::from_std(socket.into()).unwrap();
     
                     task::spawn(async {
                         common::socks::socksv5_handle(stream).await;

