@@ -9,13 +9,13 @@ export const CpuSvg = () => {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="-14.4 -14.4 208.80 208.80"
       stroke="#ffffff"
-      stroke-width="3.78"
+      strokeWidth="3.78"
     >
-      <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       ></g>
       <g id="SVGRepo_iconCarrier">
         {" "}
@@ -37,13 +37,13 @@ export const RamSvg = () => {
       viewBox="-20.58 -20.58 298.47 298.47"
       stroke="#ffffff"
       transform="matrix(1, 0, 0, 1, 0, 0)"
-      stroke-width="7.204652000000001"
+      strokeWidth="7.204652000000001"
     >
-      <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       ></g>
       <g id="SVGRepo_iconCarrier">
         {" "}
@@ -66,13 +66,13 @@ export const GpuSvg = () => {
       viewBox="0 0 233.039 233.039"
       xmlSpace="preserve"
       stroke="#ffffff"
-      stroke-width="3.2625460000000004"
+      strokeWidth="3.2625460000000004"
     >
-      <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       ></g>
       <g id="SVGRepo_iconCarrier">
         {" "}
@@ -93,13 +93,13 @@ export const StorageSvg = () => {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 200 200"
       stroke="#ffffff"
-      stroke-width="5.6000000000000005"
+      strokeWidth="5.6000000000000005"
     >
-      <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       ></g>
       <g id="SVGRepo_iconCarrier">
         {" "}

@@ -10,7 +10,9 @@ import {
   Log,
 } from "../../types";
 import { fetchStateCmd } from "./RATCommands";
-import { WebviewWindow } from "@tauri-apps/api/window";
+
+import { Window } from "@tauri-apps/api/window";
+import { Webview } from "@tauri-apps/api/webview";
 
 const translateWindowType = (type: string) => {
   switch (type) {
@@ -95,32 +97,19 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     });
   };
 
-  const cleanupClientWindowByType = async (addr: string, type: string) => {
-    Object.values(clientWindows).forEach((window) => {
-      if (window.addr?.includes(addr) && window.type === type) {
-        window.window.emit("close_window");
-      }
-    });
-
-    setClientWindows((prevWindows) => {
-      const newWindows = prevWindows.filter(
-        (window) => window.addr !== addr && window.type !== type
-      );
-      return newWindows;
-    });
-  };
-
   const cleanupClientWindows = async (addr: string) => {
     setClientWindows((prevWindows) => {
       prevWindows.forEach((window) => {
         if (window.addr.includes(addr)) {
-          window.window.emit("close_window");
+          window.window.close();
         }
       });
 
       return prevWindows.filter((window) => window.addr !== addr);
     });
   };
+
+  console.log(clientWindows);
 
   const openClientWindow = async (
     addr: string,
@@ -132,36 +121,64 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
       const windowId = `${type}-${Date.now()}`;
 
-      const window = new WebviewWindow(windowId, {
-        url: fullUrl,
-        title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
+      const windowParent = new Window(windowId, {
         width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
         height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+        title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
         resizable: true,
         center: true,
+        closable: true,
       });
 
-      let newWindow: ClientWindowType = { window, addr, type, id: windowId };
+      windowParent.once("tauri://created", function () {
+        const window = new Webview(windowParent, windowId, {
+          url: fullUrl,
+          x: 0,
+          y: 0,
+          width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
+          height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+        });
+
+        window.once("tauri://created", function () {});
+
+        window.once("tauri://error", function (e) {});
+
+        windowParent.once("tauri://close-requested", async () => {
+          windowParent.emit("close_window").then(() => {
+            setClientWindows((prevWindows) => {
+              const newWindows = prevWindows.filter(
+                (window) => window.addr !== addr && window.type !== type
+              );
+              return newWindows;
+            });
+            windowParent.close();
+          });
+        });
+      });
+
+      let newWindow: ClientWindowType = {
+        window: windowParent,
+        addr,
+        type,
+        id: windowId,
+      };
 
       setClientWindows((prevWindows) => [...prevWindows, newWindow]);
 
-      window.once("tauri://close-requested", async () => {
-        await cleanupClientWindowByType(addr, type);
-      });
-
-      return window;
+      return windowParent;
     } catch (error) {
       console.error(`Failed to open ${type} window for client ${addr}:`, error);
     }
   };
 
   async function waitNotification(type: string) {
+    let genericStyle = "!bg-white !text-black !rounded-2xl !border-accentx";
+
     listen(type, async (event) => {
       if (type == "client_connected" || type == "client_disconnected") {
         const client = event.payload as RATClient;
         let icon = type == "client_connected" ? "🤙" : "👋";
         let message = type == "client_connected" ? "connected" : "disconnected";
-        let style = "!bg-white !text-black !rounded-2xl !border-accentx";
 
         let toast_message = `Client ${client.username} has ${message}!`;
 
@@ -170,7 +187,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         }
 
         if (type == "client_connected") {
-          console.log(client);
           setClientList((prevClients) => [...prevClients, client]);
         }
 
@@ -181,7 +197,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         }
 
         if (notificationClientRef.current)
-          customToast(icon, toast_message, style);
+          customToast(icon, toast_message, genericStyle);
       }
       if (type == "server_log") {
         const { event_type, message } = event.payload as Log;
@@ -189,35 +205,19 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         setServerLogs((prevLogs) => [log, ...prevLogs]);
 
         if (event_type == "server_error") {
-          customToast(
-            "❌",
-            message,
-            "!bg-white !text-black !rounded-2xl !border-accentx"
-          );
+          customToast("❌", message, genericStyle);
         }
 
         if (event_type == "build_client") {
-          customToast(
-            "🔨",
-            message,
-            "!bg-white !text-black !rounded-2xl !border-accentx"
-          );
+          customToast("🔨", message, genericStyle);
         }
 
         if (event_type == "build_finished") {
-          customToast(
-            "🔨",
-            message,
-            "!bg-white !text-black !rounded-2xl !border-accentx"
-          );
+          customToast("🔨", message, genericStyle);
         }
 
         if (event_type == "build_failed") {
-          customToast(
-            "❌",
-            message,
-            "!bg-white !text-black !rounded-2xl !border-accentx"
-          );
+          customToast("❌", message, genericStyle);
         }
       }
     });

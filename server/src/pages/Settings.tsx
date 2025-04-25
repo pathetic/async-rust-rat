@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   IconBell,
   IconBellOff,
@@ -25,7 +25,7 @@ import {
 
 import { RATContext } from "../rat/RATContext";
 import { AssemblyInfo } from "../../types";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { buildClientCmd } from "../rat/RATCommands";
 
 export const Settings = () => {
