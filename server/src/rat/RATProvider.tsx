@@ -109,8 +109,6 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     });
   };
 
-  console.log(clientWindows);
-
   const openClientWindow = async (
     addr: string,
     type: string,

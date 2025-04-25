@@ -90,6 +90,7 @@ export const readFilesCmd = async (
   run: string,
   path: string
 ): Promise<Array<string>> => {
+  console.log("readFilesCmd", addr, run, path);
   return invoke("read_files", { addr, run, path });
 };
 
