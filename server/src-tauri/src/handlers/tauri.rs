@@ -22,7 +22,7 @@ use once_cell::sync::OnceCell;
 use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
 use common::packets::{
     ClientInfo, KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
-    VisitWebsiteData,
+    VisitWebsiteData, FileData
 };
 
 use std::process::Command;
