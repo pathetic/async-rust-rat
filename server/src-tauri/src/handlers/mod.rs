@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
-use std::sync::{ Arc, Mutex };
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 pub mod tauri;
-use tokio::sync::mpsc::Sender;
-use once_cell::sync::OnceCell;
 use crate::commands::ServerCommand;
+use once_cell::sync::OnceCell;
+use tokio::sync::mpsc::Sender;
 
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 

