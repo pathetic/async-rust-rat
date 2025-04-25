@@ -1,5 +1,5 @@
 import React from "react";
-import { WebviewWindow } from "@tauri-apps/api/window";
+import { Window } from "@tauri-apps/api/webview";
 
 export type RATState = {
   running: boolean;
@@ -21,7 +21,7 @@ export type RATContextType = {
     addr: string,
     type: string,
     clientFullName: string
-  ) => Promise<WebviewWindow | undefined>;
+  ) => Promise<Window | undefined>;
   serverLogs: Array<Log>;
 };
 
@@ -51,7 +51,7 @@ export type RATClient = {
 export type ClientWindowType = {
   id: string;
   addr: string;
-  window: WebviewWindow;
+  window: Window;
   type: string;
 };
 

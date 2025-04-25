@@ -11,7 +11,7 @@ pub fn get_installed_avs() -> Vec<String> {
     // Initialize COM
     let com_con = match COMLibrary::new() {
         Ok(c) => c,
-        Err(e) => {
+        Err(_e) => {
             return Vec::new();
         },
     };

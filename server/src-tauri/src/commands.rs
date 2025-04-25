@@ -2,9 +2,9 @@
 use common::packets::*;
 use std::net::SocketAddr;
 
-use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
 use crate::utils::logger::Log;
 use tauri::AppHandle;
+use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
 
 /// Commands sent to client-server connection handlers.
 #[derive(Debug)]
@@ -52,7 +52,6 @@ pub enum ServerCommand {
 
     ElevateClient(SocketAddr),
 
-    
     ManageSystem(SocketAddr, String),
 
     GetProcessList(SocketAddr),

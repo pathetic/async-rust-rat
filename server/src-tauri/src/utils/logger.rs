@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Log {
@@ -16,15 +16,25 @@ pub struct Logger {
 
 impl Logger {
     pub fn new() -> Self {
-        Self { logs: Vec::new(), tauri_handle: None }
+        Self {
+            logs: Vec::new(),
+            tauri_handle: None,
+        }
     }
-    
+
     pub async fn log(&mut self, event_type: &str, message: String) {
-        let log = Log { event_type: event_type.to_string(), message: message };
+        let log = Log {
+            event_type: event_type.to_string(),
+            message: message,
+        };
         self.logs.push(log.clone());
 
         if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            handle
+                .lock()
+                .unwrap()
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
         }
     }
 
@@ -32,7 +42,11 @@ impl Logger {
         self.logs.push(log.clone());
 
         if let Some(handle) = &self.tauri_handle {
-            handle.lock().unwrap().emit_all("server_log", log).unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
+            handle
+                .lock()
+                .unwrap()
+                .emit("server_log", log)
+                .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
         }
     }
 }

@@ -1,8 +1,7 @@
 import { useEffect, ReactNode } from "react";
 import { WindowWrapperProps } from "../../types";
-import { getCurrent } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import { useParams } from "react-router-dom";
+import { listen } from "@tauri-apps/api/event";
 
 export interface WindowWrapperComponentProps
   extends Omit<WindowWrapperProps, "feature_cleanup"> {
@@ -17,51 +16,22 @@ export const WindowWrapper = ({
   const params = useParams();
 
   useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
+    let unlistenCustomClose: (() => void) | undefined;
 
-    let window = getCurrent();
-
-    listen("close_window", () => {
-      feature_cleanup(params);
-      window.close();
-    }).then((unlisten) => {
-      cleanupFn = unlisten;
-    });
-
-    return () => {
-      if (cleanupFn) cleanupFn();
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      feature_cleanup(params);
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  useEffect(() => {
-    const cleanup = async () => {
-      try {
-        const window = getCurrent();
-
-        await window.listen("tauri://close-requested", async () => {
+    const setup = async () => {
+      unlistenCustomClose = await listen("close_window", async () => {
+        try {
           feature_cleanup(params);
-          window.close();
-        });
-      } catch (error) {
-        console.error("Error setting up window close handler:", error);
-      }
+        } catch (e) {
+          console.error("Feature cleanup error:", e);
+        }
+      });
     };
 
-    cleanup();
+    setup();
 
     return () => {
+      if (unlistenCustomClose) unlistenCustomClose();
       feature_cleanup(params);
     };
   }, []);

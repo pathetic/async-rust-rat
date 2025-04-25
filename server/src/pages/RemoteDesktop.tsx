@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrent, WebviewWindow } from "@tauri-apps/api/window";
 import { useParams } from "react-router-dom";
 import {
   startRemoteDesktopCmd,
@@ -27,7 +26,6 @@ export const RemoteDesktop: React.FC = () => {
     width: 0,
     height: 0,
   });
-  const currentWindow = useRef<WebviewWindow | null>(null);
 
   // UI state
   const [showControls, setShowControls] = useState(true);
@@ -55,11 +53,6 @@ export const RemoteDesktop: React.FC = () => {
 
   // Additional state
   const [showKeyboardInfo, setShowKeyboardInfo] = useState(true);
-
-  // Initialize window reference
-  useEffect(() => {
-    currentWindow.current = getCurrent();
-  }, [addr]);
 
   // Initialize remote display and cleanup
   useEffect(() => {

