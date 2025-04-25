@@ -1,8 +1,10 @@
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use rand::{rngs::OsRng, Rng, SeedableRng};
-use rsa::{PaddingScheme, PublicKey, RsaPublicKey};
-use rand_chacha::ChaCha20Rng;
+use rsa::{RsaPublicKey, Pkcs1v15Encrypt};
+use rsa::pkcs8::DecodePublicKey;
+use rsa::rand_core::OsRng;
+use rand_chacha::{ChaCha20Rng, ChaCha8Rng};
+use rand::SeedableRng;
 use common::{connection::{Connection, ConnectionReader, ConnectionWriter}, packets::*};
 
 pub static SECRET: Lazy<Mutex<[u8; common::SECRET_LEN]>> = Lazy::new(||
@@ -59,7 +61,7 @@ pub async fn perform_encryption_handshake(
     {
         match p {
             ClientboundPacket::EncryptionResponse(pub_key_der, token_) => {
-                let pub_key = rsa::pkcs8::FromPublicKey::from_public_key_der(&pub_key_der)
+                let pub_key = RsaPublicKey::from_public_key_der(&pub_key_der)
                     .map_err(|_| "Failed to parse server public key")?;
                 assert_eq!(common::ENC_TOK_LEN, token_.len());
                 (pub_key, token_)
@@ -71,16 +73,16 @@ pub async fn perform_encryption_handshake(
     };
 
     let mut secret = [0u8; common::SECRET_LEN];
-    OsRng.fill(&mut secret);
+    for i in 0..common::SECRET_LEN {
+        secret[i] = rand::random::<u8>();
+    }
 
-    let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let enc_secret = pub_key
-        .encrypt(&mut OsRng, padding, &secret[..])
+        .encrypt(&mut OsRng, Pkcs1v15Encrypt, &secret[..])
         .map_err(|_| "Failed to encrypt secret")?;
     
-    let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let enc_token = pub_key
-        .encrypt(&mut OsRng, padding, &token[..])
+        .encrypt(&mut OsRng, Pkcs1v15Encrypt, &token[..])
         .map_err(|_| "Failed to encrypt token")?;
     
     writer

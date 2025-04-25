@@ -7,8 +7,9 @@ use tauri::{ AppHandle, Manager };
 
 use common::packets::ClientInfo;
 
-use rand::rngs::OsRng;
-use rsa::{pkcs8::ToPublicKey, RsaPrivateKey, RsaPublicKey};
+use rsa::{RsaPrivateKey, RsaPublicKey};
+use rsa::pkcs8::EncodePublicKey;
+use rsa::rand_core::{OsRng, CryptoRngCore};
 use base64::{engine::general_purpose, Engine as _};
 
 use common::packets::*;
@@ -36,9 +37,8 @@ impl ServerWrapper {
     pub async fn spawn(receiver: Receiver<ServerCommand>) -> Result<()> {
         let txs: HashMap<std::net::SocketAddr, Sender<ClientCommand>> = HashMap::new();
         let connected_users: HashMap<std::net::SocketAddr, ClientInfo> = HashMap::new();
-        let mut rng = OsRng;
         let priv_key =
-            RsaPrivateKey::new(&mut rng, RSA_BITS).with_context(|| "Failed to generate a key.")?;
+            RsaPrivateKey::new(&mut OsRng, RSA_BITS).with_context(|| "Failed to generate a key.")?;
         let pub_key = RsaPublicKey::from(&priv_key);
 
         let country_reader = maxminddb::Reader::open_readfile(
@@ -148,7 +148,8 @@ impl ServerWrapper {
                 
                 // Client connection handling
                 EncryptionRequest(tx, otx) => {
-                    handle_encryption_request(tx, otx, self.pub_key.to_public_key_der().unwrap().as_ref().to_vec()).await;
+                    let pub_key_der = self.pub_key.to_public_key_der().unwrap();
+                    handle_encryption_request(tx, otx, pub_key_der.as_ref().to_vec()).await;
                 }
                 
                 EncryptionConfirm(tx, otx, enc_s, enc_t, exp_t) => {
@@ -255,7 +256,7 @@ impl ServerWrapper {
                         "addr": addr.to_string(),
                         "data": general_purpose::STANDARD.encode(&data)
                     })).await;
-                }
+                },
                 
                 // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {
