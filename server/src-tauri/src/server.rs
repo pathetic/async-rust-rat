@@ -30,6 +30,7 @@ pub struct ServerWrapper {
     tauri_handle: Option<Arc<Mutex<AppHandle>>>,
     reverse_proxy_tasks: HashMap<std::net::SocketAddr, tokio::task::JoinHandle<()>>,
     log_events: Logger,
+    country_reader: maxminddb::Reader<Vec<u8>>,
 }
 
 impl ServerWrapper {
@@ -40,6 +41,11 @@ impl ServerWrapper {
             RsaPrivateKey::new(&mut OsRng, RSA_BITS).with_context(|| "Failed to generate a key.")?;
         let pub_key = RsaPublicKey::from(&priv_key);
 
+        let country_reader = maxminddb::Reader::open_readfile(
+            "Country.mmdb"
+        )
+        .unwrap();
+
         let s = Self {
             receiver,
             txs,
@@ -49,6 +55,7 @@ impl ServerWrapper {
             tauri_handle: None,
             reverse_proxy_tasks: HashMap::new(),
             log_events: Logger::new(),
+            country_reader,
         };
 
         s.channel_loop().await;
@@ -106,6 +113,15 @@ impl ServerWrapper {
         }
     }
 
+    async fn get_country_code(&self, addr: &SocketAddr) -> String {
+        let country = self.country_reader.lookup::<maxminddb::geoip2::Country>(addr.ip()).unwrap();
+        if let Some(country) = country {
+            country.country.unwrap().iso_code.unwrap().to_string()
+        } else {
+            "N/A".to_string()
+        }
+    }
+
     async fn channel_loop(mut self) {
         while let Some(p) = self.receiver.recv().await {
             use crate::commands::ServerCommand::*;
@@ -144,6 +160,8 @@ impl ServerWrapper {
                     self.txs.insert(addr, tx);
                     client_info.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
                     client_info.addr = Some(addr.to_string());
+                    client_info.country_code = self.get_country_code(&addr).await;
+                    
                     self.connected_users.insert(addr, client_info.clone());
                 
                     self.log_events.log("client_connected", format!("Client [{}] {} connected!", addr, client_info.username)).await;

