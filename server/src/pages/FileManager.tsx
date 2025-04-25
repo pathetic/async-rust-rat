@@ -1,9 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FileType } from "../../types";
-import { readFilesCmd, manageFileCmd, uploadAndExecute, executeFile } from "../rat/RATCommands";
+import {
+  readFilesCmd,
+  manageFileCmd,
+  uploadAndExecute,
+  executeFile,
+} from "../rat/RATCommands";
 import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   IconFolderFilled,
   IconFileFilled,
@@ -28,13 +33,7 @@ import {
   IconDotsVertical,
   IconFileUpload,
 } from "@tabler/icons-react";
-import { invoke } from "@tauri-apps/api/tauri";
-
-let fileIcon = {
-  dir: <IconFolderFilled size={24} className="text-accentx" />,
-  file: <IconFileFilled size={24} className="text-gray-300" />,
-  back: <IconArrowLeft size={24} className="text-accentx" />,
-};
+import { invoke } from "@tauri-apps/api/core";
 
 export const FileManager = () => {
   const { addr } = useParams();
@@ -87,15 +86,17 @@ export const FileManager = () => {
   }
 
   useEffect(() => {
-    fetchFolder("disks");
+    invoke("read_files", { addr, run: "available_disks", path: "disks" });
+  }, []);
 
+  useEffect(() => {
     // Handle clicks outside the context menu
     const handleClickOutside = (event: MouseEvent) => {
       if (
         contextMenuRef.current &&
         !contextMenuRef.current.contains(event.target as Node)
       ) {
-        setContextMenu(prev => ({ ...prev, visible: false }));
+        setContextMenu((prev) => ({ ...prev, visible: false }));
       }
     };
 
@@ -107,7 +108,9 @@ export const FileManager = () => {
 
   useEffect(() => {
     let unlisten = listen("files_result", (event: any) => {
+      console.log(event);
       if (event.payload.addr === addr) {
+        console.log(event.payload.files);
         setFiles(event.payload.files);
         setLoading(false);
       }
@@ -182,19 +185,21 @@ export const FileManager = () => {
     if (selected && !Array.isArray(selected)) {
       try {
         // Read the file content
-        const fileData = await invoke("read_file_for_upload", { filePath: selected });
-        
+        const fileData = await invoke("read_file_for_upload", {
+          filePath: selected,
+        });
+
         // Get just the filename from the path
         const fileName = selected.split(/[\\\/]/).pop();
-        
+
         // Send the file to the client
-        await invoke("upload_file_to_folder", { 
-          addr, 
+        await invoke("upload_file_to_folder", {
+          addr,
           targetFolder: path,
           fileName,
-          fileData 
+          fileData,
         });
-        
+
         // Refresh the directory after upload
         await readFilesCmd(addr, "view_dir", path.split("\\").pop() || "");
       } catch (error) {
@@ -206,17 +211,17 @@ export const FileManager = () => {
 
   const handleContextMenu = (e: React.MouseEvent, fileName: string) => {
     e.preventDefault();
-    
+
     // Get the position for the context menu
     const x = e.clientX;
     const y = e.clientY;
-    
+
     // Set the context menu information
     setContextMenu({
       visible: true,
       x,
       y,
-      fileName
+      fileName,
     });
   };
 
@@ -290,30 +295,30 @@ export const FileManager = () => {
           className="fixed z-50 bg-secondarybg border border-gray-700 rounded-md shadow-xl"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
-          <ul className="py-1">
-            <li 
+          <ul>
+            <li
               className="px-4 py-2 hover:bg-accentx hover:text-white flex items-center gap-2 cursor-pointer text-sm"
               onClick={() => {
                 executeRemoteFile(contextMenu.fileName);
-                setContextMenu(prev => ({ ...prev, visible: false }));
+                setContextMenu((prev) => ({ ...prev, visible: false }));
               }}
             >
               <IconPlayerPlay size={16} /> Execute File
             </li>
-            <li 
+            <li
               className="px-4 py-2 hover:bg-accentx hover:text-white flex items-center gap-2 cursor-pointer text-sm"
               onClick={() => {
                 manageFile("download_file", contextMenu.fileName);
-                setContextMenu(prev => ({ ...prev, visible: false }));
+                setContextMenu((prev) => ({ ...prev, visible: false }));
               }}
             >
               <IconDownload size={16} /> Download File
             </li>
-            <li 
+            <li
               className="px-4 py-2 hover:bg-red-900 hover:text-white flex items-center gap-2 cursor-pointer text-sm"
               onClick={() => {
                 manageFile("remove_file", contextMenu.fileName);
-                setContextMenu(prev => ({ ...prev, visible: false }));
+                setContextMenu((prev) => ({ ...prev, visible: false }));
               }}
             >
               <IconTrash size={16} /> Delete File
@@ -338,7 +343,7 @@ export const FileManager = () => {
             <IconUpload size={14} />
             Upload & Execute
           </button>
-          
+
           <button
             className="cursor-pointer px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
             onClick={uploadFileToCurrentFolder}
@@ -347,7 +352,7 @@ export const FileManager = () => {
             <IconFileUpload size={14} />
             Upload File
           </button>
-          
+
           <div className="text-sm text-gray-400 max-w-lg truncate">
             <span className="text-white mr-1">Current path:</span>{" "}
             {path || "Loading..."}
@@ -496,7 +501,7 @@ export const FileManager = () => {
                             visible: true,
                             x: rect.right,
                             y: rect.bottom,
-                            fileName: file.name
+                            fileName: file.name,
                           });
                         }}
                       >
@@ -513,7 +518,6 @@ export const FileManager = () => {
                       <div className="text-center mb-2 text-xs text-gray-400">
                         <em>Right-click for more options</em>
                       </div>
-                      {fileActions(file.file_type, file.name)}
                     </div>
                   </div>
                 ))}

