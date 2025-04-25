@@ -5,6 +5,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 
+
 pub async fn start_reverse_proxy(
     port: String,
     local_port: String,
@@ -27,6 +28,7 @@ pub async fn start_reverse_proxy(
     };
 
     let raw_stream = slave_stream.into_std().unwrap();
+
     raw_stream
         .set_keepalive(Some(std::time::Duration::from_secs(10)))
         .unwrap();
@@ -43,11 +45,13 @@ pub async fn start_reverse_proxy(
         loop {
             let (stream, _) = listener.accept().await.unwrap();
 
-            let raw_stream = stream.into_std().unwrap();
-            raw_stream
-                .set_keepalive(Some(std::time::Duration::from_secs(10)))
-                .unwrap();
-            let mut stream = TcpStream::from_std(raw_stream).unwrap();
+
+        let raw_stream = stream.into_std().unwrap();
+        let socket = Socket::from(raw_stream);
+        let keepalive = TcpKeepalive::new().with_time(std::time::Duration::from_secs(10));
+        let _ = socket.set_tcp_keepalive(&keepalive);
+        let mut stream = TcpStream::from_std(socket.into()).unwrap();
+
 
             if let Err(_e) = slave_stream.write_all(&[MAGIC_FLAG[0]]).await {
                 break;
@@ -60,11 +64,13 @@ pub async fn start_reverse_proxy(
                 Ok(p) => p,
             };
 
-            let raw_stream = proxy_stream.into_std().unwrap();
-            raw_stream
-                .set_keepalive(Some(std::time::Duration::from_secs(10)))
-                .unwrap();
-            let mut proxy_stream = TcpStream::from_std(raw_stream).unwrap();
+
+        let raw_stream = proxy_stream.into_std().unwrap();
+        let socket = Socket::from(raw_stream);
+        let keepalive = TcpKeepalive::new().with_time(std::time::Duration::from_secs(10));
+        let _ = socket.set_tcp_keepalive(&keepalive);
+        let mut proxy_stream = TcpStream::from_std(socket.into()).unwrap();
+
 
             let _task = tokio::spawn(async move {
                 let mut buf1 = [0u8; 1024];

