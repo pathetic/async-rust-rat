@@ -19,8 +19,6 @@ pub struct ClientInfo {
     pub reverse_proxy_port: String,
     pub installed_avs: Vec<String>,
     pub country_code: String,
-    pub latitude: f64,
-    pub longitude: f64,
 }
 
 pub trait Packet {
