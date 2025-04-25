@@ -1,14 +1,14 @@
 use crate::handlers::AssemblyInfo;
 use serde::Serialize;
-use std::vec;
 use std::fs;
+use std::vec;
 
-use object::{ Object, ObjectSection };
+use common::ClientConfig;
+use object::{Object, ObjectSection};
+use rmp_serde::Serializer;
 use std::fs::File;
 use std::io::Write;
-use rmp_serde::Serializer;
 use std::process::Command;
-use common::ClientConfig;
 
 pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
     let bin_data = fs::read("target/debug/client.exe").unwrap();
@@ -40,8 +40,12 @@ pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn apply_rcedit(assembly_info: &AssemblyInfo, enable_icon: bool, icon_path: &str) -> Result<(), String> {
-    let mut cmd = Command::new("target/rcedit.exe");
+pub async fn apply_rcedit(
+    assembly_info: &AssemblyInfo,
+    enable_icon: bool,
+    icon_path: &str,
+) -> Result<(), String> {
+    let mut cmd = Command::new("rcedit.exe");
 
     cmd.arg("target/debug/Client_built.exe");
 
@@ -50,31 +54,44 @@ pub async fn apply_rcedit(assembly_info: &AssemblyInfo, enable_icon: bool, icon_
     }
 
     if assembly_info.assembly_name != "" {
-        cmd.arg("--set-version-string").arg("ProductName").arg(&assembly_info.assembly_name);
+        cmd.arg("--set-version-string")
+            .arg("ProductName")
+            .arg(&assembly_info.assembly_name);
     }
 
     if assembly_info.assembly_description != "" {
-        cmd.arg("--set-version-string").arg("FileDescription").arg(&assembly_info.assembly_description);
+        cmd.arg("--set-version-string")
+            .arg("FileDescription")
+            .arg(&assembly_info.assembly_description);
     }
 
     if assembly_info.assembly_company != "" {
-        cmd.arg("--set-version-string").arg("CompanyName").arg(&assembly_info.assembly_company);
+        cmd.arg("--set-version-string")
+            .arg("CompanyName")
+            .arg(&assembly_info.assembly_company);
     }
-    
+
     if assembly_info.assembly_copyright != "" {
-        cmd.arg("--set-version-string").arg("LegalCopyright").arg(&assembly_info.assembly_copyright);
+        cmd.arg("--set-version-string")
+            .arg("LegalCopyright")
+            .arg(&assembly_info.assembly_copyright);
     }
 
     if assembly_info.assembly_trademarks != "" {
-        cmd.arg("--set-version-string").arg("LegalTrademarks").arg(&assembly_info.assembly_trademarks);
+        cmd.arg("--set-version-string")
+            .arg("LegalTrademarks")
+            .arg(&assembly_info.assembly_trademarks);
     }
 
     if assembly_info.assembly_original_filename != "" {
-        cmd.arg("--set-version-string").arg("OriginalFilename").arg(&assembly_info.assembly_original_filename);
+        cmd.arg("--set-version-string")
+            .arg("OriginalFilename")
+            .arg(&assembly_info.assembly_original_filename);
     }
 
     if assembly_info.assembly_file_version != "" {
-        cmd.arg("--set-file-version").arg(&assembly_info.assembly_file_version);
+        cmd.arg("--set-file-version")
+            .arg(&assembly_info.assembly_file_version);
     }
 
     let status = cmd.status().unwrap();
@@ -88,15 +105,15 @@ pub async fn apply_rcedit(assembly_info: &AssemblyInfo, enable_icon: bool, icon_
 
 pub async fn open_explorer(path: &str) -> Result<(), String> {
     let written_file_path = std::fs::canonicalize(path)
-    .map_err(|e| format!("Failed to get full path: {}", e))?
-    .to_string_lossy()
-    .replace(r"\\?\", "");
+        .map_err(|e| format!("Failed to get full path: {}", e))?
+        .to_string_lossy()
+        .replace(r"\\?\", "");
 
     let _ = Command::new("explorer")
-    .arg("/select,")
-    .arg(&written_file_path)
-    .status()
-    .map_err(|e| format!("Failed to open explorer: {}", e));
+        .arg("/select,")
+        .arg(&written_file_path)
+        .status()
+        .map_err(|e| format!("Failed to open explorer: {}", e));
 
     Ok(())
 }

