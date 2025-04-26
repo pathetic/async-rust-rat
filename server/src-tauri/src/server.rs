@@ -200,7 +200,7 @@ impl ServerWrapper {
                     client_info.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
                     client_info.addr = Some(addr.to_string());
                     client_info.country_code = self.get_country_code(&addr).await;
-
+                    
                     self.connected_users.insert(addr, client_info.clone());
 
                     self.log_events

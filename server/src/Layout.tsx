@@ -5,6 +5,7 @@ import {
   IconShieldFilled,
   IconCopyright,
   IconHistory,
+  IconWorld,
 } from "@tabler/icons-react";
 
 import { RATContext } from "./rat/RATContext";
@@ -98,6 +99,12 @@ export const Layout = () => {
           label="Clients"
           to="/"
           active={location.pathname === "/"}
+        />
+        <SidebarButton
+          icon={IconWorld}
+          label="World Map"
+          to="/worldmap"
+          active={location.pathname === "/worldmap"}
         />
         <SidebarButton
           icon={IconHistory}

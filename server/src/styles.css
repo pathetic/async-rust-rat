@@ -33,8 +33,32 @@ html {
     background-color: #b1b1b1; /* light thumb */
     border-radius: 8px;
   }
-
   
+  .clients-table {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #007 white; /* Firefox */
+    overflow: auto; /* Make sure overflow is on */
+  }
+  
+  /* Webkit browsers (Chrome, Edge, Safari) */
+  .clients-table::-webkit-scrollbar {
+    width: 8px;
+    background: white;
+  }
+  
+  .clients-table::-webkit-scrollbar-thumb {
+    background-color: #007;
+    border-radius: 8px;
+    border: 2px solid white; /* nice gap between thumb and track */
+  }
+  
+  /* Remove scrollbar buttons (top/bottom arrows) if they exist */
+  .clients-table::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   * {
     user-select: none;
   }
@@ -59,4 +83,22 @@ html {
     font-family: "firacode";
     display: swap;
     src: url("../fonts/FiraCodeNerdFontMono-Regular.ttf");
+}
+
+.world-map svg {
+  stroke: #fff;
+  stroke-width: 0.4px;
+}
+
+.world-map svg path {
+  fill: var(--color-primarybg); /* default background color */
+  cursor: pointer;
+  outline: none;
+  transition: fill 0.3s ease;
+}
+
+/* Hover effect */
+.world-map svg path:hover {
+  fill: var(--color-accentx);
+  cursor: default !important;
 }
