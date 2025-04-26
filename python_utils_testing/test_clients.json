@@ -1,0 +1,1315 @@
+[
+    {
+        "addr": "127.0.0.1:40773",
+        "country_code": "AU",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-b9df7a",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": true,
+        "os": "macOS Ventura",
+        "ram": "39.5 GB",
+        "reverse_proxy_port": "3732",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user31",
+        "uuidv4": "90be92c9-aecf-40e0-9a89-2be874648631"
+    },
+    {
+        "addr": "127.0.0.1:37180",
+        "country_code": "RU",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-b73962",
+        "installed_avs": [
+            "Windows Defender"
+        ],
+        "is_elevated": true,
+        "os": "Windows 11 (22621)",
+        "ram": "101.3 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "2 TB SSD",
+            "1.5 TB SATA",
+            "256 GB NVMe"
+        ],
+        "username": "user80",
+        "uuidv4": "9732888b-f9f2-4b00-b046-25cb2a6f1ad8"
+    },
+    {
+        "addr": "127.0.0.1:52208",
+        "country_code": "GB",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-514aa9",
+        "installed_avs": [
+            "Windows Defender",
+            "Norton"
+        ],
+        "is_elevated": true,
+        "os": "Windows 11 (22621)",
+        "ram": "55.8 GB",
+        "reverse_proxy_port": "5884",
+        "storage": [
+            "2 TB SSD",
+            "1.5 TB SATA",
+            "1 TB HDD"
+        ],
+        "username": "user100",
+        "uuidv4": "d21718c7-ac6f-4741-a659-41f05fc6a8c4"
+    },
+    {
+        "addr": "127.0.0.1:39608",
+        "country_code": "BR",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "Intel Iris Xe",
+            "NVIDIA RTX 4090",
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Default",
+        "hostname": "host-7f4e8c",
+        "installed_avs": [
+            "Norton"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "26.1 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "512 GB SSD",
+            "1 TB HDD",
+            "1.5 TB SATA"
+        ],
+        "username": "user84",
+        "uuidv4": "6cd83788-7853-4e73-89c9-c788544840ec"
+    },
+    {
+        "addr": "127.0.0.1:40744",
+        "country_code": "GB",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Guests",
+        "hostname": "host-546391",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "Fedora 38",
+        "ram": "16.1 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1 TB HDD",
+            "2 TB SSD",
+            "256 GB NVMe"
+        ],
+        "username": "user55",
+        "uuidv4": "87f90dfa-11d9-4df1-9573-4453d506f20e"
+    },
+    {
+        "addr": "127.0.0.1:36639",
+        "country_code": "FR",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "NVIDIA RTX 4090",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-142d15",
+        "installed_avs": [
+            "Windows Defender",
+            "Norton"
+        ],
+        "is_elevated": false,
+        "os": "Windows 11 (22621)",
+        "ram": "107.5 GB",
+        "reverse_proxy_port": "9808",
+        "storage": [
+            "1.5 TB SATA",
+            "512 GB SSD"
+        ],
+        "username": "user93",
+        "uuidv4": "dd5bf621-0f4b-4231-a0b7-4a1f8db683ee"
+    },
+    {
+        "addr": "127.0.0.1:43328",
+        "country_code": "NL",
+        "cpu": "Apple M2 Max",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Admins",
+        "hostname": "host-21d89c",
+        "installed_avs": [
+            "Norton",
+            "Bitdefender"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "99.2 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1 TB HDD"
+        ],
+        "username": "user72",
+        "uuidv4": "02a44afd-129e-4844-bb3f-bbcd0ca36a09"
+    },
+    {
+        "addr": "127.0.0.1:51039",
+        "country_code": "KR",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-469714",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "50.8 GB",
+        "reverse_proxy_port": "7153",
+        "storage": [
+            "1 TB HDD",
+            "1.5 TB SATA"
+        ],
+        "username": "user43",
+        "uuidv4": "e7c12f72-7cc9-4311-8e22-d56ffb201589"
+    },
+    {
+        "addr": "127.0.0.1:32998",
+        "country_code": "CH",
+        "cpu": "Apple M2 Max",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Guests",
+        "hostname": "host-7236c0",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "22.2 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "512 GB SSD"
+        ],
+        "username": "user31",
+        "uuidv4": "4c69f75c-26c3-4b95-9a6c-5004f01668e8"
+    },
+    {
+        "addr": "127.0.0.1:54532",
+        "country_code": "CN",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-b319a3",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "44.6 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "2 TB SSD",
+            "1 TB HDD",
+            "512 GB SSD"
+        ],
+        "username": "user92",
+        "uuidv4": "43c4bdfa-3f7c-420d-9259-aad6284f2e86"
+    },
+    {
+        "addr": "127.0.0.1:30439",
+        "country_code": "NL",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Guests",
+        "hostname": "host-ec252a",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "87.5 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "2 TB SSD"
+        ],
+        "username": "user6",
+        "uuidv4": "af420faf-de94-4c00-b2e6-cfd24cd25b0b"
+    },
+    {
+        "addr": "127.0.0.1:32386",
+        "country_code": "CN",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-7249bd",
+        "installed_avs": [
+            "Avast",
+            "Bitdefender"
+        ],
+        "is_elevated": false,
+        "os": "macOS Ventura",
+        "ram": "38.9 GB",
+        "reverse_proxy_port": "3739",
+        "storage": [
+            "1.5 TB SATA",
+            "2 TB SSD",
+            "256 GB NVMe"
+        ],
+        "username": "user56",
+        "uuidv4": "92a83397-1fc4-4379-bf41-94580d7dbbcf"
+    },
+    {
+        "addr": "127.0.0.1:31721",
+        "country_code": "CN",
+        "cpu": "Intel Xeon W-2295",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "NVIDIA RTX 4090",
+            "Intel Iris Xe"
+        ],
+        "group": "Admins",
+        "hostname": "host-4001bd",
+        "installed_avs": [
+            "Bitdefender",
+            "McAfee"
+        ],
+        "is_elevated": false,
+        "os": "Fedora 38",
+        "ram": "66.4 GB",
+        "reverse_proxy_port": "6413",
+        "storage": [
+            "512 GB SSD"
+        ],
+        "username": "user81",
+        "uuidv4": "f73fdab7-2642-44f3-a680-a7c33516bce6"
+    },
+    {
+        "addr": "127.0.0.1:50875",
+        "country_code": "AU",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-4d064b",
+        "installed_avs": [
+            "Bitdefender",
+            "Windows Defender"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "105.1 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe",
+            "1 TB HDD",
+            "1.5 TB SATA"
+        ],
+        "username": "user33",
+        "uuidv4": "d9b203d5-4448-4abf-9a4a-fa9cfec7bc5f"
+    },
+    {
+        "addr": "127.0.0.1:38777",
+        "country_code": "GB",
+        "cpu": "Intel Xeon W-2295",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Admins",
+        "hostname": "host-396a80",
+        "installed_avs": [
+            "Kaspersky",
+            "Bitdefender"
+        ],
+        "is_elevated": true,
+        "os": "macOS Ventura",
+        "ram": "96.7 GB",
+        "reverse_proxy_port": "3666",
+        "storage": [
+            "2 TB SSD",
+            "1.5 TB SATA",
+            "256 GB NVMe"
+        ],
+        "username": "user82",
+        "uuidv4": "ff17fe91-2675-4aaa-99c1-9e7354d4739d"
+    },
+    {
+        "addr": "127.0.0.1:50953",
+        "country_code": "KR",
+        "cpu": "Apple M2 Max",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "Intel Iris Xe"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-bffad3",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": true,
+        "os": "Windows 10 (19045)",
+        "ram": "30.4 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1.5 TB SATA"
+        ],
+        "username": "user89",
+        "uuidv4": "eaa0e812-1c78-42b5-9f2d-d3b231465f32"
+    },
+    {
+        "addr": "127.0.0.1:10725",
+        "country_code": "CA",
+        "cpu": "Apple M2 Max",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-a44c95",
+        "installed_avs": [
+            "Kaspersky",
+            "Norton"
+        ],
+        "is_elevated": true,
+        "os": "macOS Ventura",
+        "ram": "48.9 GB",
+        "reverse_proxy_port": "3912",
+        "storage": [
+            "1.5 TB SATA",
+            "2 TB SSD",
+            "256 GB NVMe"
+        ],
+        "username": "user86",
+        "uuidv4": "009c6601-bc08-4104-8321-93b51a798ffa"
+    },
+    {
+        "addr": "127.0.0.1:30790",
+        "country_code": "SE",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Guests",
+        "hostname": "host-a19f28",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "70.6 GB",
+        "reverse_proxy_port": "2000",
+        "storage": [
+            "1 TB HDD"
+        ],
+        "username": "user38",
+        "uuidv4": "186ec0a3-5824-4b75-91b3-b5833f2a59b8"
+    },
+    {
+        "addr": "127.0.0.1:54205",
+        "country_code": "BR",
+        "cpu": "Apple M2 Max",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Admins",
+        "hostname": "host-d0cb5e",
+        "installed_avs": [
+            "Kaspersky",
+            "Windows Defender"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "116.6 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user17",
+        "uuidv4": "ab65d53e-17d5-4513-9ffc-e0c35d5aa94a"
+    },
+    {
+        "addr": "127.0.0.1:18357",
+        "country_code": "FR",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "NVIDIA RTX 4090",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Default",
+        "hostname": "host-3c46fa",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": false,
+        "os": "Windows 11 (22621)",
+        "ram": "110.2 GB",
+        "reverse_proxy_port": "4211",
+        "storage": [
+            "512 GB SSD"
+        ],
+        "username": "user50",
+        "uuidv4": "abe11e4f-9103-42ad-ac70-b6c4121faadd"
+    },
+    {
+        "addr": "127.0.0.1:11282",
+        "country_code": "BR",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-22b390",
+        "installed_avs": [
+            "Kaspersky",
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "macOS Ventura",
+        "ram": "60.7 GB",
+        "reverse_proxy_port": "1661",
+        "storage": [
+            "1 TB HDD",
+            "2 TB SSD"
+        ],
+        "username": "user85",
+        "uuidv4": "8f0f1200-d22f-4eb5-b471-30dc9c3d8f7a"
+    },
+    {
+        "addr": "127.0.0.1:33044",
+        "country_code": "KR",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "Intel Iris Xe"
+        ],
+        "group": "Admins",
+        "hostname": "host-9319c6",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "22.6 GB",
+        "reverse_proxy_port": "4600",
+        "storage": [
+            "1.5 TB SATA"
+        ],
+        "username": "user74",
+        "uuidv4": "72415686-ec8b-4e42-8c27-966159da2d89"
+    },
+    {
+        "addr": "127.0.0.1:14953",
+        "country_code": "GB",
+        "cpu": "Apple M2 Max",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "Intel Iris Xe"
+        ],
+        "group": "Guests",
+        "hostname": "host-13e9dd",
+        "installed_avs": [
+            "Norton"
+        ],
+        "is_elevated": false,
+        "os": "macOS Ventura",
+        "ram": "10.9 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe",
+            "1 TB HDD",
+            "512 GB SSD"
+        ],
+        "username": "user79",
+        "uuidv4": "3d0399b8-478c-4fa2-baab-9fe759703114"
+    },
+    {
+        "addr": "127.0.0.1:58948",
+        "country_code": "JP",
+        "cpu": "Apple M2 Max",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-bb094e",
+        "installed_avs": [
+            "Windows Defender"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "61.3 GB",
+        "reverse_proxy_port": "5645",
+        "storage": [
+            "1.5 TB SATA",
+            "256 GB NVMe",
+            "512 GB SSD"
+        ],
+        "username": "user89",
+        "uuidv4": "1df9da9a-1119-4b0f-b52c-205c441243a5"
+    },
+    {
+        "addr": "127.0.0.1:51324",
+        "country_code": "RU",
+        "cpu": "Apple M2 Max",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "Intel Iris Xe",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-e0688d",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "36.4 GB",
+        "reverse_proxy_port": "6488",
+        "storage": [
+            "2 TB SSD"
+        ],
+        "username": "user93",
+        "uuidv4": "ed314bf7-16fb-49d6-99aa-428542ab1f83"
+    },
+    {
+        "addr": "127.0.0.1:18534",
+        "country_code": "CA",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": true,
+        "displays": 3,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Default",
+        "hostname": "host-e57855",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": true,
+        "os": "Windows 11 (22621)",
+        "ram": "88.6 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user36",
+        "uuidv4": "07c62808-23d4-459b-8ae7-9bb00dcd78b4"
+    },
+    {
+        "addr": "127.0.0.1:14343",
+        "country_code": "AU",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "Intel Iris Xe",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Admins",
+        "hostname": "host-4065e3",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "67.5 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user78",
+        "uuidv4": "f3da7c23-0bb2-4d38-8d5b-7c9c42b6fa40"
+    },
+    {
+        "addr": "127.0.0.1:10494",
+        "country_code": "ES",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-95d2af",
+        "installed_avs": [
+            "McAfee",
+            "Norton"
+        ],
+        "is_elevated": false,
+        "os": "Fedora 38",
+        "ram": "86.0 GB",
+        "reverse_proxy_port": "1834",
+        "storage": [
+            "512 GB SSD",
+            "256 GB NVMe"
+        ],
+        "username": "user26",
+        "uuidv4": "d5b4e3c4-b971-45c8-aee0-f46d42fcce9a"
+    },
+    {
+        "addr": "127.0.0.1:51376",
+        "country_code": "RU",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": true,
+        "displays": 3,
+        "gpus": [
+            "Intel Iris Xe",
+            "Microsoft Basic Render Driver",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Admins",
+        "hostname": "host-063982",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "71.4 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "512 GB SSD",
+            "256 GB NVMe",
+            "2 TB SSD"
+        ],
+        "username": "user32",
+        "uuidv4": "52d60a1b-e728-4968-989a-71e06d5d0331"
+    },
+    {
+        "addr": "127.0.0.1:48118",
+        "country_code": "MX",
+        "cpu": "Apple M2 Max",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Guests",
+        "hostname": "host-ebc40a",
+        "installed_avs": [
+            "Kaspersky",
+            "Windows Defender"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "36.6 GB",
+        "reverse_proxy_port": "8211",
+        "storage": [
+            "2 TB SSD"
+        ],
+        "username": "user54",
+        "uuidv4": "10e20546-80b0-41d7-8390-0a332d122c89"
+    },
+    {
+        "addr": "127.0.0.1:47567",
+        "country_code": "AU",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "Intel Iris Xe"
+        ],
+        "group": "Guests",
+        "hostname": "host-9f5ee5",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "67.8 GB",
+        "reverse_proxy_port": "9908",
+        "storage": [
+            "2 TB SSD"
+        ],
+        "username": "user76",
+        "uuidv4": "161f2047-1db9-4b8f-aeb4-76df297d50c2"
+    },
+    {
+        "addr": "127.0.0.1:17279",
+        "country_code": "JP",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-6a5c4d",
+        "installed_avs": [
+            "Norton"
+        ],
+        "is_elevated": true,
+        "os": "Windows 10 (19045)",
+        "ram": "61.0 GB",
+        "reverse_proxy_port": "7518",
+        "storage": [
+            "2 TB SSD",
+            "1.5 TB SATA"
+        ],
+        "username": "user17",
+        "uuidv4": "dc413983-77bf-4815-9b29-b3c1696a4661"
+    },
+    {
+        "addr": "127.0.0.1:15073",
+        "country_code": "MX",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "Intel Iris Xe"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-0b8870",
+        "installed_avs": [
+            "Avast",
+            "Kaspersky"
+        ],
+        "is_elevated": true,
+        "os": "Windows 10 (19045)",
+        "ram": "17.1 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "512 GB SSD"
+        ],
+        "username": "user6",
+        "uuidv4": "e15d9f63-9e84-47a8-93bd-77963a1c19a8"
+    },
+    {
+        "addr": "127.0.0.1:54148",
+        "country_code": "CA",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Default",
+        "hostname": "host-e31d79",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": true,
+        "os": "Windows 11 (22621)",
+        "ram": "87.8 GB",
+        "reverse_proxy_port": "6008",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user24",
+        "uuidv4": "70632e47-cb8b-4c73-a6c2-a94835ee16ba"
+    },
+    {
+        "addr": "127.0.0.1:54760",
+        "country_code": "RU",
+        "cpu": "Intel Xeon W-2295",
+        "disconnected": true,
+        "displays": 3,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "Intel Iris Xe"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-5f5ec3",
+        "installed_avs": [
+            "Avast",
+            "Windows Defender"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "106.5 GB",
+        "reverse_proxy_port": "5856",
+        "storage": [
+            "2 TB SSD",
+            "512 GB SSD"
+        ],
+        "username": "user25",
+        "uuidv4": "3b104941-5c27-4fa9-bfbd-0c92f25146a6"
+    },
+    {
+        "addr": "127.0.0.1:10853",
+        "country_code": "NO",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "Intel Iris Xe"
+        ],
+        "group": "Default",
+        "hostname": "host-10dc9f",
+        "installed_avs": [
+            "McAfee"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "52.2 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1 TB HDD",
+            "1.5 TB SATA",
+            "256 GB NVMe"
+        ],
+        "username": "user23",
+        "uuidv4": "df1dbfd6-f6b0-40b3-a17e-5461a9341ce5"
+    },
+    {
+        "addr": "127.0.0.1:33346",
+        "country_code": "ES",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Guests",
+        "hostname": "host-2a279c",
+        "installed_avs": [
+            "Norton"
+        ],
+        "is_elevated": false,
+        "os": "Fedora 38",
+        "ram": "48.4 GB",
+        "reverse_proxy_port": "1961",
+        "storage": [
+            "2 TB SSD",
+            "256 GB NVMe",
+            "1.5 TB SATA"
+        ],
+        "username": "user2",
+        "uuidv4": "73884c97-97f0-42e1-9363-a2e60d2f4187"
+    },
+    {
+        "addr": "127.0.0.1:16418",
+        "country_code": "CH",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 2,
+        "gpus": [
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Default",
+        "hostname": "host-3507d2",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "72.9 GB",
+        "reverse_proxy_port": "7184",
+        "storage": [
+            "256 GB NVMe",
+            "1.5 TB SATA"
+        ],
+        "username": "user2",
+        "uuidv4": "64c8997e-5540-46ce-90b0-3e040063b9e7"
+    },
+    {
+        "addr": "127.0.0.1:24926",
+        "country_code": "FR",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-ad622c",
+        "installed_avs": [
+            "Kaspersky",
+            "Norton"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "15.2 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "2 TB SSD",
+            "512 GB SSD",
+            "256 GB NVMe"
+        ],
+        "username": "user1",
+        "uuidv4": "95c7cd78-a638-4a21-b657-b5a5f9a3980f"
+    },
+    {
+        "addr": "127.0.0.1:11925",
+        "country_code": "NO",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": true,
+        "displays": 1,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Guests",
+        "hostname": "host-5799ec",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Windows 11 (22621)",
+        "ram": "114.6 GB",
+        "reverse_proxy_port": "2768",
+        "storage": [
+            "2 TB SSD",
+            "512 GB SSD"
+        ],
+        "username": "user87",
+        "uuidv4": "6b6b0363-7059-4193-ad20-21274ca202cb"
+    },
+    {
+        "addr": "127.0.0.1:17942",
+        "country_code": "GB",
+        "cpu": "Intel Xeon W-2295",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Guests",
+        "hostname": "host-305193",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "41.5 GB",
+        "reverse_proxy_port": "2687",
+        "storage": [
+            "512 GB SSD"
+        ],
+        "username": "user44",
+        "uuidv4": "76ba0219-1e26-4d9e-b193-f9bcd0467073"
+    },
+    {
+        "addr": "127.0.0.1:45041",
+        "country_code": "IN",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-6dd781",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": true,
+        "os": "Fedora 38",
+        "ram": "15.0 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1.5 TB SATA",
+            "512 GB SSD",
+            "1 TB HDD"
+        ],
+        "username": "user25",
+        "uuidv4": "b490b14b-768d-47c3-b212-6254880f63b4"
+    },
+    {
+        "addr": "127.0.0.1:43220",
+        "country_code": "ZA",
+        "cpu": "Intel Xeon W-2295",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Admins",
+        "hostname": "host-71b9f5",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": true,
+        "os": "Windows 10 (19045)",
+        "ram": "79.4 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "512 GB SSD",
+            "1.5 TB SATA",
+            "2 TB SSD"
+        ],
+        "username": "user59",
+        "uuidv4": "f0e9b4fb-b108-4a79-b2a8-672ce1ebed6f"
+    },
+    {
+        "addr": "127.0.0.1:34083",
+        "country_code": "NL",
+        "cpu": "AMD Ryzen 9 7950X",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "AMD Radeon RX 7900 XTX",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-f64821",
+        "installed_avs": [
+            "Avast"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "88.9 GB",
+        "reverse_proxy_port": "5739",
+        "storage": [
+            "512 GB SSD",
+            "256 GB NVMe",
+            "1 TB HDD"
+        ],
+        "username": "user55",
+        "uuidv4": "ffc0b9d7-da3a-4f03-89fe-cfece88b1580"
+    },
+    {
+        "addr": "127.0.0.1:43978",
+        "country_code": "RU",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": true,
+        "displays": 2,
+        "gpus": [
+            "NVIDIA RTX 4090",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Guests",
+        "hostname": "host-63dba2",
+        "installed_avs": [
+            "Avast",
+            "Norton"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "83.3 GB",
+        "reverse_proxy_port": "5837",
+        "storage": [
+            "256 GB NVMe",
+            "512 GB SSD"
+        ],
+        "username": "user93",
+        "uuidv4": "d2339e16-252c-4a49-8598-72854881a599"
+    },
+    {
+        "addr": "127.0.0.1:43459",
+        "country_code": "CA",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": false,
+        "displays": 1,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Default",
+        "hostname": "host-f5d1be",
+        "installed_avs": [
+            "Bitdefender",
+            "McAfee"
+        ],
+        "is_elevated": true,
+        "os": "Ubuntu 22.04",
+        "ram": "118.9 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe"
+        ],
+        "username": "user98",
+        "uuidv4": "2e228e17-6f2a-42ab-8054-78a6f7aab859"
+    },
+    {
+        "addr": "127.0.0.1:45915",
+        "country_code": "AU",
+        "cpu": "Apple M2 Max",
+        "disconnected": true,
+        "displays": 3,
+        "gpus": [
+            "AMD Radeon RX 7900 XTX",
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "Microsoft Basic Render Driver"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-b0c1b3",
+        "installed_avs": [
+            "Avast",
+            "Kaspersky"
+        ],
+        "is_elevated": false,
+        "os": "Windows 10 (19045)",
+        "ram": "31.5 GB",
+        "reverse_proxy_port": "8037",
+        "storage": [
+            "256 GB NVMe",
+            "512 GB SSD",
+            "2 TB SSD"
+        ],
+        "username": "user39",
+        "uuidv4": "7d68f3d5-e5f2-456f-adac-1bc7c80e3a10"
+    },
+    {
+        "addr": "127.0.0.1:28709",
+        "country_code": "GB",
+        "cpu": "AMD Ryzen 7 5800X",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+        ],
+        "group": "Guests",
+        "hostname": "host-66b56f",
+        "installed_avs": [
+            "Kaspersky"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "117.3 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "2 TB SSD"
+        ],
+        "username": "user99",
+        "uuidv4": "40baddad-b35a-4036-8288-8887bb7c4eaa"
+    },
+    {
+        "addr": "127.0.0.1:50059",
+        "country_code": "SE",
+        "cpu": "Intel Core i9-13900K",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "NVIDIA RTX 4090"
+        ],
+        "group": "Default",
+        "hostname": "host-b776ec",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": false,
+        "os": "Ubuntu 22.04",
+        "ram": "71.2 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "1 TB HDD",
+            "1.5 TB SATA",
+            "256 GB NVMe"
+        ],
+        "username": "user77",
+        "uuidv4": "15f4b097-e0b6-4311-9ef6-06b784e789c9"
+    },
+    {
+        "addr": "127.0.0.1:52325",
+        "country_code": "MX",
+        "cpu": "Intel Core i7-13800H",
+        "disconnected": false,
+        "displays": 3,
+        "gpus": [
+            "Microsoft Basic Render Driver",
+            "AMD Radeon RX 7900 XTX"
+        ],
+        "group": "Beta Testers",
+        "hostname": "host-f1fd9a",
+        "installed_avs": [
+            "Bitdefender"
+        ],
+        "is_elevated": false,
+        "os": "macOS Ventura",
+        "ram": "93.4 GB",
+        "reverse_proxy_port": "",
+        "storage": [
+            "256 GB NVMe",
+            "1 TB HDD"
+        ],
+        "username": "user95",
+        "uuidv4": "60e139de-224d-4a12-8e62-bd732a5e2da1"
+    }
+]
