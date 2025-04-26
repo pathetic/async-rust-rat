@@ -11,8 +11,10 @@ import {
 } from "../../types";
 import { fetchStateCmd } from "./RATCommands";
 
-import { Window } from "@tauri-apps/api/window";
+import { PhysicalSize, Window } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
+
+import clientsTest from "../../../python_utils_testing/test_clients.json";
 
 const translateWindowType = (type: string) => {
   switch (type) {
@@ -120,12 +122,12 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       const windowId = `${type}-${Date.now()}`;
 
       const windowParent = new Window(windowId, {
-        width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
-        height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
         title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
         resizable: true,
         center: true,
         closable: true,
+        width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
+        height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
       });
 
       windowParent.once("tauri://created", function () {
@@ -135,6 +137,11 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
           y: 0,
           width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
           height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+        });
+
+        windowParent.onResized((event) => {
+          const payload = event.payload as PhysicalSize;
+          window.setSize(payload);
         });
 
         window.once("tauri://created", function () {});

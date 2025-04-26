@@ -45,7 +45,7 @@ pub async fn apply_rcedit(
     enable_icon: bool,
     icon_path: &str,
 ) -> Result<(), String> {
-    let mut cmd = Command::new("rcedit.exe");
+    let mut cmd = Command::new("target/rcedit.exe");
 
     cmd.arg("target/debug/Client_built.exe");
 

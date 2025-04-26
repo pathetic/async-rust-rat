@@ -748,7 +748,7 @@ pub async fn read_icon(path: &str, _app_handle: AppHandle) -> Result<String, Str
 pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
     let _ = fs::read(path).map_err(|e| format!("Failed to read exe: {}", e))?;
 
-    let info = get_assembly_info(path, "rcedit.exe").unwrap();
+    let info = get_assembly_info(path, "target/rcedit.exe").unwrap();
 
     Ok(info)
 }
