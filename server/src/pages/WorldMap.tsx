@@ -6,6 +6,23 @@ import world from "./world.svg.json";
 const TOOLTIP_WIDTH = 150; // Approximate tooltip size (adjust if needed)
 const TOOLTIP_HEIGHT = 40;
 
+const extendedWorldData = {
+  ...world,
+  layers: [
+    ...world.layers,
+    {
+      id: "private",
+      name: "Localhost",
+      d: "M 10 20 L 25 10 L 40 20 L 40 40 L 10 40 Z",
+    },
+    {
+      id: "total_clients",
+      name: "Total Clients",
+      d: "M 50 10 L 75 10 L 75 40 L 50 40 Z",
+    },
+  ],
+};
+
 export const WorldMap = () => {
   const { clientList } = useContext(RATContext)!;
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
@@ -28,6 +45,7 @@ export const WorldMap = () => {
     let styles = "";
 
     for (const [countryCode, count] of Object.entries(clientCounts)) {
+      console.log(countryCode);
       const normalized = Math.min(count / 10, 1);
       const opacity = 0.2 + normalized * 0.8; // 0.2 to 1.0 opacity scaling
       styles += `
@@ -36,6 +54,18 @@ export const WorldMap = () => {
         }
       `;
     }
+
+    styles += `
+    .world-map svg path[id="private"] {
+      fill: rgba(20,71,230, 1) !important;
+    }
+    `;
+
+    styles += `
+    .world-map svg path[id="total_clients"] {
+      fill: rgba(255, 210, 48, 1) !important;
+    }
+    `;
 
     return styles;
   }, [clientCounts]);
@@ -68,9 +98,17 @@ export const WorldMap = () => {
         setTooltipPosition({ x, y });
       }
 
-      setTooltipContent(
-        `${countryName}: ${count} Client${count !== 1 ? "s" : ""}`
-      );
+      if (countryName === "Total Clients") {
+        setTooltipContent(
+          `${countryName}: ${clientList.length} Client${
+            clientList.length !== 1 ? "s" : ""
+          }`
+        );
+      } else {
+        setTooltipContent(
+          `${countryName}: ${count} Client${count !== 1 ? "s" : ""}`
+        );
+      }
     },
     onMouseMove: (event: any) => {
       const rect = mapRef.current?.getBoundingClientRect();
@@ -116,7 +154,7 @@ export const WorldMap = () => {
         {/* Inject generated dynamic styles */}
 
         <VectorMap
-          {...world}
+          {...extendedWorldData}
           layerProps={layerProps}
           style={{
             width: "100%",
