@@ -1,27 +1,11 @@
 import { VectorMap } from "@south-paw/react-vector-maps";
 import { RATContext } from "../rat/RATContext";
 import { useContext, useMemo, useState, useRef } from "react";
-import world from "./world.svg.json";
-
-const TOOLTIP_WIDTH = 150; // Approximate tooltip size (adjust if needed)
-const TOOLTIP_HEIGHT = 40;
-
-const extendedWorldData = {
-  ...world,
-  layers: [
-    ...world.layers,
-    {
-      id: "private",
-      name: "Localhost",
-      d: "M 10 20 L 25 10 L 40 20 L 40 40 L 10 40 Z",
-    },
-    {
-      id: "total_clients",
-      name: "Total Clients",
-      d: "M 50 10 L 75 10 L 75 40 L 50 40 Z",
-    },
-  ],
-};
+import {
+  extendedWorldData,
+  computePosition,
+  ToolTip,
+} from "../components/world/world";
 
 export const WorldMap = () => {
   const { clientList } = useContext(RATContext)!;
@@ -76,27 +60,8 @@ export const WorldMap = () => {
       const countryId = event.target.attributes.id?.value?.toUpperCase();
       const count = clientCounts[countryId] || 0;
 
-      const rect = mapRef.current?.getBoundingClientRect();
-      if (rect) {
-        let x = event.clientX - rect.left;
-        let y = event.clientY - rect.top;
-
-        // If tooltip would overflow right, move it to the left
-        if (x + TOOLTIP_WIDTH > rect.width) {
-          x = x - TOOLTIP_WIDTH - 10; // shift left with some padding
-        } else {
-          x = x + 10; // normal right side offset
-        }
-
-        // If tooltip would overflow bottom, move it above the cursor
-        if (y + TOOLTIP_HEIGHT > rect.height) {
-          y = y - TOOLTIP_HEIGHT - 10; // shift above
-        } else {
-          y = y + 10; // normal below offset
-        }
-
-        setTooltipPosition({ x, y });
-      }
+      const { x, y } = computePosition(event, mapRef);
+      setTooltipPosition({ x, y });
 
       if (countryName === "Total Clients") {
         setTooltipContent(
@@ -111,27 +76,8 @@ export const WorldMap = () => {
       }
     },
     onMouseMove: (event: any) => {
-      const rect = mapRef.current?.getBoundingClientRect();
-      if (rect) {
-        let x = event.clientX - rect.left;
-        let y = event.clientY - rect.top;
-
-        // If tooltip would overflow right, move it to the left
-        if (x + TOOLTIP_WIDTH > rect.width) {
-          x = x - TOOLTIP_WIDTH - 10; // shift left with some padding
-        } else {
-          x = x + 10; // normal right side offset
-        }
-
-        // If tooltip would overflow bottom, move it above the cursor
-        if (y + TOOLTIP_HEIGHT > rect.height) {
-          y = y - TOOLTIP_HEIGHT - 10; // shift above
-        } else {
-          y = y + 10; // normal below offset
-        }
-
-        setTooltipPosition({ x, y });
-      }
+      const { x, y } = computePosition(event, mapRef);
+      setTooltipPosition({ x, y });
     },
     onMouseLeave: () => {
       setTooltipContent(null);
@@ -163,18 +109,10 @@ export const WorldMap = () => {
           }}
         />
 
-        {tooltipContent && tooltipPosition && (
-          <div
-            className="absolute bg-black text-white text-xs rounded px-2 py-1 pointer-events-none"
-            style={{
-              top: tooltipPosition.y + 10,
-              left: tooltipPosition.x + 10,
-              zIndex: 1000,
-            }}
-          >
-            {tooltipContent}
-          </div>
-        )}
+        <ToolTip
+          tooltipContent={tooltipContent}
+          tooltipPosition={tooltipPosition}
+        />
       </div>
     </>
   );
