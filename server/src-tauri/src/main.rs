@@ -51,6 +51,7 @@ async fn main() {
             execute_file,
             read_file_for_upload,
             upload_file_to_folder,
+            execute_plugin,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

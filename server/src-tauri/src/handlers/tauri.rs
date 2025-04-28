@@ -939,3 +939,16 @@ pub async fn upload_file_to_folder(
 
     Ok("File upload command sent".to_string())
 }
+
+#[tauri::command]
+pub async fn execute_plugin(
+    addr: &str,
+    plugin_name: &str,
+    plugin_path: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle
+) -> Result<String, String> {
+    send_server_command(ServerCommand::ExecutePlugin(addr.parse().unwrap(), plugin_name.to_string(), plugin_path.to_string()), tauri_state, app_handle).await?;
+
+    Ok("Plugin execution command sent".to_string())
+}

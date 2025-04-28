@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { manageHVNC } from "../rat/RATCommands";

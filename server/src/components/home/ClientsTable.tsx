@@ -4,7 +4,6 @@ import {
   IconBrandUbuntu,
 } from "@tabler/icons-react";
 import { RATClient, FilterCategories } from "../../../types";
-import { useState, useEffect } from "react";
 
 import { CpuSvg, GpuSvg, RamSvg, StorageSvg } from "./Svgs";
 

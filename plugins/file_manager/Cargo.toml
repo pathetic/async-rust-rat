@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 common = { path = "../../common" }
 lazy_static = "1.4"
+rand = "0.9.1"
 
 
 [profile.release]

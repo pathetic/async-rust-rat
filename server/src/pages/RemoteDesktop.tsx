@@ -43,7 +43,7 @@ export const RemoteDesktop: React.FC = () => {
   // Control states
   const [mouseControlEnabled, setMouseControlEnabled] = useState(false);
   const [keyboardControlEnabled, setKeyboardControlEnabled] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [activeMouseButton, setActiveMouseButton] = useState<number | null>(
     null

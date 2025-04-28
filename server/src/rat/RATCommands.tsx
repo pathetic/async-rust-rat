@@ -260,3 +260,11 @@ export const executeFile = async (
 ): Promise<void> => {
   return invoke("execute_file", { addr, filePath });
 };
+
+export const executePlugin = async (
+  addr: string | undefined,
+  pluginName: string,
+  pluginPath: string
+): Promise<void> => {
+  return invoke("execute_plugin", { addr, pluginName, pluginPath });
+};
