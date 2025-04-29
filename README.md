@@ -1,26 +1,35 @@
 # Rust RAT
 
 <p align="center">
-  <b>A free and open-source Remote Administration Tool for Windows coded in Rust.</b><br>  
-  <i>This project was the focus of my thesis during my final year of university.</i>
+  <strong>A Free and Open-Source Remote Administration Tool for Windows, built with Rust.</strong><br>
+  <em>This project was developed as part of my university thesis during my final year.</em>
 </p>
 
-# 🚧 Disclaimer
+---
 
-<p align="center">This program is for educational purposes only.</p>
-<p align="center">How you use this program is your responsibility.</p>
-<p align="center">I will not be held accountable for any illegal activities.</p>
+## ⚠️ Responsible Use
 
-# 🖼️ Screenshots:
+<p align="center">
+  <strong>This tool is intended for system administration, research, and educational purposes.</strong><br>
+  <em>Please ensure you have proper authorization before connecting to or managing any system.</em>
+</p>
 
-![home](images/home.png)
+---
 
-See [IMAGES.md](IMAGES.md) for more screenshots.
+## 🖼️ Screenshots
 
-# 🔱 Features:
+![Home](images/home.png)
+
+For more images, see [IMAGES.md](IMAGES.md).
+
+---
+
+## 🔱 Features
 
 - [x] System Information
 - [x] Desktop Screenshot
+- [x] Webcam Capture
+- [ ] HVNC *(in development)*
 - [x] Remote Desktop
 - [x] File Manager
 - [x] Reverse Shell
@@ -32,13 +41,18 @@ See [IMAGES.md](IMAGES.md) for more screenshots.
 - [x] System Control (Shutdown, Restart, Log Out)
 - [x] Connection Manager
 - [x] Logging
-- [x] Client builder (assembly info, install, antivm, icon, etc)
-- [ ] More Features To Come!
+- [x] World Map
+- [x] Client Builder (assembly info, installation, anti-VM, icon customization, etc.)
+- [ ] More Features Coming Soon!
 
-# 🔨 Building and working on the code:
+---
 
-See [USERMANUAL.md](USERMANUAL.md).
+## 🛠️ Building & Contributing
 
-# License
+To learn how to build or contribute to this project, please refer to [USERMANUAL.md](USERMANUAL.md).
 
-Rust RAT is distributed under the [MIT License](LICENSE).
+---
+
+## 📄 License
+
+**Rust RAT** is distributed under the [MIT License](LICENSE).
