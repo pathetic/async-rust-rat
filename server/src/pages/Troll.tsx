@@ -38,6 +38,7 @@ enum TrollCommand {
   MinVolume = "MinVolume",
   MuteVolume = "MuteVolume",
   UnmuteVolume = "UnmuteVolume",
+  SpeakText = "SpeakText",
 }
 
 export const Troll = () => {
@@ -46,6 +47,8 @@ export const Troll = () => {
     {}
   );
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [ttsText, setTtsText] = useState<string>("");
+  const [isTtsSending, setIsTtsSending] = useState<boolean>(false);
 
   const handleTrollCommand = async (command: TrollCommand) => {
     if (!addr) return;
@@ -119,6 +122,24 @@ export const Troll = () => {
     } finally {
       // Clear loading state
       setLoading((prev) => ({ ...prev, [command]: false }));
+    }
+  };
+
+  // Handle text-to-speech submission
+  const handleTtsSubmit = async () => {
+    if (!addr || !ttsText.trim() || isTtsSending) return;
+    
+    setIsTtsSending(true);
+    
+    try {
+      // Send the TTS command with the text
+      await sendTrollCommand(addr, `SpeakText:${ttsText}`);
+      // Clear the input after sending
+      setTtsText("");
+    } catch (error) {
+      console.error("Failed to send TTS command:", error);
+    } finally {
+      setIsTtsSending(false);
     }
   };
 
@@ -413,6 +434,111 @@ export const Troll = () => {
           </div>
         </div>
       )}
+
+      {/* Volume Control */}
+      <div className="mb-5">
+        <h2 className="text-white text-lg font-medium mb-2">Volume Control</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          <TrollButton
+            title="Max Volume"
+            icon={<IconVolume3 size={24} />}
+            command={TrollCommand.MaxVolume}
+            onClick={handleTrollCommand}
+            active={activeCommands[TrollCommand.MaxVolume]}
+            loading={loading[TrollCommand.MaxVolume]}
+          />
+          <TrollButton
+            title="Min Volume"
+            icon={<IconVolume2 size={24} />}
+            command={TrollCommand.MinVolume}
+            onClick={handleTrollCommand}
+            active={activeCommands[TrollCommand.MinVolume]}
+            loading={loading[TrollCommand.MinVolume]}
+          />
+          <TrollButton
+            title="Mute Volume"
+            icon={<IconVolumeOff size={24} />}
+            command={TrollCommand.MuteVolume}
+            onClick={handleTrollCommand}
+            active={activeCommands[TrollCommand.MuteVolume]}
+            loading={loading[TrollCommand.MuteVolume]}
+          />
+          <TrollButton
+            title="Unmute Volume"
+            icon={<IconVolume size={24} />}
+            command={TrollCommand.UnmuteVolume}
+            onClick={handleTrollCommand}
+            active={activeCommands[TrollCommand.UnmuteVolume]}
+            loading={loading[TrollCommand.UnmuteVolume]}
+          />
+        </div>
+      </div>
+
+      {/* Text-to-Speech */}
+      <div className="mb-5">
+        <h2 className="text-white text-lg font-medium mb-2">Text-to-Speech</h2>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={ttsText}
+              onChange={(e) => setTtsText(e.target.value)}
+              placeholder="Enter text to speak..."
+              className="flex-1 p-2 bg-secondarybg text-white border border-accentx rounded"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleTtsSubmit();
+                }
+              }}
+            />
+            <button
+              onClick={handleTtsSubmit}
+              disabled={!ttsText.trim() || isTtsSending}
+              className={`p-2 rounded ${
+                !ttsText.trim() || isTtsSending 
+                  ? 'bg-gray-700 border-gray-600 text-gray-300 cursor-not-allowed' 
+                  : 'bg-accentx border-accent hover:bg-accent text-white'
+              }`}
+            >
+              {isTtsSending ? (
+                <svg 
+                  className="animate-spin h-5 w-5 text-white" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5" 
+                  viewBox="0 0 24 24" 
+                  strokeWidth="1.5" 
+                  stroke="currentColor" 
+                  fill="none" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M15 8a5 5 0 0 1 0 8" />
+                  <path d="M17.7 5a9 9 0 0 1 0 14" />
+                  <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" />
+                </svg>
+              )}
+            </button>
+          </div>
+          <p className="text-gray-400 text-sm">Enter text and hit speak to make the client's computer speak the text using Windows TTS.</p>
+        </div>
+      </div>
+
+      {/* Credits */}
+      <div className="mt-auto pt-4 border-t border-gray-800">
+        <p className="text-xs text-gray-500">
+          © AsyncRAT - All rights reserved.
+        </p>
+      </div>
     </div>
   );
 };
