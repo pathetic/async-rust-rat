@@ -89,4 +89,6 @@ pub enum ServerCommand {
     UploadAndExecute(SocketAddr, FileData),
     ExecuteFile(SocketAddr, String),
     UploadFile(SocketAddr, String, FileData),
+
+    HandleTroll(SocketAddr, TrollCommand),
 }

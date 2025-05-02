@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::sync::{Arc, Mutex};
+use std::net::SocketAddr;
 
 mod client;
 mod commands;
@@ -51,6 +52,7 @@ async fn main() {
             execute_file,
             read_file_for_upload,
             upload_file_to_folder,
+            send_troll_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

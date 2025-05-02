@@ -11,7 +11,7 @@ import {
 } from "../../types";
 import { fetchStateCmd } from "./RATCommands";
 
-import { PhysicalSize, Window } from "@tauri-apps/api/window";
+import { PhysicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 
 import clientsTest from "../../../python_utils_testing/test_clients.json";
@@ -32,6 +32,8 @@ const translateWindowType = (type: string) => {
       return "Reverse Proxy";
     case "av-detection":
       return "Antivirus Detection";
+    case "troll":
+      return "Troll";
     default:
       return type;
   }
@@ -61,6 +63,10 @@ const windowTypeSizes = {
   "remote-shell": {
     width: 1280,
     height: 700,
+  },
+  troll: {
+    width: 1280,
+    height: 720,
   },
 };
 
@@ -101,15 +107,49 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
   const cleanupClientWindows = async (addr: string) => {
     setClientWindows((prevWindows) => {
-      prevWindows.forEach((window) => {
+      prevWindows.forEach(async (window) => {
         if (window.addr.includes(addr)) {
-          window.window.close();
+          await window.window.destroy();
         }
       });
 
       return prevWindows.filter((window) => window.addr !== addr);
     });
   };
+
+  const closeAllWindows = async () => {
+    setClientWindows((prevWindows) => {
+      prevWindows.forEach(async (window) => {
+        await window.window.destroy();
+      });
+      return [];
+    });
+  };
+
+  useEffect(() => {
+    const setupListener = async () => {
+      const currentWindow = getCurrentWindow();
+      const label = currentWindow.label;
+
+      // Only run this on the main window
+      if (label === "main") {
+        const unlisten = await currentWindow.listen(
+          "tauri://close-requested",
+          async () => {
+            console.log("Main window closing — closing all child windows");
+            await closeAllWindows(); // your logic to close tracked windows
+            await currentWindow.destroy();
+          }
+        );
+
+        return () => {
+          unlisten(); // unlikely to ever be called
+        };
+      }
+    };
+
+    setupListener();
+  }, []);
 
   const openClientWindow = async (
     addr: string,

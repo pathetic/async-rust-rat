@@ -10,3 +10,4 @@ pub mod reverse_proxy;
 pub mod av_detection;
 pub mod webcam;
 pub mod hvnc;
+pub mod troll;

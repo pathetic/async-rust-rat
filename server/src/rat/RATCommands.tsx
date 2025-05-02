@@ -260,3 +260,10 @@ export const executeFile = async (
 ): Promise<void> => {
   return invoke("execute_file", { addr, filePath });
 };
+
+export const sendTrollCommand = async (
+  addr: string | undefined,
+  command: string
+): Promise<void> => {
+  return invoke("send_troll_command", { addr, command });
+};

