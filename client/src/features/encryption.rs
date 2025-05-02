@@ -5,6 +5,7 @@ use rsa::pkcs8::DecodePublicKey;
 use rsa::rand_core::OsRng;
 use rand_chacha::{ChaCha20Rng, ChaCha8Rng};
 use rand::SeedableRng;
+
 use common::{connection::{Connection, ConnectionReader, ConnectionWriter}, packets::*};
 
 pub static SECRET: Lazy<Mutex<[u8; common::SECRET_LEN]>> = Lazy::new(||

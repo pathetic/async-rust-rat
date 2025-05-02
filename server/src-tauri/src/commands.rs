@@ -28,7 +28,7 @@ pub enum ServerCommand {
     RegisterClient(Sender<ClientCommand>, SocketAddr, ClientInfo),
 
     TakeScreenshot(SocketAddr, String),
-    ScreenshotData(SocketAddr, Vec<u8>),
+    ScreenshotData(SocketAddr, ScreenshotData),
 
     DisconnectClient(SocketAddr),
     ReconnectClient(SocketAddr),

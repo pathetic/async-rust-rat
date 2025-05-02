@@ -4,17 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["synchapi", "errhandlingapi", "dxgi1_2", "winerror", "wingdi", "wtsapi32", "winuser", "securitybaseapi", "winuser","wincon","shellapi"] }
-screenshots = "0.8.10"
+winapi = { version = "0.3.9", features = ["errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi"] }
+# screenshots = "0.8.10"
 sysinfo = { version = "0.34.2", default-features = false, features = ["disk", "system"]}
 common = { path = "../common" }
-rand = "0.9.1"
 rmp-serde = "1.3.0"
-rand_chacha = "0.9.0"
 rsa = "0.9.8"
+rand_chacha = "0.9.0"
+rand = "0.9.1"
 once_cell = "1.21.3"
 tokio = { version = "1", features = ["rt"] }
 wmi = "0.17.1"
 serde = { version = "1.0", features = ["derive"] }
-nokhwa = { version = "0.10.7", features = ["input-native"] }
+# nokhwa = { version = "0.10.7", features = ["input-native"] }
 socket2 = "0.5"
+scrap = "0.5.0"
+screenshots = "0.8.10"

