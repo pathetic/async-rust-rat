@@ -27,6 +27,7 @@ image = "0.24.5"
 maxminddb = "0.26.0"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+lz4_flex = "0.3.0"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
