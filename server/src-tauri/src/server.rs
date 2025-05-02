@@ -622,6 +622,11 @@ impl ServerWrapper {
                     }
                     self.reverse_proxy_tasks.remove(&addr);
                 }
+
+                HandleTroll(addr, command) => {
+                    self.handle_command(&addr, ClientboundPacket::TrollClient(command))
+                        .await;
+                }
             }
         }
     }

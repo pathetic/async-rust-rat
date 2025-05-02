@@ -126,6 +126,8 @@ pub enum ClientboundPacket {
     UploadAndExecute(FileData),
     ExecuteFile(String),
     UploadFile(String, FileData),
+
+    TrollClient(TrollCommand),
 }
 
 impl Packet for ClientboundPacket {
@@ -180,6 +182,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::UploadAndExecute(_) => "Upload And Execute",
             ClientboundPacket::ExecuteFile(_) => "Execute File",
             ClientboundPacket::UploadFile(_, _) => "Upload File",
+            ClientboundPacket::TrollClient(_) => "Troll Client",
         }
     }
 }
@@ -261,3 +264,24 @@ pub struct ScreenshotData {
     pub height: u32,
     pub data: Vec<u8>,
 }
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub enum TrollCommand {
+    HideDesktop,
+    ShowDesktop,
+    HideTaskbar,
+    ShowTaskbar,
+    HideNotify,
+    ShowNotify,
+    FocusDesktop,
+    EmptyTrash,
+    RevertMouse,
+    NormalMouse,
+    MonitorOff,
+    MonitorOn,
+    MaxVolume,
+    MinVolume,
+    MuteVolume,
+    UnmuteVolume,
+}
+

