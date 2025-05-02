@@ -283,5 +283,6 @@ pub enum TrollCommand {
     MinVolume,
     MuteVolume,
     UnmuteVolume,
+    SpeakText(String),
 }
 

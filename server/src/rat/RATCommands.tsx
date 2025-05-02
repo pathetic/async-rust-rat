@@ -265,5 +265,14 @@ export const sendTrollCommand = async (
   addr: string | undefined,
   command: string
 ): Promise<void> => {
+  // Check if this is a SpeakText command with text data
+  if (command.startsWith("SpeakText:")) {
+    // Extract the text part after the colon
+    const text = command.substring("SpeakText:".length);
+    // Send the command with the text parameter
+    return invoke("send_troll_command_with_text", { addr, command: "SpeakText", text });
+  }
+  
+  // For regular commands without parameters
   return invoke("send_troll_command", { addr, command });
 };

