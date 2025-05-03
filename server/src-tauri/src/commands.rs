@@ -57,6 +57,9 @@ pub enum ServerCommand {
     GetProcessList(SocketAddr),
     ProcessList(SocketAddr, ProcessList),
     KillProcess(SocketAddr, Process),
+    SuspendProcess(SocketAddr, Process),
+    ResumeProcess(SocketAddr, Process),
+    StartProcess(SocketAddr, String),
 
     StartShell(SocketAddr),
     ExitShell(SocketAddr),

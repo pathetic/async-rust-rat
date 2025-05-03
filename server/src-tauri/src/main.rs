@@ -39,6 +39,8 @@ async fn main() {
             handle_system_command,
             process_list,
             kill_process,
+            handle_process,
+            start_process,
             manage_shell,
             execute_shell_command,
             read_files,
