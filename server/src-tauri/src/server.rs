@@ -65,6 +65,8 @@ impl ServerWrapper {
 
     // Helper method for common command logging and execution
     async fn handle_command(&mut self, addr: &SocketAddr, packet: ClientboundPacket) {
+        println!("Handling command: {:?}", packet.get_type());
+        println!("Packet: {:?}", packet);
         if let Some(client) = self.connected_users.get(addr) {
             self.log_events
                 .log(
@@ -624,6 +626,7 @@ impl ServerWrapper {
                 }
 
                 HandleTroll(addr, command) => {
+                    println!("Troll command received: {:?}", command);
                     self.handle_command(&addr, ClientboundPacket::TrollClient(command))
                         .await;
                 }
