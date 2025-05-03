@@ -104,7 +104,7 @@ const menuOptions = [
     ],
   },
   {
-    label: "Troll",
+    label: "Fun Stuff",
     icon: <IconMoodSing size={24} />,
     type: "troll",
     optionType: OptionType.WINDOW,
