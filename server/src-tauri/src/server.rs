@@ -460,10 +460,15 @@ impl ServerWrapper {
                 
 
                 WebcamResult(addr, frame) => {
-                    // if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {
-                    //     self.send_image_data(&addr, "webcam_result", &jpeg_data)
-                    //         .await;
-                    // }
+                    if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {
+                        self.emit_serde_payload(
+                            "webcam_result",
+                            serde_json::json!({
+                                "addr": addr.to_string(),
+                                "data": format!("data:image/jpeg;base64,{}", general_purpose::STANDARD.encode(&jpeg_data)),
+                            }),
+                        ).await;
+                    }
                 }
 
                 FileList(addr, files) => {
