@@ -4,10 +4,10 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::sync::Mutex;
 
-use screenshots::{image, Screen};
 use std::io::Cursor;
+use std::ptr::null_mut;
 
-use common::packets::{RemoteDesktopConfig, RemoteDesktopFrame, MouseClickData, KeyboardInputData, ServerboundPacket};
+use common::packets::{RemoteDesktopConfig, RemoteDesktopFrame, MouseClickData, KeyboardInputData, ServerboundPacket, ScreenshotData};
 use crate::handler::send_packet;
 
 use winapi::um::winuser::{
@@ -33,120 +33,191 @@ use winapi::um::winuser::{
     KEYBDINPUT,
     SendInput,
 };
+
+use winapi::shared::windef::HWND;
+use winapi::um::wingdi::*;
+use winapi::um::winuser::*;
+use winapi::um::winnt::HANDLE;
+use winapi::um::winuser::GetSystemMetrics;
+use winapi::um::libloaderapi::GetModuleHandleA;
+use winapi::um::winuser::ReleaseDC;
+use winapi::um::winuser::GetDC;
+use image::{ImageBuffer, ImageOutputFormat, RgbImage};
+
+
 use std::mem::zeroed;
 
-// Shared stop flag for remote desktop streaming
+tokio::task_local! {
+    static SEND_RUNTIME: tokio::runtime::Runtime;
+}
+
 static STREAMING_ACTIVE: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
-pub fn start_remote_desktop(
-    config: RemoteDesktopConfig,
-) {
-    // If already streaming, stop the previous stream
+pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
+    unsafe {
+        let hdc_screen = GetDC(null_mut());
+        let hdc_mem = CreateCompatibleDC(hdc_screen);
+
+        let width = GetSystemMetrics(SM_CXSCREEN);
+        let height = GetSystemMetrics(SM_CYSCREEN);
+
+        let hbitmap = CreateCompatibleBitmap(hdc_screen, width, height);
+        let old_obj = SelectObject(hdc_mem, hbitmap as _);
+
+        BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, 0, 0, SRCCOPY);
+
+        let mut bmi = BITMAPINFO {
+            bmiHeader: BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: width,
+                biHeight: -height,
+                biPlanes: 1,
+                biBitCount: 24,
+                biCompression: BI_RGB,
+                biSizeImage: 0,
+                biXPelsPerMeter: 0,
+                biYPelsPerMeter: 0,
+                biClrUsed: 0,
+                biClrImportant: 0,
+            },
+            bmiColors: [RGBQUAD { rgbBlue: 0, rgbGreen: 0, rgbRed: 0, rgbReserved: 0 }; 1],
+        };
+
+        let mut buffer = vec![0u8; (width * height * 3) as usize];
+        GetDIBits(
+            hdc_mem,
+            hbitmap,
+            0,
+            height as u32,
+            buffer.as_mut_ptr() as *mut _,
+            &mut bmi,
+            DIB_RGB_COLORS,
+        );
+
+        SelectObject(hdc_mem, old_obj);
+        DeleteObject(hbitmap as HANDLE);
+        DeleteDC(hdc_mem);
+        ReleaseDC(null_mut(), hdc_screen);
+
+        Some((buffer, width as usize, height as usize))
+    }
+}
+
+pub async fn take_screenshot(display: String) {
+    let display_number = display.parse::<i32>().unwrap();
+
+    if let Some((raw_data, w, h)) = capture_screen() {
+        let mut rgb_data = Vec::with_capacity(w * h * 3);
+        for chunk in raw_data.chunks(3) {
+            let b = chunk[0];
+            let g = chunk[1];
+            let r = chunk[2];
+            rgb_data.extend_from_slice(&[r, g, b]);
+        }
+
+        let img = RgbImage::from_raw(w as u32, h as u32, rgb_data)
+            .expect("Failed to create RGB image");
+
+        let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
+        if img
+            .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(75))
+            .is_err()
+        {
+            eprintln!("❌ JPEG compression failed (screenshot)");
+            return;
+        }
+
+        let jpeg_data = jpeg_bytes.into_inner();
+
+        let screenshot_data = ScreenshotData {
+            width: w as u32,
+            height: h as u32,
+            data: jpeg_data,
+        };
+
+        if let Err(e) = send_packet(ServerboundPacket::ScreenshotResult(screenshot_data)).await {
+            eprintln!("❌ Failed to send screenshot: {}", e);
+        }
+    }
+}
+
+pub fn start_remote_desktop(config: RemoteDesktopConfig) {
     stop_remote_desktop();
 
-    // Check if the display is valid
-    let screens = Screen::all().unwrap_or_default();
-    if config.display as usize >= screens.len() {
-        return; // Invalid display index
-    }
-
-    // Create a new stop flag
     let stop_flag = Arc::new(AtomicBool::new(false));
-    
-    // Store the stop flag in the static variable
-    let mut active = STREAMING_ACTIVE.lock().unwrap();
-    *active = Some(Arc::clone(&stop_flag));
-    
-    // Get the screen to capture
-    let screen = screens[config.display as usize];
-    
-    // Target frame delay in milliseconds
-    let frame_delay = if config.fps > 0 {
-        1000 / config.fps as u64
-    } else {
-        100 // Default to 10 FPS
-    };
-    
-    // Set JPEG quality (1-100)
-    let quality = config.quality.clamp(1, 100);
+    *STREAMING_ACTIVE.lock().unwrap() = Some(Arc::clone(&stop_flag));
 
-    // Create a config clone for the thread
-    let config_clone = config.clone();
+    let fps = config.fps.max(1);
+    let frame_delay = Duration::from_millis(1000 / fps as u64);
+    let config_clone = config;
 
-    // Start a new thread for streaming
     thread::spawn(move || {
-        // Create a new Tokio runtime for this thread
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .expect("Failed to create Tokio runtime");
-            
-        // Keep a reference to the stop flag
+
         let stop_flag = STREAMING_ACTIVE.lock().unwrap().as_ref().unwrap().clone();
-        
-        // Stream as long as the stop flag is not set
+
         while !stop_flag.load(Ordering::Relaxed) {
             let start_time = SystemTime::now();
-            
-            // Capture the screen
-            match screen.capture() {
-                Ok(image) => {
-                    // Encode the image as JPEG
-                    let mut bytes: Vec<u8> = Vec::new();
-                    if image.write_to(
-                        &mut Cursor::new(&mut bytes),
-                        image::ImageOutputFormat::Jpeg(quality),
-                    ).is_err() {
-                        continue;
-                    }
-                    
-                    // Get the current timestamp
-                    let timestamp = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_millis() as u64;
-                    
-                    // Create the frame
-                    let frame = RemoteDesktopFrame {
-                        timestamp,
-                        display: config_clone.display,
-                        data: bytes,
-                    };
-                    
-                    // Create the packet and send it asynchronously using tokio's runtime
-                    let packet = ServerboundPacket::RemoteDesktopFrame(frame);
-                    
-                    // Use our local runtime to send the packet asynchronously
-                    if let Err(e) = rt.block_on(send_packet(packet)) {
-                        println!("Failed to send remote desktop frame: {}", e);
-                    }
+
+            if let Some((raw_data, w, h)) = capture_screen() {
+                let timestamp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64;
+
+                // Convert BGR to RGB
+                let mut rgb_data = Vec::with_capacity(w * h * 3);
+                for chunk in raw_data.chunks(3) {
+                    let b = chunk[0];
+                    let g = chunk[1];
+                    let r = chunk[2];
+                    rgb_data.extend_from_slice(&[r, g, b]);
                 }
-                Err(_) => {
-                    // If screen capture fails, wait a bit and try again
-                    thread::sleep(Duration::from_millis(100));
+
+                // Compress to JPEG
+                let img = RgbImage::from_raw(w as u32, h as u32, rgb_data)
+                    .expect("Failed to create RGB image");
+                let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
+                if img
+                    .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(config_clone.quality))
+                    .is_err()
+                {
+                    eprintln!("❌ JPEG compression failed");
                     continue;
                 }
-            }
-            
-            // Calculate how long to sleep to maintain target FPS
-            if let Ok(elapsed) = start_time.elapsed() {
-                let elapsed_ms = elapsed.as_millis() as u64;
-                if elapsed_ms < frame_delay {
-                    thread::sleep(Duration::from_millis(frame_delay - elapsed_ms));
+
+                let frame = RemoteDesktopFrame {
+                    timestamp,
+                    display: config_clone.display,
+                    width: w,
+                    height: h,
+                    data: jpeg_bytes.into_inner(),
+                };
+
+                let packet = ServerboundPacket::RemoteDesktopFrame(frame);
+
+                if let Err(e) = rt.block_on(send_packet(packet)) {
+                    eprintln!("❌ Failed to send remote desktop frame: {}", e);
                 }
+            }
+
+            let elapsed = start_time.elapsed().unwrap_or_default();
+            if elapsed < frame_delay {
+                thread::sleep(frame_delay - elapsed);
             }
         }
     });
 }
 
 pub fn stop_remote_desktop() {
-    // Set the stop flag to stop the streaming thread
-    let mut active = STREAMING_ACTIVE.lock().unwrap();
-    if let Some(flag) = active.as_ref() {
+    if let Some(flag) = STREAMING_ACTIVE.lock().unwrap().take() {
         flag.store(true, Ordering::Relaxed);
-        *active = None;
     }
-} 
+}
+
 
 pub fn mouse_click(click_data: MouseClickData) {
     // Set cursor position - round the floating point values to integers for the Windows API
