@@ -15,7 +15,7 @@ use base64::{engine::general_purpose, Engine as _};
 use std::io::Cursor;
 
 use common::packets::*;
-use image::{ImageBuffer, RgbImage, ImageOutputFormat};
+use image::{RgbImage, ImageOutputFormat};
 use anyhow::{Context, Result};
 use crate::commands::*;
 use common::RSA_BITS;
@@ -200,7 +200,7 @@ impl ServerWrapper {
     }
 
     async fn send_client_packet(&self, addr: &SocketAddr, packet: ClientboundPacket) {
-        if let Some(tx) = self.txs.get(&addr) {
+        if let Some(tx) = self.txs.get(addr) {
             tx.send(ClientCommand::Write(packet.clone()))
                 .await
                 .unwrap_or_else(|e| {
@@ -487,24 +487,13 @@ impl ServerWrapper {
                 // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events
-                            .log(
-                                "cmd_rcvd",
-                                format!(
-                                    "Received screenshot from client [{}] [{}]",
-                                    addr, client.username
-                                ),
-                            )
-                            .await;
-                
-                        self.send_image_data(
-                            &addr,
+                        self.emit_serde_payload(
                             "client_screenshot",
-                            &data.data,
-                            data.width as usize,
-                            data.height as usize,
-                        )
-                        .await;
+                            serde_json::json!({
+                                "addr": addr.to_string(),
+                                "data": format!("data:image/jpeg;base64,{}", general_purpose::STANDARD.encode(&data.data))
+                            }),
+                        ).await;
                     }
                 }
 
@@ -541,11 +530,11 @@ impl ServerWrapper {
                             "addr": addr.to_string(),
                             "timestamp": frame.timestamp,
                             "display": frame.display,
-                            "data": general_purpose::STANDARD.encode(&frame.data)
+                            "data": general_purpose::STANDARD.encode(&frame.data),
                         }),
-                    )
-                    .await;
+                    ).await;
                 }
+                
 
                 WebcamResult(addr, frame) => {
                     // if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {

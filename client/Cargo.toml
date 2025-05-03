@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto"] }
-# screenshots = "0.8.10"
+winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto"] }
 sysinfo = { version = "0.34.2", default-features = false, features = ["disk", "system"]}
 common = { path = "../common" }
 rmp-serde = "1.3.0"
@@ -18,5 +17,4 @@ wmi = "0.17.1"
 serde = { version = "1.0", features = ["derive"] }
 # nokhwa = { version = "0.10.7", features = ["input-native"] }
 socket2 = "0.5"
-scrap = "0.5.0"
-screenshots = "0.8.10"
+image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
