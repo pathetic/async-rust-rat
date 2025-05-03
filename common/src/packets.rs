@@ -285,5 +285,7 @@ pub enum TrollCommand {
     MuteVolume(String),
     UnmuteVolume(String),
     SpeakText(String),
+    Beep(String),
+    PianoKey(String),
 }
 

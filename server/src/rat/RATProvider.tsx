@@ -33,7 +33,7 @@ const translateWindowType = (type: string) => {
     case "av-detection":
       return "Antivirus Detection";
     case "troll":
-      return "Troll";
+      return "Fun Stuff";
     default:
       return type;
   }

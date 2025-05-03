@@ -173,6 +173,8 @@ export enum TrollCommandType {
   MuteVolume = "MuteVolume",
   UnmuteVolume = "UnmuteVolume",
   SpeakText = "SpeakText",
+  Beep = "Beep",
+  PianoKey = "PianoKey",
 }
 
 export type TrollCommand = {
