@@ -550,6 +550,48 @@ pub async fn process_list(
 }
 
 #[tauri::command]
+pub async fn handle_process(
+    addr: &str,
+    run: &str,
+    pid: i32,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    let cmd = Process {
+        pid: pid as usize,
+        name: name.to_string(),
+    };
+
+    let cmd = match run {
+        "suspend" => ServerCommand::SuspendProcess(addr.parse().unwrap(), cmd),
+        "resume" => ServerCommand::ResumeProcess(addr.parse().unwrap(), cmd),
+        _ => return Err("Invalid command".to_string()),
+    };
+
+    send_server_command(cmd, tauri_state, app_handle).await?;
+
+    Ok("Process command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn start_process(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartProcess(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Process started".to_string())
+}
+
+#[tauri::command]
 pub async fn kill_process(
     addr: &str,
     pid: i32,

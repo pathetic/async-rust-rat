@@ -103,6 +103,9 @@ pub enum ClientboundPacket {
 
     GetProcessList,
     KillProcess(Process),
+    SuspendProcess(Process),
+    ResumeProcess(Process),
+    StartProcess(String),
 
     StartShell,
     ExitShell,
@@ -162,6 +165,9 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::ManageSystem(_) => "Manage System",
             ClientboundPacket::GetProcessList => "Get Process List",
             ClientboundPacket::KillProcess(_) => "Kill Process",
+            ClientboundPacket::SuspendProcess(_) => "Suspend Process",
+            ClientboundPacket::ResumeProcess(_) => "Resume Process",
+            ClientboundPacket::StartProcess(_) => "Start Process",
             ClientboundPacket::StartShell => "Start Shell",
             ClientboundPacket::ExitShell => "Exit Shell",
             ClientboundPacket::ShellCommand(_) => "Shell Command",
