@@ -334,6 +334,21 @@ impl ServerWrapper {
                         .await
                 }
 
+                SuspendProcess(addr, process) => {
+                    self.handle_command(&addr, ClientboundPacket::SuspendProcess(process))
+                        .await
+                }
+
+                ResumeProcess(addr, process) => {
+                    self.handle_command(&addr, ClientboundPacket::ResumeProcess(process))
+                        .await
+                }
+
+                StartProcess(addr, process) => {
+                    self.handle_command(&addr, ClientboundPacket::StartProcess(process))
+                        .await
+                }
+
                 StartShell(addr) => {
                     self.handle_command(&addr, ClientboundPacket::StartShell)
                         .await

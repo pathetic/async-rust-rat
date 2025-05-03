@@ -116,6 +116,22 @@ export const killProcessCmd = async (
   return invoke("kill_process", { addr, pid, name });
 };
 
+export const handleProcessCmd = async (
+  addr: string | undefined,
+  run: string,
+  pid: number,
+  name: string
+): Promise<void> => {
+  return invoke("handle_process", { addr, run, pid, name });
+};
+
+export const startProcessCmd = async (
+  addr: string | undefined,
+  name: string
+): Promise<void> => {
+  return invoke("start_process", { addr, name });
+};
+
 export const stopShellCmd = async (addr: string | undefined): Promise<void> => {
   return invoke("manage_shell", { addr, run: "stop" });
 };
