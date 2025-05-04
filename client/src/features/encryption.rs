@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use rsa::{RsaPublicKey, Pkcs1v15Encrypt};
 use rsa::pkcs8::DecodePublicKey;
 use rsa::rand_core::OsRng;
-use rand_chacha::{ChaCha20Rng, ChaCha8Rng};
+use rand_chacha::ChaCha20Rng;
 use rand::SeedableRng;
 
 use common::{connection::{Connection, ConnectionReader, ConnectionWriter}, packets::*};

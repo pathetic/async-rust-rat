@@ -34,15 +34,13 @@ use winapi::um::winuser::{
     SendInput,
 };
 
-use winapi::shared::windef::HWND;
 use winapi::um::wingdi::*;
 use winapi::um::winuser::*;
 use winapi::um::winnt::HANDLE;
 use winapi::um::winuser::GetSystemMetrics;
-use winapi::um::libloaderapi::GetModuleHandleA;
 use winapi::um::winuser::ReleaseDC;
 use winapi::um::winuser::GetDC;
-use image::{ImageBuffer, ImageOutputFormat, RgbImage};
+use image::{ImageOutputFormat, RgbImage};
 
 
 use std::mem::zeroed;
@@ -104,7 +102,7 @@ pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
 }
 
 pub async fn take_screenshot(display: String) {
-    let display_number = display.parse::<i32>().unwrap();
+    let _display_number = display.parse::<i32>().unwrap();
 
     if let Some((raw_data, w, h)) = capture_screen() {
         let mut rgb_data = Vec::with_capacity(w * h * 3);

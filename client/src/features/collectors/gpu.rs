@@ -8,24 +8,21 @@ pub async fn collect_gpu_info() -> Vec<GpuInfo> {
     task::spawn_blocking(|| {
         let com = match COMLibrary::new() {
             Ok(c) => c,
-            Err(e) => {
-                eprintln!("❌ COM init failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };
 
         let wmi = match WMIConnection::with_namespace_path("root\\cimv2", com) {
             Ok(w) => w,
-            Err(e) => {
-                eprintln!("❌ WMI connection failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };
 
         let results: Vec<HashMap<String, Variant>> = match wmi.raw_query("SELECT Name, DriverVersion FROM Win32_VideoController") {
             Ok(r) => r,
-            Err(e) => {
-                eprintln!("❌ WMI GPU query failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };
