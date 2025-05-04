@@ -6,6 +6,8 @@ use crate::utils::logger::Log;
 use tauri::AppHandle;
 use tokio::sync::{mpsc::Sender, oneshot::Sender as OSender};
 
+use common::client_info::ClientInfo;
+
 /// Commands sent to client-server connection handlers.
 #[derive(Debug)]
 pub enum ClientCommand {

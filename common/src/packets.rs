@@ -1,25 +1,6 @@
 use rmp_serde::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ClientInfo {
-    pub uuidv4: Option<String>,
-    pub addr: Option<String>,
-    pub group: String,
-    pub username: String,
-    pub hostname: String,
-    pub os: String,
-    pub ram: String,
-    pub cpu: String,
-    pub gpus: Vec<String>,
-    pub storage: Vec<String>,
-    pub displays: i32,
-    pub disconnected: Option<bool>,
-    pub is_elevated: bool,
-    pub reverse_proxy_port: String,
-    pub installed_avs: Vec<String>,
-    pub country_code: String,
-}
+use crate::client_info::ClientInfo;
 
 pub trait Packet {
     fn serialized(&self) -> Vec<u8>;
