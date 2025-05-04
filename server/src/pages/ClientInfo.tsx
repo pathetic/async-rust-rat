@@ -5,7 +5,6 @@ import { RATClient } from "../../types";
 import {
   IconDeviceDesktop,
   IconUser,
-  IconServer,
   IconCpu,
   IconDeviceDesktopAnalytics,
   IconShieldCheck,

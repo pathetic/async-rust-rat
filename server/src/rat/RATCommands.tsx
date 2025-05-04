@@ -181,6 +181,14 @@ export const sendMessageBoxCmd = async (
   return invoke("send_messagebox", { addr, title, message, button, icon });
 };
 
+export const sendInputBoxCmd = async (
+  addr: string | undefined,
+  title: string,
+  message: string
+): Promise<void> => {
+  return invoke("send_inputbox", { addr, title, message });
+};
+
 export const startReverseProxyCmd = async (
   addr: string | undefined,
   port: string,

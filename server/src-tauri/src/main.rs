@@ -33,6 +33,7 @@ async fn main() {
             send_keyboard_input,
             visit_website,
             send_messagebox,
+            send_inputbox,
             test_messagebox,
             elevate_client,
             handle_system_command,

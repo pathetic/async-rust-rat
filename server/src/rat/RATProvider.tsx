@@ -36,6 +36,8 @@ const translateWindowType = (type: string) => {
       return "Antivirus Detection";
     case "troll":
       return "Fun Stuff";
+    case "input-box":
+      return "Input Box";
     default:
       return type;
   }
@@ -73,6 +75,10 @@ const windowTypeSizes = {
   troll: {
     width: 1280,
     height: 720,
+  },
+  "input-box": {
+    width: 400,
+    height: 500,
   },
 };
 

