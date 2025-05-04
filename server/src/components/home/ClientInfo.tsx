@@ -1,7 +1,8 @@
 import { RATClient } from "../../../types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { takeScreenshotCmd, takeWebcamCmd } from "../../rat/RATCommands";
+import { RATContext } from "../../rat/RATContext";
 import {
   IconSquareRoundedX,
   IconCamera,
@@ -20,6 +21,8 @@ import {
   IconVideo,
   IconRefresh,
   IconMapPin,
+  IconWindowMaximize,
+  IconNetwork,
 } from "@tabler/icons-react";
 
 export const ClientInfo = ({
@@ -30,6 +33,7 @@ export const ClientInfo = ({
   onClose: () => void;
 }) => {
   if (!client) return null;
+  const { openClientWindow } = useContext(RATContext)!;
 
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
@@ -118,13 +122,28 @@ export const ClientInfo = ({
             {getOsIcon()}
             <span className="truncate">{client.system.machine_name}</span>
           </h2>
-          <button
-            onClick={onClose}
-            className="text-accentx hover:text-white transition cursor-pointer"
-            aria-label="Close details"
-          >
-            <IconSquareRoundedX size={28} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                openClientWindow(
+                  client.data.addr,
+                  "client-info",
+                  `${client.system.username}@${client.system.machine_name}`
+                )
+              }
+              className="text-accentx hover:text-white transition cursor-pointer"
+              aria-label="Open in new window"
+            >
+              <IconWindowMaximize size={28} />
+            </button>
+            <button
+              onClick={onClose}
+              className="text-accentx hover:text-white transition cursor-pointer"
+              aria-label="Close details"
+            >
+              <IconSquareRoundedX size={28} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -171,7 +190,8 @@ export const ClientInfo = ({
           <div className="space-y-4">
             {/* Connection info */}
             <div className="bg-primarybg rounded-lg p-3">
-              <h3 className="text-accentx font-semibold mb-2 text-sm">
+              <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
+                <IconNetwork size={16} />
                 CONNECTION
               </h3>
               <div className="grid grid-cols-2 gap-3">

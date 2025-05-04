@@ -5,6 +5,7 @@ import { RATProvider } from "./rat/RATProvider";
 
 import { Logs } from "./pages/Logs";
 import { Clients } from "./pages/Clients";
+import { ClientInfo } from "./pages/ClientInfo";
 import { Settings } from "./pages/Settings";
 import { RemoteDesktop } from "./pages/RemoteDesktop";
 import { ProcessViewer } from "./pages/ProcessViewer";
@@ -111,6 +112,14 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <Troll />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/client-info/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <ClientInfo />
             </WindowWrapper>
           }
         />

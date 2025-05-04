@@ -23,6 +23,7 @@ export type RATContextType = {
     clientFullName: string
   ) => Promise<Window | undefined>;
   serverLogs: Array<Log>;
+  getClientByAddr: (addr: string) => Promise<RATClient | undefined>;
 };
 
 export interface RATProviderProps {
