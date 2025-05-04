@@ -10,10 +10,8 @@ use rsa::{RsaPrivateKey, RsaPublicKey};
 use rsa::pkcs8::EncodePublicKey;
 use rsa::rand_core::OsRng;
 use base64::{engine::general_purpose, Engine as _};
-use std::io::Cursor;
 
 use common::packets::*;
-use image::{RgbImage, ImageOutputFormat};
 use anyhow::{Context, Result};
 use crate::commands::*;
 use common::RSA_BITS;
@@ -408,7 +406,7 @@ impl ServerWrapper {
 
                 // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {
-                    if let Some(client) = self.connected_users.get(&addr) {
+                    if let Some(_client) = self.connected_users.get(&addr) {
                         self.emit_serde_payload(
                             "client_screenshot",
                             serde_json::json!({

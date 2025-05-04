@@ -34,24 +34,21 @@ pub async fn collect_security_info() -> SecurityInfo {
 fn get_installed_avs() -> Vec<String> {
     let com = match COMLibrary::new() {
         Ok(c) => c,
-        Err(e) => {
-            eprintln!("❌ COM init failed: {:?}", e);
+        Err(_e) => {
             return Vec::new();
         }
     };
 
     let wmi = match WMIConnection::with_namespace_path("root\\SecurityCenter2", com) {
         Ok(w) => w,
-        Err(e) => {
-            eprintln!("❌ WMI SecurityCenter2 connection failed: {:?}", e);
+        Err(_e) => {
             return Vec::new();
         }
     };
 
     let results: Vec<HashMap<String, Variant>> = match wmi.raw_query("SELECT displayName FROM AntivirusProduct") {
         Ok(r) => r,
-        Err(e) => {
-            eprintln!("❌ Antivirus WMI query failed: {:?}", e);
+        Err(_e) => {
             return Vec::new();
         }
     };

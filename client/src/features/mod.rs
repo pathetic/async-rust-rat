@@ -9,5 +9,5 @@ pub mod file_manager;
 pub mod reverse_proxy;
 pub mod webcam;
 pub mod hvnc;
-pub mod troll;
 pub mod collectors;
+pub mod fun;

@@ -57,7 +57,7 @@ pub fn suspend_process(pid: usize) {
                     let tid = (*te).th32ThreadID;
 
                     let thread: HANDLE = OpenThread(THREAD_SUSPEND_RESUME, FALSE, tid);
-                    SuspendThread(thread) as i32 == -1i32;
+                    let _ = SuspendThread(thread) as i32 == -1i32;
                     CloseHandle(thread);
                 }
 
@@ -84,7 +84,7 @@ pub fn resume_process(pid: usize) {
                     let tid = (*te).th32ThreadID;
 
                     let thread: HANDLE = OpenThread(THREAD_SUSPEND_RESUME, FALSE, tid);
-                    ResumeThread(thread) as i32 == -1i32;
+                    let _ = ResumeThread(thread) as i32 == -1i32;
                     CloseHandle(thread);
                 }
 

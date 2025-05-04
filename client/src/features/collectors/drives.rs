@@ -8,24 +8,21 @@ pub async fn collect_physical_drives() -> Vec<PhysicalDrive> {
     task::spawn_blocking(|| {
         let com = match COMLibrary::new() {
             Ok(c) => c,
-            Err(e) => {
-                eprintln!("❌ COM init failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };
 
         let wmi = match WMIConnection::with_namespace_path("root\\cimv2", com) {
             Ok(c) => c,
-            Err(e) => {
-                eprintln!("❌ WMI connection failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };
 
         let results: Vec<HashMap<String, Variant>> = match wmi.raw_query("SELECT Model, Size FROM Win32_DiskDrive") {
             Ok(r) => r,
-            Err(e) => {
-                eprintln!("❌ WMI diskdrive query failed: {:?}", e);
+            Err(_e) => {
                 return Vec::new();
             }
         };

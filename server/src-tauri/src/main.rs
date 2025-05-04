@@ -1,6 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::sync::{Arc, Mutex};
-use std::net::SocketAddr;
 
 mod client;
 mod commands;

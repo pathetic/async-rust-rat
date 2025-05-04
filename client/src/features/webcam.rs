@@ -1,8 +1,6 @@
 use crate::handler::send_packet;
 use common::packets::ServerboundPacket;
 use tokio::task;
-use image::{RgbImage, ImageOutputFormat};
-use std::io::Cursor;
 use std::{panic::{self, AssertUnwindSafe}, process::Command, thread};
 
 pub async fn take_webcam() {

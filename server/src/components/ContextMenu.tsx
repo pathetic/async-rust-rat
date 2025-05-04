@@ -37,9 +37,16 @@ import {
   IconMoodSing,
   IconChevronDown,
   IconLink,
+  IconUser,
 } from "@tabler/icons-react";
 
 const menuOptions = [
+  {
+    label: "Client Info",
+    type: "client-info",
+    icon: <IconUser size={24} />,
+    optionType: OptionType.WINDOW,
+  },
   {
     label: "Manage",
     icon: <IconSettings2 size={24} />,
