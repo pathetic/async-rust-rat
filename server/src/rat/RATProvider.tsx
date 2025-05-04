@@ -225,10 +225,10 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
         let icon = type == "client_connected" ? "🤙" : "👋";
         let message = type == "client_connected" ? "connected" : "disconnected";
 
-        let toast_message = `Client ${client.username} has ${message}!`;
+        let toast_message = `Client ${client.system.username} has ${message}!`;
 
         if (type == "client_disconnected") {
-          await cleanupClientWindows(client.addr);
+          await cleanupClientWindows(client.data.addr);
         }
 
         if (type == "client_connected") {
@@ -237,7 +237,9 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
         if (type == "client_disconnected") {
           setClientList((prevClients) =>
-            prevClients.filter((client) => client.uuidv4 !== client.uuidv4)
+            prevClients.filter(
+              (client) => client.data.uuidv4 !== client.data.uuidv4
+            )
           );
         }
 
