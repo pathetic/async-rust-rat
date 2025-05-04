@@ -13,15 +13,12 @@ impl ReverseProxy {
         Self { ip: "127.0.0.1".to_string(), con_port: "9876".to_string(), task: None }
     }
 
-    pub fn setup(&mut self, ip: String, port: String) {
+    pub async fn start(&mut self, ip: String, port: String) {
         self.ip = ip;
         self.con_port = port;
-    }
+        let full_ip = format!("{}:{}", self.ip, self.con_port);
 
-    pub async fn start(&mut self) {
-       let full_ip = format!("{}:{}", self.ip, self.con_port);
-
-       let task = tokio::spawn(async move {
+        let task = tokio::spawn(async move {
             let master_stream = match TcpStream::connect(full_ip.clone()).await{
                 Ok(p) => p,
                 Err(_e) => {

