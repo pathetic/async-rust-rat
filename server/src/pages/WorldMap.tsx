@@ -18,8 +18,8 @@ export const WorldMap = () => {
 
   const clientCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    clientList.forEach(({ country_code }) => {
-      const code = country_code.toUpperCase();
+    clientList.forEach(({ data }) => {
+      const code = data.country_code.toUpperCase();
       counts[code] = (counts[code] || 0) + 1;
     });
     return counts;
