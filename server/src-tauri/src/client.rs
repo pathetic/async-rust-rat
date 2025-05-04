@@ -146,6 +146,11 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            InputBoxResult(result) => {
+                self.send_server_packet(ServerCommand::InputBoxResult(self.addr, result))
+                    .await;
+            }
+
             ProcessList(process_list) => {
                 self.send_server_packet(ServerCommand::ProcessList(self.addr, process_list))
                     .await;

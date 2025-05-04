@@ -38,6 +38,7 @@ import {
   IconChevronDown,
   IconLink,
   IconUser,
+  IconMessageCog,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -107,6 +108,12 @@ const menuOptions = [
         icon: <IconMessage2 size={24} />,
         optionType: OptionType.MODAL,
         modalId: "message_box_modal",
+      },
+      {
+        label: "InputBox",
+        type: "input-box",
+        icon: <IconMessageCog size={24} />,
+        optionType: OptionType.WINDOW,
       },
     ],
   },

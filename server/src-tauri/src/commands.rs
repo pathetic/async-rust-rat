@@ -51,6 +51,8 @@ pub enum ServerCommand {
     VisitWebsite(SocketAddr, VisitWebsiteData),
 
     ShowMessageBox(SocketAddr, MessageBoxData),
+    ShowInputBox(SocketAddr, InputBoxData),
+    InputBoxResult(SocketAddr, String),
 
     ElevateClient(SocketAddr),
 
