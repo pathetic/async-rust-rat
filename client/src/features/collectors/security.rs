@@ -8,7 +8,14 @@ use common::client_info::SecurityInfo;
 pub async fn collect_security_info() -> SecurityInfo {
     let firewall_future = task::spawn_blocking(|| {
         let output = Command::new("powershell")
-            .args(&["-Command", "Get-NetFirewallProfile | Select-Object -ExpandProperty Enabled"])
+            .args(&[
+                "-NoLogo", 
+                "-NoProfile", 
+                "-NonInteractive", 
+                "-WindowStyle", "Hidden",
+                "-Command", 
+                "Get-NetFirewallProfile | Select-Object -ExpandProperty Enabled"
+            ])
             .output();
 
         match output {
