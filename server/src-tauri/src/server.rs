@@ -248,6 +248,24 @@ impl ServerWrapper {
                     }
                 }
 
+                SendChatMessage(addr, message) => {
+                    self.handle_command(&addr, ClientboundPacket::SendChatMessage(message))
+                        .await;
+                }
+
+                ChatMessage(addr, message) => {
+                    println!("Chat message received: {}", message);
+                    self.emit_serde_payload("chat_message", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "message": message
+                    })).await;
+                }
+
+                StopChat(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StopChat)
+                        .await;
+                }
+
                 ElevateClient(addr) => {
                     self.handle_command(&addr, ClientboundPacket::ElevateClient)
                         .await

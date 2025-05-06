@@ -39,6 +39,8 @@ import {
   IconLink,
   IconUser,
   IconMessageCog,
+  IconMessage,
+  IconMessageCircleCode,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -102,6 +104,18 @@ const menuOptions = [
         optionType: OptionType.FUNCTION,
         function: handleElevateCmd,
       },
+    ],
+  },
+  {
+    label: "Fun Stuff",
+    icon: <IconMoodSing size={24} />,
+    type: "troll",
+    optionType: OptionType.WINDOW,
+  },
+  {
+    label: "Messaging",
+    icon: <IconMessageCircleCode size={24} />,
+    options: [
       {
         label: "MessageBox",
         type: "show-message-box",
@@ -115,13 +129,13 @@ const menuOptions = [
         icon: <IconMessageCog size={24} />,
         optionType: OptionType.WINDOW,
       },
+      {
+        label: "Chat",
+        type: "chat",
+        icon: <IconMessage size={24} />,
+        optionType: OptionType.WINDOW,
+      },
     ],
-  },
-  {
-    label: "Fun Stuff",
-    icon: <IconMoodSing size={24} />,
-    type: "troll",
-    optionType: OptionType.WINDOW,
   },
   {
     label: "System",

@@ -10,3 +10,4 @@ pub mod webcam;
 pub mod hvnc;
 pub mod collectors;
 pub mod fun;
+pub mod messaging;

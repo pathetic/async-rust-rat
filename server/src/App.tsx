@@ -18,11 +18,13 @@ import {
   stopReverseProxyCmd,
   stopShellCmd,
   manageHVNC,
+  stopChatCmd,
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
 import { Troll } from "./pages/Troll";
 import { InputBox } from "./pages/InputBox";
+import { Chat } from "./pages/Chat";
 
 export const App: React.FC = () => {
   return (
@@ -129,6 +131,20 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <ClientInfo />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/chat/:addr"
+          element={
+            <WindowWrapper
+              feature_cleanup={(params) => {
+                if (params.addr) {
+                  stopChatCmd(params.addr);
+                }
+              }}
+            >
+              <Chat />
             </WindowWrapper>
           }
         />

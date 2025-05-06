@@ -151,6 +151,12 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            ChatMessage(message) => {
+                println!("Received chat message: {}", message);
+                self.send_server_packet(ServerCommand::ChatMessage(self.addr, message))
+                    .await;
+            }
+
             ProcessList(process_list) => {
                 self.send_server_packet(ServerCommand::ProcessList(self.addr, process_list))
                     .await;

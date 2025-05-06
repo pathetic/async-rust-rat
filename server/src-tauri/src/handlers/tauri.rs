@@ -1025,3 +1025,27 @@ pub async fn send_troll_command(
 
     Ok("Troll command sent".to_string())
 }
+
+#[tauri::command]
+pub async fn send_chat_message(
+    addr: &str,
+    message: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(ServerCommand::SendChatMessage(addr.parse().unwrap(), message.to_string()), tauri_state, app_handle).await?;
+
+    Ok("Chat message sent".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_chat(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(ServerCommand::StopChat(addr.parse().unwrap()), tauri_state, app_handle).await?;
+
+    Ok("Chat stopped".to_string())
+}
+

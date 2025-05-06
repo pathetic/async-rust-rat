@@ -55,6 +55,8 @@ async fn main() {
             read_file_for_upload,
             upload_file_to_folder,
             send_troll_command,
+            send_chat_message,
+            stop_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

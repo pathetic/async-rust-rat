@@ -303,3 +303,14 @@ export const sendTrollCommand = async (
     command: cleanCommand,
   });
 };
+
+export const sendChatMessageCmd = async (
+  addr: string | undefined,
+  message: string
+): Promise<void> => {
+  return invoke("send_chat_message", { addr, message });
+};
+
+export const stopChatCmd = async (addr: string | undefined): Promise<void> => {
+  return invoke("stop_chat", { addr });
+};

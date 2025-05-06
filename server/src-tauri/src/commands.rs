@@ -54,6 +54,10 @@ pub enum ServerCommand {
     ShowInputBox(SocketAddr, InputBoxData),
     InputBoxResult(SocketAddr, String),
 
+    SendChatMessage(SocketAddr, String),
+    ChatMessage(SocketAddr, String),
+    StopChat(SocketAddr),
+
     ElevateClient(SocketAddr),
 
     ManageSystem(SocketAddr, String),

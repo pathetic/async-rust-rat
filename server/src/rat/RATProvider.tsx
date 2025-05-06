@@ -38,6 +38,8 @@ const translateWindowType = (type: string) => {
       return "Fun Stuff";
     case "input-box":
       return "Input Box";
+    case "chat":
+      return "Chat";
     default:
       return type;
   }
@@ -77,6 +79,10 @@ const windowTypeSizes = {
     height: 720,
   },
   "input-box": {
+    width: 400,
+    height: 500,
+  },
+  chat: {
     width: 400,
     height: 500,
   },

