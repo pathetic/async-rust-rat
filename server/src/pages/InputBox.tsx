@@ -63,13 +63,12 @@ export const InputBox = () => {
   return (
     <div className="bg-secondarybg text-white h-screen flex flex-col">
       {/* Compact Sticky Header */}
-      <div className="sticky top-0 z-10 bg-secondarybg border-b border-gray-700 py-2 px-4">
+      <div className="sticky top-0 z-10 bg-secondarybg py-2 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <IconInputSearch size={20} className="text-accentx" />
             <h1 className="text-lg font-bold">Input Box</h1>
           </div>
-          <p className="text-gray-400 text-xs">{addr}</p>
         </div>
       </div>
 

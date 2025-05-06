@@ -139,6 +139,7 @@ export const FileManager = () => {
 
   async function fetchFolder(folder: string) {
     setLoading(true);
+    console.log("fetchFolder: " + folder);
     let run =
       folder === "previous"
         ? "previous_dir"
@@ -201,7 +202,7 @@ export const FileManager = () => {
         });
 
         // Refresh the directory after upload
-        await readFilesCmd(addr, "view_dir", path.split("\\").pop() || "");
+        await readFilesCmd(addr, "refresh_dir", "");
       } catch (error) {
         console.error("Failed to upload file:", error);
         alert("Failed to upload file: " + error);
