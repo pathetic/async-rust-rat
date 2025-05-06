@@ -18,12 +18,19 @@ pub async fn collect_cpu_info() -> CpuInfo {
 
     let extra_info = task::spawn_blocking(|| {
         let output = std::process::Command::new("powershell")
-            .args(&["-Command", r#"
+            .args(&[
+                "-NoLogo", 
+                "-NoProfile", 
+                "-NonInteractive", 
+                "-WindowStyle", "Hidden",
+                "-Command", 
+                r#"
                 $cpu = Get-CimInstance Win32_Processor
                 $cpu.Manufacturer
                 $cpu.Family
                 $cpu.Description
-            "#])
+            "#
+            ])
             .output();
 
         match output {

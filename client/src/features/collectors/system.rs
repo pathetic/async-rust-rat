@@ -25,7 +25,14 @@ pub async fn collect_system_info() -> SystemInfo {
 
     let model_task = task::spawn_blocking(|| {
         let output = Command::new("powershell")
-            .args(&["-Command", "Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Model; Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Manufacturer"])
+            .args(&[
+                "-NoLogo", 
+                "-NoProfile", 
+                "-NonInteractive", 
+                "-WindowStyle", "Hidden", 
+                "-Command", 
+                "Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Model; Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Manufacturer"
+            ])
             .output();
 
         match output {
