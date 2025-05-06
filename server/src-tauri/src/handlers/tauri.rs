@@ -713,6 +713,14 @@ pub async fn read_files(
             )
             .await?
         }
+        "refresh_dir" => {
+            send_server_command(
+                ServerCommand::RefreshDir(addr.parse().unwrap()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         "available_disks" => {
             send_server_command(
                 ServerCommand::AvailableDisks(addr.parse().unwrap()),

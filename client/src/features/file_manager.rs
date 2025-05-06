@@ -149,7 +149,6 @@ impl FileManager {
             return;
         }
         
-        println!("Successfully uploaded file to: {}", file_path.display());
         
         // Refresh the directory listing
         if let Some(parent) = file_path.parent() {

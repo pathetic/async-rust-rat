@@ -102,6 +102,7 @@ pub enum ClientboundPacket {
     RemoveFile(String),
     DownloadFile(String),
     AvailableDisks,
+    RefreshDir,
 
     StartReverseProxy(String),
     StopReverseProxy,
@@ -163,6 +164,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::RemoveFile(_) => "Remove File",
             ClientboundPacket::DownloadFile(_) => "Download File",
             ClientboundPacket::AvailableDisks => "Available Disks",
+            ClientboundPacket::RefreshDir => "Refresh Dir",
 
             ClientboundPacket::StartReverseProxy(_) => "Start Reverse Proxy",
             ClientboundPacket::StopReverseProxy => "Stop Reverse Proxy",

@@ -72,6 +72,8 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::AvailableDisks)) => file_manager.list_available_disks().await,
 
+            Ok(Some(ClientboundPacket::RefreshDir)) => file_manager.list_directory_contents().await,
+
             Ok(Some(ClientboundPacket::PreviousDir)) => file_manager.navigate_to_parent().await,
 
             Ok(Some(ClientboundPacket::ViewDir(path))) => file_manager.view_folder(&path).await,

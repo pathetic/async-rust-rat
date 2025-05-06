@@ -355,6 +355,10 @@ impl ServerWrapper {
                     self.send_client_packet(&addr, ClientboundPacket::AvailableDisks)
                         .await
                 }
+                RefreshDir(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::RefreshDir)
+                        .await
+                }
                 RemoveDir(addr, path) => {
                     self.send_client_packet(&addr, ClientboundPacket::RemoveDir(path))
                         .await

@@ -76,6 +76,7 @@ pub enum ServerCommand {
     RemoveDir(SocketAddr, String),
     RemoveFile(SocketAddr, String),
     DownloadFile(SocketAddr, String),
+    RefreshDir(SocketAddr),
 
     DisksResult(SocketAddr, Vec<String>),
     FileList(SocketAddr, Vec<File>),
