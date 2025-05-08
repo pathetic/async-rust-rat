@@ -41,13 +41,13 @@ export const WorldMap = () => {
 
     styles += `
     .world-map svg path[id="private"] {
-      fill: rgba(20,71,230, 1) !important;
+      fill: rgba(255,255,255, 1) !important;
     }
     `;
 
     styles += `
     .world-map svg path[id="total_clients"] {
-      fill: rgba(255, 210, 48, 1) !important;
+      fill: rgba(255, 255, 255, 1) !important;
     }
     `;
 

@@ -49,21 +49,30 @@ export const computePosition = (
   if (!mapRef.current) return { x: 0, y: 0 };
   const rect = mapRef.current.getBoundingClientRect();
   if (rect) {
-    let x = event.clientX - rect.left;
-    let y = event.clientY - rect.top;
+    // Get the exact mouse position relative to the map container
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
 
-    // If tooltip would overflow right, move it to the left
-    if (x + TOOLTIP_WIDTH > rect.width) {
-      x = x - TOOLTIP_WIDTH - 10; // shift left with some padding
-    } else {
-      x = x + 10; // normal right side offset
+    // Calculate the initial tooltip position (centered on the mouse)
+    let x = mouseX - TOOLTIP_WIDTH / 2;
+    let y = mouseY - TOOLTIP_HEIGHT / 2;
+
+    // Handle horizontal overflow
+    if (x < 0) {
+      // If tooltip would overflow left, align with left edge
+      x = 0;
+    } else if (x + TOOLTIP_WIDTH > rect.width) {
+      // If tooltip would overflow right, align with right edge
+      x = rect.width - TOOLTIP_WIDTH;
     }
 
-    // If tooltip would overflow bottom, move it above the cursor
-    if (y + TOOLTIP_HEIGHT > rect.height) {
-      y = y - TOOLTIP_HEIGHT - 10; // shift above
-    } else {
-      y = y + 10; // normal below offset
+    // Handle vertical overflow
+    if (y < 0) {
+      // If tooltip would overflow top, position below the mouse
+      y = mouseY + 10;
+    } else if (y + TOOLTIP_HEIGHT > rect.height) {
+      // If tooltip would overflow bottom, position above the mouse
+      y = mouseY - TOOLTIP_HEIGHT - 10;
     }
 
     return { x, y };
@@ -80,8 +89,8 @@ export const ToolTip: React.FC<{
     <div
       className="absolute bg-black text-white text-xs rounded px-2 py-1 pointer-events-none"
       style={{
-        top: tooltipPosition.y + 10,
-        left: tooltipPosition.x + 10,
+        top: tooltipPosition.y,
+        left: tooltipPosition.x,
         zIndex: 1000,
       }}
     >
