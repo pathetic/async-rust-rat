@@ -49,29 +49,21 @@ export const computePosition = (
   if (!mapRef.current) return { x: 0, y: 0 };
   const rect = mapRef.current.getBoundingClientRect();
   if (rect) {
-    // Get the exact mouse position relative to the map container
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    // Calculate the initial tooltip position (centered on the mouse)
     let x = mouseX - TOOLTIP_WIDTH / 2;
     let y = mouseY - TOOLTIP_HEIGHT / 2;
 
-    // Handle horizontal overflow
     if (x < 0) {
-      // If tooltip would overflow left, align with left edge
       x = 0;
     } else if (x + TOOLTIP_WIDTH > rect.width) {
-      // If tooltip would overflow right, align with right edge
       x = rect.width - TOOLTIP_WIDTH;
     }
 
-    // Handle vertical overflow
     if (y < 0) {
-      // If tooltip would overflow top, position below the mouse
       y = mouseY + 10;
     } else if (y + TOOLTIP_HEIGHT > rect.height) {
-      // If tooltip would overflow bottom, position above the mouse
       y = mouseY - TOOLTIP_HEIGHT - 10;
     }
 

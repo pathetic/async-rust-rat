@@ -73,11 +73,7 @@ export const App: React.FC = () => {
         <Route
           path="/process-viewer/:addr"
           element={
-            <WindowWrapper
-              feature_cleanup={() => {
-                // No cleanup needed
-              }}
-            >
+            <WindowWrapper feature_cleanup={() => {}}>
               <ProcessViewer />
             </WindowWrapper>
           }
@@ -85,11 +81,7 @@ export const App: React.FC = () => {
         <Route
           path="/file-manager/:addr"
           element={
-            <WindowWrapper
-              feature_cleanup={() => {
-                // No cleanup needed
-              }}
-            >
+            <WindowWrapper feature_cleanup={() => {}}>
               <FileManager />
             </WindowWrapper>
           }

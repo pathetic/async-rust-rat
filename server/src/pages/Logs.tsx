@@ -18,7 +18,6 @@ export const Logs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<Record<string, boolean>>({});
 
-  // Initialize filters based on event types in logs
   useEffect(() => {
     if (serverLogs && serverLogs.length > 0) {
       const eventTypes = new Set<string>();
@@ -33,7 +32,6 @@ export const Logs = () => {
     }
   }, [serverLogs]);
 
-  // Filter logs based on search term and selected filters
   const filteredLogs = useMemo(() => {
     return serverLogs.filter((log: Log) => {
       const matchesSearch =

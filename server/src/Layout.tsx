@@ -88,7 +88,6 @@ export const Layout = () => {
 
   return (
     <div className="flex h-screen w-screen bg-primarybg text-white flex-row justify-center">
-      {/* Sidebar */}
       <aside className="w-20 bg-primarybg flex flex-col items-center py-3.5 gap-4 pl-2">
         <SidebarBurger
           color={running ? "#009000" : "#D22B2B"}
@@ -119,8 +118,6 @@ export const Layout = () => {
           active={location.pathname === "/settings"}
         />
 
-        {/* Footer year */}
-
         <div className="flex flex-col mt-auto text-xs text-gray-400 text-center gap-4">
           <p>{running ? `Listening on port ${port}` : "Not Listening"}</p>
           <p>Made for educational purposes only!</p>
@@ -130,9 +127,7 @@ export const Layout = () => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex flex-col flex-1">
-        {/* Top Bar */}
         <header className="h-14 bg-primarybg px-4 flex items-center pt-2 gap-3">
           <div className="flex items-center rounded-full bg-secondarybg pl-3 border border-accentx h-9">
             <div className="shrink-0 text-base text-accentx select-none sm:text-sm/6">
@@ -152,7 +147,6 @@ export const Layout = () => {
             />
           </div>
 
-          {/* Rounded button */}
           <button
             onClick={() => {
               if (running) {
@@ -166,7 +160,6 @@ export const Layout = () => {
             {running ? "Stop" : "Start"}
           </button>
 
-          {/* Connected Clients box */}
           <div className="ml-auto flex items-center gap-2 rounded-full bg-secondarybg px-4 py-1.5 border border-accentx text-white">
             <IconUsers size={18} className="text-white" />
             <span className="text-white">Connected:</span>
@@ -176,7 +169,6 @@ export const Layout = () => {
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-auto m-3 text-black rounded-2xl">
           <Outlet />
         </main>

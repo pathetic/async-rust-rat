@@ -56,40 +56,30 @@ export const Troll = () => {
   const handleTrollCommand = async (command: TrollCommand) => {
     if (!addr) return;
 
-    // Set loading state for this command
     setLoading((prev) => ({ ...prev, [command.type]: true }));
 
     try {
       await sendTrollCommand(addr, command);
 
-      // For one-time actions, briefly show them as active then reset
       if (isOneTimeAction(command)) {
         setActiveCommands((prev) => ({ ...prev, [command.type]: true }));
 
-        // Reset active state after a short delay
         setTimeout(() => {
           setActiveCommands((prev) => ({ ...prev, [command.type]: false }));
         }, 1000);
-      }
-      // For toggle commands, update the active state
-      else if (isToggleCommand(command)) {
+      } else if (isToggleCommand(command)) {
         setActiveCommands((prev) => {
           const newState = { ...prev };
 
-          // If this is a "show" command, set its pair to inactive
           if (command.type.startsWith("Show")) {
             const hideCommand = command.type.replace("Show", "Hide");
             newState[hideCommand] = false;
             newState[command.type] = true;
-          }
-          // If this is a "hide" command, set its pair to inactive
-          else if (command.type.startsWith("Hide")) {
+          } else if (command.type.startsWith("Hide")) {
             const showCommand = command.type.replace("Hide", "Show");
             newState[showCommand] = false;
             newState[command.type] = true;
-          }
-          // For other toggle commands
-          else if (command.type === TrollCommandType.NormalMouse) {
+          } else if (command.type === TrollCommandType.NormalMouse) {
             newState[TrollCommandType.RevertMouse] = false;
             newState[command.type] = true;
           } else if (command.type === TrollCommandType.RevertMouse) {
@@ -123,7 +113,6 @@ export const Troll = () => {
     } catch (error) {
       console.error("Failed to send troll command:", error);
     } finally {
-      // Clear loading state
       setLoading((prev) => ({ ...prev, [command.type]: false }));
     }
   };
@@ -143,7 +132,6 @@ export const Troll = () => {
   const handleTrollCommandWithText = async (command: TrollCommand) => {
     if (!addr) return;
 
-    // Set loading state for this command
     setLoading((prev) => ({ ...prev, [command.type]: true }));
 
     try {
@@ -158,7 +146,6 @@ export const Troll = () => {
     }
   };
 
-  // Helper to determine if a command is part of a toggle pair
   const isToggleCommand = (command: TrollCommand): boolean => {
     return [
       TrollCommandType.HideDesktop,
@@ -173,13 +160,11 @@ export const Troll = () => {
       TrollCommandType.MonitorOn,
       TrollCommandType.MuteVolume,
       TrollCommandType.UnmuteVolume,
-      // These are not actual toggles, but we want to track their button state
       TrollCommandType.MaxVolume,
       TrollCommandType.MinVolume,
     ].includes(command.type);
   };
 
-  // Helper to determine if a command is a one-time action rather than a toggle
   const isOneTimeAction = (command: TrollCommand): boolean => {
     return [
       TrollCommandType.FocusDesktop,
@@ -187,29 +172,8 @@ export const Troll = () => {
     ].includes(command.type);
   };
 
-  // Get the appropriate CSS class for a button based on its state
-  const getButtonClass = (
-    command: TrollCommand,
-    placeholder: boolean = false
-  ): string => {
-    if (placeholder) {
-      return "bg-gray-800 text-gray-500 border-accentx cursor-not-allowed opacity-60";
-    }
-
-    if (loading[command.type]) {
-      return "bg-gray-700 border-gray-600 text-gray-300 cursor-wait";
-    }
-
-    if (activeCommands[command.type]) {
-      return "bg-green-900 border-green-700 text-white";
-    }
-
-    return "bg-secondarybg border-accentx text-white hover:bg-accentx hover:border-accentx transition-all duration-200";
-  };
-
   return (
     <div className="p-3 flex flex-1 flex-col overflow-auto w-full bg-primarybg h-screen">
-      {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <svg
@@ -232,7 +196,6 @@ export const Troll = () => {
         </div>
       </div>
 
-      {/* Warning */}
       <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-2 mb-3 text-md">
         <div className="flex items-start">
           <svg
@@ -269,7 +232,6 @@ export const Troll = () => {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {/* DESKTOP CONTROLS */}
           <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
             <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
               <h3 className="text-white font-medium text-md">
@@ -315,7 +277,6 @@ export const Troll = () => {
             </div>
           </div>
 
-          {/* NOTIFICATION CONTROLS */}
           <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
             <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
               <h3 className="text-white font-medium text-md">System Actions</h3>
@@ -359,7 +320,6 @@ export const Troll = () => {
             </div>
           </div>
 
-          {/* INPUT CONTROLS */}
           <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
             <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
               <h3 className="text-white font-medium text-md">
@@ -405,7 +365,6 @@ export const Troll = () => {
             </div>
           </div>
 
-          {/* AUDIO CONTROLS */}
           <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
             <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
               <h3 className="text-white font-medium text-md">Volume Control</h3>
@@ -451,9 +410,7 @@ export const Troll = () => {
         </div>
       )}
 
-      {/* Text-to-Speech, Piano Tiles, and Beep Sounds */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-4">
-        {/* Text-to-Speech */}
         <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
           <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
             <h3 className="text-white font-medium text-md">Text-to-Speech</h3>
@@ -500,7 +457,6 @@ export const Troll = () => {
           </div>
         </div>
 
-        {/* Piano Tiles */}
         <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
           <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
             <h3 className="text-white font-medium text-md">Piano Tiles</h3>
@@ -626,7 +582,6 @@ export const Troll = () => {
           </div>
         </div>
 
-        {/* Beep Command */}
         <div className="bg-secondarybg border border-accentx rounded-lg overflow-hidden">
           <div className="bg-primarybg border-b border-accentx px-2 py-1.5">
             <h3 className="text-white font-medium text-md">Beep Sound</h3>
@@ -716,7 +671,6 @@ const TrollButton = ({
       onClick={() => !loading && !placeholder && onClick(command)}
       disabled={loading || placeholder}
     >
-      {/* Icon with loading indicator */}
       <div className="flex-shrink-0">
         {loading ? (
           <div className="animate-spin">
@@ -742,7 +696,6 @@ const TrollButton = ({
         )}
       </div>
 
-      {/* Text content */}
       <span className="font-medium truncate">{title}</span>
 
       {placeholder && (

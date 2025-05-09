@@ -16,7 +16,6 @@ export const TableFilter = ({
 
   const isMultiCategory = filterCategories.length > 0;
 
-  // Handle simple filter (single category only)
   const handleSingleCategoryFilterChange = (key: string) => {
     if (!isMultiCategory) {
       setFilters((prev: Record<string, boolean>) => ({
@@ -26,7 +25,6 @@ export const TableFilter = ({
     }
   };
 
-  // Handle multi-category filter (like in Clients)
   const handleMultiCategoryFilterChange = (category: string, key: string) => {
     if (isMultiCategory && setActiveFilterCategory) {
       setFilters((prev: Record<string, Record<string, boolean>>) => ({

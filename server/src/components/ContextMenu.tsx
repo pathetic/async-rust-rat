@@ -262,7 +262,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     setSubmenuPosition({ top: rect.top, left: rect.right });
   };
 
-  // Add an effect to handle clicks outside of the menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -281,9 +280,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     };
   }, []);
 
-  // Close submenu when mouse leaves the menu area
   const handleMouseLeave = () => {
-    // Use a small timeout to allow the mouse to move from main menu to submenu
     setTimeout(() => {
       const isOverSubMenu =
         submenuRef.current && submenuRef.current.matches(":hover");

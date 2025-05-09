@@ -54,7 +54,6 @@ export const ClientInfo = ({
 
   async function waitScreenshot() {
     listen("client_screenshot", (event) => {
-      // Extract the data URL from the payload
       const payload = event.payload as { addr: string; data: string };
 
       if (payload.addr === client.data.addr) {
@@ -66,7 +65,6 @@ export const ClientInfo = ({
 
   async function waitWebcamResult() {
     listen("webcam_result", (event) => {
-      // Extract the data URL from the payload
       const payload = event.payload as { addr: string; data: string };
 
       if (payload.addr === client.data.addr) {
@@ -96,7 +94,6 @@ export const ClientInfo = ({
     }
   }
 
-  // Helper to determine OS icon
   const getOsIcon = () => {
     if (client.system.os_full_name.toLowerCase().includes("windows")) {
       return <IconBrandWindows size={20} className="text-blue-400" />;
@@ -110,7 +107,6 @@ export const ClientInfo = ({
     }
   };
 
-  // Get country flag SVG path based on country code
   const getCountryFlagPath = (countryCode: string) => {
     if (!countryCode || countryCode === "N/A") return "";
 
@@ -120,9 +116,7 @@ export const ClientInfo = ({
 
   return (
     <div className="relative bg-secondarybg p-4 rounded-xl text-white h-full flex flex-col max-h-full">
-      {/* Header and Tabs are fixed */}
       <div className="flex-none z-10">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
           <h2 className="text-xl font-bold flex items-center gap-2">
             {getOsIcon()}
@@ -152,7 +146,6 @@ export const ClientInfo = ({
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex mb-4 border-b border-gray-700">
           <button
             className={`py-2 px-4 flex items-center gap-1 cursor-pointer ${
@@ -190,11 +183,9 @@ export const ClientInfo = ({
         </div>
       </div>
 
-      {/* Main content - absolute positioning with a fixed height */}
       <div className="absolute top-[121px] left-4 right-4 bottom-4 overflow-y-auto">
         {activeSection === "system" && (
           <div className="space-y-4">
-            {/* Connection info */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
                 <IconNetwork size={16} />
@@ -212,7 +203,6 @@ export const ClientInfo = ({
               </div>
             </div>
 
-            {/* User info */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
                 <IconUser size={16} />
@@ -239,7 +229,6 @@ export const ClientInfo = ({
               </div>
             </div>
 
-            {/* Location info */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
                 <IconMapPin size={16} />
@@ -267,7 +256,6 @@ export const ClientInfo = ({
               </div>
             </div>
 
-            {/* System info */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
                 <IconDeviceDesktopAnalytics size={16} />
@@ -323,7 +311,6 @@ export const ClientInfo = ({
               </div>
             </div>
 
-            {/* Security info */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm flex items-center gap-1">
                 <IconShieldCheck size={16} />
@@ -351,7 +338,6 @@ export const ClientInfo = ({
 
         {activeSection === "screenshot" && (
           <div className="space-y-4">
-            {/* Screenshot display */}
             <div
               className={`w-full aspect-[16/9] border border-accentx rounded-xl flex items-center justify-center bg-primarybg overflow-hidden ${
                 isScreenshotLoading ? "animate-pulse" : ""
@@ -374,7 +360,6 @@ export const ClientInfo = ({
               )}
             </div>
 
-            {/* Display selection */}
             <div className="bg-primarybg rounded-lg p-3">
               <h3 className="text-accentx font-semibold mb-2 text-sm">
                 DISPLAYS ({client.displays})
@@ -404,7 +389,6 @@ export const ClientInfo = ({
 
         {activeSection === "webcam" && (
           <div className="space-y-4">
-            {/* Webcam display */}
             <div
               className={`w-full aspect-[4/3] border border-accentx rounded-xl flex items-center justify-center bg-primarybg overflow-hidden ${
                 isWebcamLoading ? "animate-pulse" : ""
@@ -429,7 +413,6 @@ export const ClientInfo = ({
               )}
             </div>
 
-            {/* Webcam controls */}
             <div className="bg-primarybg rounded-lg p-3">
               <div className="flex justify-between items-center">
                 <h3 className="text-accentx font-semibold text-sm flex items-center gap-1">

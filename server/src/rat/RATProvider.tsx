@@ -14,7 +14,7 @@ import { fetchStateCmd } from "./RATCommands";
 import { PhysicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 
-import clientsTest from "../../../python_utils_testing/test_clients.json";
+//import clientsTest from "../../../python_utils_testing/test_clients.json";
 
 const translateWindowType = (type: string) => {
   switch (type) {
@@ -90,7 +90,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const notificationClientRef = useRef(false);
   const [listenClientNotif, setListenClientNotif] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
+  const [_clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
   const [serverLogs, setServerLogs] = useState<Log[]>([]);
 
   async function fetchState() {
@@ -143,19 +143,18 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
       const currentWindow = getCurrentWindow();
       const label = currentWindow.label;
 
-      // Only run this on the main window
       if (label === "main") {
         const unlisten = await currentWindow.listen(
           "tauri://close-requested",
           async () => {
             console.log("Main window closing — closing all child windows");
-            await closeAllWindows(); // your logic to close tracked windows
+            await closeAllWindows();
             await currentWindow.destroy();
           }
         );
 
         return () => {
-          unlisten(); // unlikely to ever be called
+          unlisten();
         };
       }
     };
@@ -198,7 +197,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
 
         window.once("tauri://created", function () {});
 
-        window.once("tauri://error", function (e) {});
+        window.once("tauri://error", function () {});
 
         windowParent.once("tauri://close-requested", async () => {
           windowParent.emit("close_window").then(() => {

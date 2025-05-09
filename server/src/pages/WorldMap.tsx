@@ -97,8 +97,6 @@ export const WorldMap = () => {
         ref={mapRef}
         className="world-map relative w-full h-full bg-secondarybg world-map"
       >
-        {/* Inject generated dynamic styles */}
-
         <VectorMap
           {...extendedWorldData}
           layerProps={layerProps}

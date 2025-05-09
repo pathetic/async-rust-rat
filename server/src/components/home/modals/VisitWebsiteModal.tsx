@@ -28,7 +28,7 @@ export const VisitWebsiteModal = ({
   const handleVisitWebsite = () => {
     if (!url || !isValidUrl) return;
     visitWebsiteCmd(selectedClient, url);
-    // Close the modal
+
     const modal = document.getElementById(
       "visit_website_modal"
     ) as HTMLDialogElement;
