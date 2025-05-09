@@ -118,7 +118,7 @@ export const Layout = () => {
           active={location.pathname === "/settings"}
         />
 
-        <div className="flex flex-col mt-auto text-xs text-gray-400 text-center gap-4">
+        <div className="flex flex-col mt-auto text-xs text-accenttext text-center gap-4">
           <p>{running ? `Listening on port ${port}` : "Not Listening"}</p>
           <p>Made for educational purposes only!</p>
           <div className="flex flex-row justify-center items-center gap-1">

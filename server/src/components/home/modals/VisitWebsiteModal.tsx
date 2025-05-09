@@ -37,8 +37,8 @@ export const VisitWebsiteModal = ({
 
   return (
     <dialog id="visit_website_modal" className="modal">
-      <div className="modal-box w-[450px] bg-primarybg text-white border border-gray-700 rounded-xl shadow-xl backdrop-blur-sm transform transition-all duration-300 ease-out">
-        <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+      <div className="modal-box w-[450px] bg-primarybg text-white border border-accentx rounded-xl shadow-xl backdrop-blur-sm transform transition-all duration-300 ease-out">
+        <div className="flex justify-between items-center border-b border-accentx pb-3 mb-4">
           <h3 className="font-bold text-lg text-gray-200 flex items-center gap-2">
             <span className="p-1.5 rounded-md">
               <IconWorld size={24} className="text-accentx" />
@@ -66,7 +66,7 @@ export const VisitWebsiteModal = ({
                 placeholder="https://example.com"
                 className={`pl-10 pr-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border ${
                   isValidUrl
-                    ? "border-gray-700 focus:border-accentx"
+                    ? "border-gray-600 focus:border-accentx"
                     : "border-red-500"
                 } focus:outline-none focus:ring-1 ${
                   isValidUrl ? "focus:ring-accentx" : "focus:ring-red-500"
@@ -82,7 +82,7 @@ export const VisitWebsiteModal = ({
             )}
           </div>
 
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-accenttext">
             <p>
               Make sure to include the full URL with http:// or https:// prefix.
             </p>
@@ -91,7 +91,7 @@ export const VisitWebsiteModal = ({
 
         <div className="flex justify-end gap-3 mt-6">
           <form method="dialog">
-            <button className="px-4 py-2 text-sm font-medium rounded-lg bg-secondarybg text-gray-200 hover:bg-gray-700 hover:text-white border border-gray-700 hover:border-accentx transition-all duration-200 cursor-pointer">
+            <button className="px-4 py-2 text-sm font-medium rounded-lg bg-secondarybg text-gray-200 hover:bg-white hover:text-accentx border border-accentx hover:border-accentx transition-all duration-200 cursor-pointer">
               Cancel
             </button>
           </form>
@@ -100,8 +100,8 @@ export const VisitWebsiteModal = ({
             disabled={!url || !isValidUrl}
             className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-all duration-200 ${
               url && isValidUrl
-                ? "bg-accentx text-primarybg hover:bg-white hover:text-accentx border border-accentx"
-                : "bg-gray-700 border border-gray-600 text-gray-400 cursor-not-allowed"
+                ? "bg-accentx text-white hover:bg-white hover:text-accentx border border-accentx"
+                : "bg-accentx border border-accentx text-black !cursor-not-allowed"
             }`}
           >
             <IconSend size={16} />

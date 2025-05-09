@@ -125,7 +125,7 @@ export const ClientInfo = () => {
 
   return (
     <div className="bg-secondarybg text-white min-h-screen">
-      <div className="sticky top-0 z-10 bg-secondarybg border-b border-gray-700 pb-3 pt-4 px-4">
+      <div className="sticky top-0 z-10 bg-secondarybg border-b border-accentx pb-3 pt-4 px-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           {getOsIcon()}
           <span>
@@ -137,7 +137,7 @@ export const ClientInfo = () => {
 
       <div className="max-w-4xl mx-auto space-y-4 p-4 pt-6">
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconNetwork size={16} />
             CONNECTION
           </h3>
@@ -154,7 +154,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconUser size={16} />
             <span>USER</span>
           </h3>
@@ -180,7 +180,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconMapPin size={16} />
             <span>LOCATION</span>
           </h3>
@@ -205,7 +205,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconDeviceDesktopAnalytics size={16} />
             <span>SYSTEM</span>
           </h3>
@@ -243,7 +243,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconBrandGooglePodcasts size={16} />
             BIOS
           </h3>
@@ -270,7 +270,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconCpu size={16} />
             <span>HARDWARE</span>
           </h3>
@@ -332,7 +332,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconFingerprint size={16} />
             UNIQUE IDENTIFIERS
           </h3>
@@ -353,7 +353,7 @@ export const ClientInfo = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-4">
-          <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-3 text-sm flex items-center gap-1">
             <IconShieldCheck size={16} />
             <span>SECURITY</span>
           </h3>

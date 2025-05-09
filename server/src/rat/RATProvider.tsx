@@ -34,7 +34,7 @@ const translateWindowType = (type: string) => {
       return "Reverse Proxy";
     case "av-detection":
       return "Antivirus Detection";
-    case "troll":
+    case "fun":
       return "Fun Stuff";
     case "input-box":
       return "Input Box";
@@ -72,7 +72,7 @@ const windowTypeSizes = {
     width: 1280,
     height: 700,
   },
-  troll: {
+  fun: {
     width: 1280,
     height: 720,
   },

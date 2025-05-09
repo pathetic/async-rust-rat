@@ -129,7 +129,7 @@ export const ProcessViewer: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center mb-5">
         <div className="flex items-center gap-4">
           <button
-            className="px-4 py-2.5 bg-secondarybg text-gray-200 hover:bg-accentx hover:text-white border border-gray-700 hover:border-accentx transition-all duration-200 rounded-lg flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-secondarybg text-white hover:bg-white hover:text-black border border-gray-500 hover:border-accentx transition-all duration-200 rounded-lg flex items-center gap-2 cursor-pointer"
             onClick={fetchProcessList}
             disabled={loading}
           >
@@ -145,7 +145,7 @@ export const ProcessViewer: React.FC = () => {
               value={processFilter}
               onChange={(e) => setProcessFilter(e.target.value)}
               type="text"
-              className="pl-10 pr-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-700 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all"
+              className="pl-10 pr-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-500 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all"
               placeholder="Filter processes..."
             />
           </div>
@@ -156,7 +156,7 @@ export const ProcessViewer: React.FC = () => {
             type="text"
             value={startProcessName}
             onChange={(e) => setStartProcessName(e.target.value)}
-            className="w-52 py-2.5 px-3 bg-secondarybg text-white border border-gray-700 rounded-l-lg focus:border-accentx focus:outline-none"
+            className="w-52 py-2.5 px-3 bg-secondarybg text-white border border-gray-500 rounded-l-lg focus:border-accentx focus:outline-none"
             placeholder="Process name (e.g., notepad.exe)"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -169,8 +169,8 @@ export const ProcessViewer: React.FC = () => {
             disabled={!startProcessName.trim() || actionLoading["start"]}
             className={`px-4 py-2.5 rounded-r-lg flex items-center gap-2 border border-l-0 ${
               !startProcessName.trim() || actionLoading["start"]
-                ? "bg-gray-700 text-gray-400 border-gray-700 cursor-not-allowed"
-                : "bg-accentx text-white hover:bg-gray-600 border-accentx cursor-pointer"
+                ? "bg-gray-700 text-gray-400 border-white cursor-not-allowed"
+                : "bg-accentx text-white hover:text-black hover:bg-white border-accentx cursor-pointer"
             }`}
           >
             {actionLoading["start"] ? (
@@ -183,7 +183,7 @@ export const ProcessViewer: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-secondarybg rounded-xl border border-gray-700 overflow-hidden flex-1">
+      <div className="bg-secondarybg rounded-xl border border-accentx overflow-hidden flex-1">
         <div className="overflow-auto h-full">
           <table className="w-full text-sm text-left">
             <thead className="bg-primarybg text-gray-300 text-xs uppercase">
@@ -198,7 +198,7 @@ export const ProcessViewer: React.FC = () => {
                 filteredProcesses.map((process, index) => (
                   <tr
                     key={index}
-                    className="border-b border-gray-800 hover:bg-accentx"
+                    className="border-b border-accentx hover:bg-accentx"
                   >
                     <td className="px-6 py-3 font-mono">{process.pid}</td>
                     <td className="px-6 py-3">{process.name}</td>

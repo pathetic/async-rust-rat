@@ -159,14 +159,6 @@ export const Settings = () => {
                       {step.icon}
                     </div>
                     <div className="text-xs mt-2">{step.name}</div>
-                    {index < steps.length - 1 && (
-                      <div
-                        className={`h-1 w-16 mt-2 ${
-                          index < currentStep ? "bg-green-500" : "bg-gray-600"
-                        }`}
-                        style={{ marginLeft: "0px" }}
-                      ></div>
-                    )}
                   </div>
                 ))}
             </div>
