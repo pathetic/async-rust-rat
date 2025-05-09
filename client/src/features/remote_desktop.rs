@@ -218,16 +218,14 @@ pub fn stop_remote_desktop() {
 
 
 pub fn mouse_click(click_data: MouseClickData) {
-    // Set cursor position - round the floating point values to integers for the Windows API
+    // Set cursor position
     let x = click_data.x;
     let y = click_data.y;
 
-    // First, position the cursor
     unsafe {
         SetCursorPos(x, y);
     }
 
-    // Handle based on click type and action type
     match (click_data.click_type, click_data.action_type) {
         // Left mouse actions
         (0, 0) => unsafe { // Left click (complete)
@@ -280,7 +278,7 @@ pub fn mouse_click(click_data: MouseClickData) {
         // For mouse move during drag, we just update the cursor position (already done above)
         (_, 3) => {}, // Just update cursor position without changing button state
         
-        _ => {} // Ignore other combinations
+        _ => {}
     }
 }
 

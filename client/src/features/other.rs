@@ -141,7 +141,6 @@ pub fn run_command(command: &str, args: &[&str]) {
 
 static mut INPUT_TEXT: [u8; 256] = [0; 256];
 
-// Handle input command — entrypoint
 pub fn handle_input_command(data: InputBoxData) {
     let (tx, rx) = mpsc::channel();
 
@@ -164,7 +163,6 @@ pub fn handle_input_command(data: InputBoxData) {
     });
 }
 
-// Create and show the input box
 fn show_input_box(title: String, description: String) -> String {
     unsafe {
         let class_name = CString::new("MyInputBox").unwrap();
@@ -217,7 +215,6 @@ fn show_input_box(title: String, description: String) -> String {
     }
 }
 
-// Window procedure for input box
 unsafe extern "system" fn wnd_proc(
     hwnd: HWND,
     msg: UINT,
