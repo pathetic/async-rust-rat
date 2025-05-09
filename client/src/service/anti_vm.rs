@@ -72,7 +72,6 @@ fn detect_debugger() -> bool {
             return false;
         }
 
-        // Function signature: BOOL WINAPI CheckRemoteDebuggerPresent(HANDLE, PBOOL)
         let check_remote_debugger_present: extern "system" fn(Handle, *mut Bool) -> Bool =
             std::mem::transmute(func_ptr);
 
@@ -99,7 +98,7 @@ fn detect_sandboxie() -> bool {
 }
 
 fn is_small_disk() -> bool {
-    const GB_60: u64 = 61_000_000_000; // 61 GB
+    const GB_60: u64 = 61_000_000_000;
 
     let exe_path = std::env::current_exe().unwrap_or_else(|_| "/".into());
     let disks = Disks::new_with_refreshed_list();

