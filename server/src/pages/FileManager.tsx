@@ -53,44 +53,11 @@ export const FileManager = () => {
   const foldersRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  function fileActions(type: string, fileName: string) {
-    if (type === "file")
-      return (
-        <div className="flex flex-row gap-1 justify-center w-full">
-          <button
-            className="cursor-pointer px-2 py-1 bg-secondarybg text-gray-200 hover:bg-accentx hover:text-white border border-gray-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              manageFile("download_file", fileName);
-            }}
-            title="Download File"
-          >
-            <IconDownload size={14} />
-            <span className="hidden sm:inline">Download</span>
-          </button>
-
-          <button
-            className="cursor-pointer px-2 py-1 bg-red-900 text-white hover:bg-red-700 rounded flex items-center gap-1 text-xs font-medium transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              manageFile("remove_file", fileName);
-            }}
-            title="Delete File"
-          >
-            <IconTrash size={14} />
-            <span className="hidden sm:inline">Delete</span>
-          </button>
-        </div>
-      );
-    return null;
-  }
-
   useEffect(() => {
     invoke("read_files", { addr, run: "available_disks", path: "disks" });
   }, []);
 
   useEffect(() => {
-    // Handle clicks outside the context menu
     const handleClickOutside = (event: MouseEvent) => {
       if (
         contextMenuRef.current &&
@@ -185,15 +152,12 @@ export const FileManager = () => {
 
     if (selected && !Array.isArray(selected)) {
       try {
-        // Read the file content
         const fileData = await invoke("read_file_for_upload", {
           filePath: selected,
         });
 
-        // Get just the filename from the path
         const fileName = selected.split(/[\\\/]/).pop();
 
-        // Send the file to the client
         await invoke("upload_file_to_folder", {
           addr,
           targetFolder: path,
@@ -201,7 +165,6 @@ export const FileManager = () => {
           fileData,
         });
 
-        // Refresh the directory after upload
         await readFilesCmd(addr, "refresh_dir", "");
       } catch (error) {
         console.error("Failed to upload file:", error);
@@ -213,11 +176,9 @@ export const FileManager = () => {
   const handleContextMenu = (e: React.MouseEvent, fileName: string) => {
     e.preventDefault();
 
-    // Get the position for the context menu
     const x = e.clientX;
     const y = e.clientY;
 
-    // Set the context menu information
     setContextMenu({
       visible: true,
       x,
@@ -289,7 +250,6 @@ export const FileManager = () => {
 
   return (
     <div className="p-6 w-full h-screen bg-primarybg flex flex-col overflow-hidden">
-      {/* Context Menu */}
       {contextMenu.visible && (
         <div
           ref={contextMenuRef}
@@ -328,7 +288,6 @@ export const FileManager = () => {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
           <IconFolders size={28} className="text-accentx" />
@@ -362,7 +321,6 @@ export const FileManager = () => {
       </div>
 
       <div className="flex gap-4 w-full flex-1 overflow-hidden">
-        {/* Folders Section */}
         <div className="w-[320px] bg-secondarybg rounded-xl overflow-hidden flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <h3 className="text-base font-medium text-white">Folders</h3>
@@ -381,7 +339,6 @@ export const FileManager = () => {
           </div>
 
           <div className="p-3">
-            {/* Back button */}
             <div
               onClick={() => fetchFolder("previous")}
               className="flex items-center gap-3 cursor-pointer hover:bg-accentx hover:text-white p-2 rounded-lg transition mb-3 bg-primarybg group"
@@ -394,7 +351,6 @@ export const FileManager = () => {
             </div>
           </div>
 
-          {/* Folder list */}
           <div
             ref={foldersRef}
             className="overflow-y-auto flex-1 p-3 pt-0 space-y-2"
@@ -454,7 +410,6 @@ export const FileManager = () => {
           </div>
         </div>
 
-        {/* Files Section */}
         <div
           ref={filesRef}
           className="flex-1 bg-secondarybg rounded-xl overflow-hidden flex flex-col h-full"

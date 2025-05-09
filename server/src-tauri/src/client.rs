@@ -8,7 +8,7 @@ use common::packets::ClientboundPacket;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 
-pub struct ClientWrapper; // Maybe this shouldn't be a struct?
+pub struct ClientWrapper;
 
 impl ClientWrapper {
     /// Handles incoming connection and spawns reading and writing loops.
@@ -97,15 +97,14 @@ impl ClientReaderWrapper {
                     }
                     Err(_) => {
                         self.client_sender.send(ClientCommand::Close).await.ok();
-                        // it's ok if already closed
                     }
                 }
             }
             Ok(_) => {
-                self.client_sender.send(ClientCommand::Close).await.ok(); // it's ok if already closed
+                self.client_sender.send(ClientCommand::Close).await.ok();
             }
             Err(_) => {
-                self.client_sender.send(ClientCommand::Close).await.ok(); // it's ok if already closed
+                self.client_sender.send(ClientCommand::Close).await.ok();
             }
         };
     }

@@ -95,7 +95,6 @@ export const Settings = () => {
   return (
     <div className="flex flex-col h-full w-full bg-primarybg text-white">
       <div className="flex flex-1 overflow-hidden">
-        {/* Left side - Server settings */}
         <div className="w-1/3 overflow-auto">
           <div className="space-y-6">
             <div className="bg-secondarybg rounded-xl p-4">
@@ -132,7 +131,6 @@ export const Settings = () => {
           </div>
         </div>
 
-        {/* Right side - Client Builder */}
         <div className="w-2/3 pl-4 overflow-auto">
           <div className="bg-secondarybg rounded-xl p-4 h-full flex flex-col">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
@@ -140,7 +138,6 @@ export const Settings = () => {
               Client Builder
             </h2>
 
-            {/* Progress steps */}
             <div
               className={`flex justify-between px-4 pt-2 ${
                 currentStep === 5 ? "pb-0" : "pb-8"
@@ -174,7 +171,6 @@ export const Settings = () => {
                 ))}
             </div>
 
-            {/* Step content */}
             <div className="flex-1 overflow-auto px-4">
               {currentStep === 0 && (
                 <div className="space-y-4">
@@ -770,7 +766,6 @@ export const Settings = () => {
               )}
             </div>
 
-            {/* Navigation buttons */}
             <div className="flex justify-between mt-6 pt-4 border-t border-accentx">
               <button
                 onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}

@@ -20,16 +20,14 @@ export const InputBox = () => {
   const [inputBoxResults, setInputBoxResults] = useState<
     Array<{ text: string; timestamp: string }>
   >([]);
-  const [isSending, setIsSending] = useState(false);
+  const [isSending, _setIsSending] = useState(false);
 
   const handleSendInputBox = async () => {
     if (!title.trim() || !message.trim() || isSending) return;
 
     try {
-      // Send the command without showing loading state
       await sendInputBoxCmd(addr, title, message);
 
-      // Clear the input fields after sending
       setTitle("");
       setMessage("");
     } catch (error) {
@@ -62,7 +60,6 @@ export const InputBox = () => {
 
   return (
     <div className="bg-secondarybg text-white h-screen flex flex-col">
-      {/* Compact Sticky Header */}
       <div className="sticky top-0 z-10 bg-secondarybg py-2 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -73,7 +70,6 @@ export const InputBox = () => {
       </div>
 
       <div className="flex-1 p-3 flex flex-col gap-3 overflow-hidden">
-        {/* Input Form - More Compact */}
         <div className="bg-primarybg rounded-lg p-3">
           <h3 className="text-accentx font-semibold mb-2 text-xs flex items-center gap-1">
             <IconMessageDots size={14} />
@@ -122,7 +118,6 @@ export const InputBox = () => {
           </div>
         </div>
 
-        {/* Log Box - Always visible with fixed height */}
         <div className="bg-primarybg rounded-lg p-3 flex-1 flex flex-col min-h-0">
           <h3 className="text-accentx font-semibold mb-2 text-xs flex items-center gap-1">
             <IconHistory size={14} />

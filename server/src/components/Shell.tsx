@@ -49,7 +49,6 @@ export const Command: React.FC<CommandProps> = ({ addr }) => {
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      // Skip focusing if text is being selected
       const selectedText = window.getSelection()?.toString();
       if (selectedText && selectedText.length > 0) {
         return;

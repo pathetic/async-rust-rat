@@ -27,23 +27,20 @@ export const RemoteDesktop: React.FC = () => {
     height: 0,
   });
 
-  // UI state
   const [showControls, setShowControls] = useState(true);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Ready to connect");
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
 
-  // Stream settings
   const [streaming, setStreaming] = useState(false);
   const [quality, setQuality] = useState(35);
   const [fps, setFps] = useState(10);
   const [displays, setDisplays] = useState<number[]>([]);
   const [selectedDisplay, setSelectedDisplay] = useState(0);
 
-  // Control states
   const [mouseControlEnabled, setMouseControlEnabled] = useState(false);
   const [keyboardControlEnabled, setKeyboardControlEnabled] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [activeMouseButton, setActiveMouseButton] = useState<number | null>(
     null
@@ -51,10 +48,8 @@ export const RemoteDesktop: React.FC = () => {
   const [capsLockState, setCapsLockState] = useState(false);
   const [ctrlKeyState, setCtrlKeyState] = useState(false);
 
-  // Additional state
   const [showKeyboardInfo, setShowKeyboardInfo] = useState(true);
 
-  // Initialize remote display and cleanup
   useEffect(() => {
     lastFrameRef.current = new Image();
 
@@ -82,7 +77,6 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, []);
 
-  // Process incoming frames
   useEffect(() => {
     const unlisten = listen("remote_desktop_frame", (event) => {
       const payload = event.payload as RemoteDesktopFramePayload;
@@ -124,7 +118,6 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, [selectedDisplay]);
 
-  // Handle keyboard control
   useEffect(() => {
     if (!streaming || !keyboardControlEnabled || !addr) return;
 
@@ -213,14 +206,12 @@ export const RemoteDesktop: React.FC = () => {
     };
   }, [streaming, keyboardControlEnabled, addr]);
 
-  // Reset keyboard state when control is disabled
   useEffect(() => {
     if (!keyboardControlEnabled || !streaming) {
       resetClientKeyboardState();
     }
   }, [keyboardControlEnabled, streaming]);
 
-  // Streaming control functions
   const stopStreamingAndCleanup = async () => {
     if (!streaming) return;
 
@@ -250,7 +241,6 @@ export const RemoteDesktop: React.FC = () => {
     setConnectionStatus("Ready to connect");
   };
 
-  // Mouse and keyboard control functions
   const resetClientKeyboardState = async () => {
     if (!addr) return;
 
@@ -279,7 +269,6 @@ export const RemoteDesktop: React.FC = () => {
     };
   };
 
-  // Mouse event handlers
   const handleCanvasMouseDown = async (
     event: React.MouseEvent<HTMLCanvasElement>
   ) => {
@@ -419,7 +408,6 @@ export const RemoteDesktop: React.FC = () => {
     }
   };
 
-  // UI control functions
   const toggleKeyboardControl = () => {
     const newState = !keyboardControlEnabled;
     setKeyboardControlEnabled(newState);
@@ -443,7 +431,6 @@ export const RemoteDesktop: React.FC = () => {
     setShowControls(!showControls);
   };
 
-  // UI helper functions
   const showToolTip = (tip: string) => {
     setShowTooltip(tip);
   };
@@ -452,7 +439,6 @@ export const RemoteDesktop: React.FC = () => {
     setShowTooltip(null);
   };
 
-  // Render display options
   const displayOptions = displays.map((displayId) => (
     <option key={displayId} value={displayId}>
       Display {displayId + 1}
@@ -461,7 +447,6 @@ export const RemoteDesktop: React.FC = () => {
 
   return (
     <div className="relative w-screen h-screen bg-black flex flex-col items-center p-0 m-0">
-      {/* Side controls */}
       <div className="fixed top-4 left-4 z-10 flex flex-col gap-3">
         <button
           className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
@@ -532,14 +517,12 @@ export const RemoteDesktop: React.FC = () => {
         </button>
       </div>
 
-      {/* Tooltip */}
       {showTooltip && (
         <div className="fixed top-4 left-20 z-20 bg-black bg-opacity-90 text-white px-3 py-2 rounded-lg text-sm shadow-lg">
           {showTooltip}
         </div>
       )}
 
-      {/* Main controls */}
       {showControls && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-10 bg-primarybg bg-opacity-90 backdrop-blur-md p-4 rounded-xl shadow-xl text-white max-w-lg w-full">
           <div className="flex w-full justify-between items-center mb-3">

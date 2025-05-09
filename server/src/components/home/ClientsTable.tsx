@@ -4,7 +4,6 @@ import {
   IconBrandUbuntu,
 } from "@tabler/icons-react";
 import { RATClient, FilterCategories } from "../../../types";
-import { useState, useEffect } from "react";
 
 import { CpuSvg, GpuSvg, RamSvg, StorageSvg } from "./Svgs";
 
@@ -40,17 +39,6 @@ export const ClientsTable = ({
     }
   };
 
-  const fetchGpus = (gpus: string[]) => {
-    let gpuString = "";
-
-    gpus.forEach((gpu) => {
-      gpuString += `${gpu}\n`;
-    });
-
-    return gpuString;
-  };
-
-  // Get country flag SVG path based on country code
   const getCountryFlagPath = (countryCode: string) => {
     if (!countryCode || countryCode === "N/A") return "";
 

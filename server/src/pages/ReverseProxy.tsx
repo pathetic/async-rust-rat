@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { startReverseProxyCmd, stopReverseProxyCmd } from "../rat/RATCommands";
 import {
@@ -49,7 +49,6 @@ export const ReverseProxy = () => {
 
   return (
     <div className="p-6 w-full h-screen bg-primarybg flex flex-col">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
           <IconNetwork size={28} className="text-accentx" />
@@ -73,7 +72,6 @@ export const ReverseProxy = () => {
         </div>
       </div>
 
-      {/* Main content */}
       <div className="bg-secondarybg bg-opacity-80 rounded-xl shadow-lg p-6 w-full max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-primarybg bg-opacity-70 rounded-lg px-4 py-3 border border-gray-700">
@@ -160,7 +158,6 @@ export const ReverseProxy = () => {
         </div>
       </div>
 
-      {/* Footer with tips */}
       <div className="mt-auto pt-4">
         <div className="bg-secondarybg bg-opacity-70 rounded-lg px-4 py-3 border border-gray-700 flex items-center gap-3 max-w-4xl mx-auto">
           <IconInfoCircle size={18} className="text-accentx shrink-0" />

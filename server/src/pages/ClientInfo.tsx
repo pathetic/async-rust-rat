@@ -37,7 +37,6 @@ export const ClientInfo = () => {
           console.log("Fetching client info for", addr);
           console.log("Current client list:", clientList);
 
-          // First try to get from context
           const clientData = await getClientByAddr(addr);
 
           if (clientData) {
@@ -47,7 +46,6 @@ export const ClientInfo = () => {
             return;
           }
 
-          // If not found in context, try direct fetch
           console.log("Client not found in context, trying direct fetch");
           try {
             const directClient = await fetchClientCmd(addr);
@@ -74,7 +72,6 @@ export const ClientInfo = () => {
     fetchClientInfo();
   }, [addr, getClientByAddr, clientList]);
 
-  // Helper to determine OS icon
   const getOsIcon = () => {
     if (!client)
       return <IconDeviceDesktop size={20} className="text-gray-400" />;
@@ -91,7 +88,6 @@ export const ClientInfo = () => {
     }
   };
 
-  // Get country flag SVG path based on country code
   const getCountryFlagPath = (countryCode: string) => {
     if (!countryCode || countryCode === "N/A") return "";
     const code = countryCode.toLowerCase();
@@ -129,7 +125,6 @@ export const ClientInfo = () => {
 
   return (
     <div className="bg-secondarybg text-white min-h-screen">
-      {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-secondarybg border-b border-gray-700 pb-3 pt-4 px-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           {getOsIcon()}
@@ -140,9 +135,7 @@ export const ClientInfo = () => {
         <p className="text-gray-400 text-sm mt-1">{client.data.addr}</p>
       </div>
 
-      {/* Main Content - Single Column */}
       <div className="max-w-4xl mx-auto space-y-4 p-4 pt-6">
-        {/* Connection info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconNetwork size={16} />
@@ -160,7 +153,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* User info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconUser size={16} />
@@ -187,7 +179,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* Location info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconMapPin size={16} />
@@ -213,7 +204,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* System info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconDeviceDesktopAnalytics size={16} />
@@ -252,7 +242,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* BIOS info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconBrandGooglePodcasts size={16} />
@@ -280,7 +269,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* Hardware info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconCpu size={16} />
@@ -343,7 +331,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* Unique Identifiers */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconFingerprint size={16} />
@@ -365,7 +352,6 @@ export const ClientInfo = () => {
           </div>
         </div>
 
-        {/* Security info */}
         <div className="bg-primarybg rounded-lg p-4">
           <h3 className="text-accentx font-semibold mb-3 text-sm flex items-center gap-1">
             <IconShieldCheck size={16} />

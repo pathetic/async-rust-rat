@@ -119,7 +119,6 @@ export const ProcessViewer: React.FC = () => {
 
   return (
     <div className="p-6 flex flex-1 flex-col overflow-auto w-full bg-primarybg h-screen">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
           <IconCpu size={28} className="text-accentx" />
@@ -127,7 +126,6 @@ export const ProcessViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* Controls */}
       <div className="flex flex-wrap justify-between items-center mb-5">
         <div className="flex items-center gap-4">
           <button
@@ -185,7 +183,6 @@ export const ProcessViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* Process List */}
       <div className="bg-secondarybg rounded-xl border border-gray-700 overflow-hidden flex-1">
         <div className="overflow-auto h-full">
           <table className="w-full text-sm text-left">
