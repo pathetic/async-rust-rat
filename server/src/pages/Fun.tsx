@@ -43,7 +43,7 @@ enum TrollCommandType {
   PianoKey = "PianoKey",
 }
 
-export const Troll = () => {
+export const FunPanel = () => {
   const { addr } = useParams();
   const [activeCommands, setActiveCommands] = useState<Record<string, boolean>>(
     {}
@@ -192,7 +192,7 @@ export const Troll = () => {
             <path d="M13 15l3 0" />
             <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
           </svg>
-          <h1 className="text-xl font-medium text-white">Troll Panel</h1>
+          <h1 className="text-xl font-medium text-white">Fun Stuff</h1>
         </div>
       </div>
 
@@ -434,7 +434,7 @@ export const Troll = () => {
               />
             </div>
 
-            <p className="text-gray-400 text-xs">
+            <p className="text-accenttext text-xs">
               Make the client's computer speak the text.
             </p>
 
@@ -448,8 +448,8 @@ export const Troll = () => {
               disabled={!ttsText.trim() || loading[TrollCommandType.SpeakText]}
               className={`w-full py-2 px-3 rounded font-medium text-md transition-colors duration-200 ${
                 !ttsText.trim() || loading[TrollCommandType.SpeakText]
-                  ? "bg-gray-700 border border-gray-600 text-gray-300 cursor-not-allowed"
-                  : "bg-accentx hover:bg-white hover:text-black text-white border border-accentx cursor-pointer"
+                  ? "bg-accentx border border-accentx text-black !cursor-not-allowed"
+                  : "bg-accentx text-white hover:bg-white hover:text-accentx border border-accentx cursor-pointer"
               }`}
             >
               Send Text
@@ -576,7 +576,7 @@ export const Troll = () => {
             </div>
           </div>
           <div className="pl-2 pt-1 pb-1">
-            <p className="text-gray-400 text-xs mt-2">
+            <p className="text-accenttext text-xs mt-2">
               Click keys to play sounds on the remote computer.
             </p>
           </div>
@@ -589,7 +589,7 @@ export const Troll = () => {
           <div className="p-2 space-y-1.5">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-gray-400 text-xs block mb-1">
+                <label className="text-accenttext text-xs block mb-1">
                   Frequency (Hz): {beepFrequency}
                 </label>
                 <input
@@ -601,12 +601,12 @@ export const Troll = () => {
                   onChange={(e) => setBeepFrequency(parseInt(e.target.value))}
                 />
                 <div className="flex justify-between mt-1">
-                  <span className="text-xs text-gray-400">100</span>
-                  <span className="text-xs text-gray-400">5000</span>
+                  <span className="text-xs text-accenttext">100</span>
+                  <span className="text-xs text-accenttext">5000</span>
                 </div>
               </div>
               <div>
-                <label className="text-gray-400 text-xs block mb-1">
+                <label className="text-accenttext text-xs block mb-1">
                   Duration (ms)
                 </label>
                 <input

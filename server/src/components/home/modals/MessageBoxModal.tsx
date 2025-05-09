@@ -15,8 +15,8 @@ export const MessageBoxModal = ({
 
   return (
     <dialog id="message_box_modal" className="modal">
-      <div className="modal-box w-[450px] bg-primarybg text-white border border-gray-700 rounded-xl shadow-xl backdrop-blur-sm transform transition-all duration-300 ease-out">
-        <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+      <div className="modal-box w-[450px] bg-primarybg text-white border border-accentx rounded-xl shadow-xl backdrop-blur-sm transform transition-all duration-300 ease-out">
+        <div className="flex justify-between items-center border-b border-accentx pb-3 mb-4">
           <h3 className="font-bold text-lg text-gray-200 flex items-center gap-2">
             <span className="p-1.5 rounded-md">
               <IconMessage2 size={24} className="text-accentx" />
@@ -38,7 +38,7 @@ export const MessageBoxModal = ({
             <input
               type="text"
               placeholder="Message Box Title"
-              className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-700 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all"
+              className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-600 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all"
               value={messageBoxTitle}
               onChange={(e) => setMessageBoxTitle(e.target.value)}
             />
@@ -50,7 +50,7 @@ export const MessageBoxModal = ({
             </label>
             <textarea
               placeholder="Content that will appear in the message box"
-              className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-700 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all min-h-[80px] resize-none"
+              className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-600 focus:border-accentx focus:outline-none focus:ring-1 focus:ring-accentx transition-all min-h-[80px] resize-none"
               value={messageBoxContent}
               onChange={(e) => setMessageBoxContent(e.target.value)}
             />
@@ -62,7 +62,7 @@ export const MessageBoxModal = ({
                 Button Style
               </label>
               <select
-                className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-700 focus:border-accentx focus:outline-none appearance-none cursor-pointer"
+                className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-600 focus:border-accentx focus:outline-none appearance-none cursor-pointer"
                 value={messageBoxButton}
                 onChange={(e) => setMessageBoxButton(e.target.value)}
               >
@@ -80,7 +80,7 @@ export const MessageBoxModal = ({
                 Icon Type
               </label>
               <select
-                className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-700 focus:border-accentx focus:outline-none appearance-none cursor-pointer"
+                className="mt-1 px-4 py-2.5 w-full text-sm bg-secondarybg rounded-lg border border-gray-600 focus:border-accentx focus:outline-none appearance-none cursor-pointer"
                 value={messageBoxIcon}
                 onChange={(e) => setMessageBoxIcon(e.target.value)}
               >
@@ -104,7 +104,7 @@ export const MessageBoxModal = ({
                 messageBoxIcon
               )
             }
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-secondarybg text-gray-200 hover:bg-gray-700 hover:text-white border border-gray-700 hover:border-accentx transition-all duration-200 cursor-pointer"
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-secondarybg text-gray-200 hover:bg-white hover:text-accentx border border-accentx hover:border-accentx transition-all duration-200 cursor-pointer"
           >
             Test Locally
           </button>
@@ -118,7 +118,7 @@ export const MessageBoxModal = ({
                 messageBoxIcon
               )
             }
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-accentx text-primarybg hover:bg-white hover:text-accentx border border-accentx transition-all duration-200 cursor-pointer"
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-accentx text-white hover:bg-white hover:text-accentx border border-accentx transition-all duration-200 cursor-pointer"
           >
             Send to Target
           </button>

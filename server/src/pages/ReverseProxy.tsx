@@ -51,7 +51,7 @@ export const ReverseProxy = () => {
     <div className="p-6 w-full h-screen bg-primarybg flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-          <IconNetwork size={28} className="text-accentx" />
+          <IconNetwork size={28} className="text-accenttext" />
           <h2 className="text-xl font-medium text-white">Reverse Proxy</h2>
         </div>
 
@@ -74,19 +74,19 @@ export const ReverseProxy = () => {
 
       <div className="bg-secondarybg bg-opacity-80 rounded-xl shadow-lg p-6 w-full max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-primarybg bg-opacity-70 rounded-lg px-4 py-3 border border-gray-700">
+          <div className="bg-primarybg bg-opacity-70 rounded-lg px-4 py-3 border border-accentx">
             <div className="flex items-center mb-2">
-              <IconServer size={20} className="text-accentx mr-2" />
+              <IconServer size={20} className="text-accenttext mr-2" />
               <h3 className="text-base text-white">Local Settings</h3>
             </div>
             <div className="text-sm text-gray-300 mb-4">
               Configure the local port where your SOCKS5 proxy will listen
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-accentx">Local Port:</label>
+              <label className="text-sm text-accenttext">Local Port:</label>
               <input
                 type="text"
-                className="block w-32 py-2 px-3 text-sm bg-secondarybg rounded-md border border-gray-700 focus:outline-none focus:border-accentx text-white"
+                className="block w-32 py-2 px-3 text-sm bg-secondarybg rounded-md border border-gray-500 focus:outline-none focus:border-accentx text-white"
                 placeholder="2345"
                 value={localPort}
                 onChange={(e) => setLocalPort(e.target.value)}
@@ -94,9 +94,9 @@ export const ReverseProxy = () => {
             </div>
           </div>
 
-          <div className="bg-primarybg bg-opacity-70 rounded-lg px-4 py-3 border border-gray-700">
+          <div className="bg-primarybg bg-opacity-70 rounded-lg px-4 py-3 border border-accentx">
             <div className="flex items-center mb-2">
-              <IconDeviceDesktop size={20} className="text-accentx mr-2" />
+              <IconDeviceDesktop size={20} className="text-accenttext mr-2" />
               <h3 className="text-base text-white">Remote Settings</h3>
             </div>
             <div className="text-sm text-gray-300 mb-4">
@@ -104,7 +104,7 @@ export const ReverseProxy = () => {
               connection
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-accentx">Remote Port:</label>
+              <label className="text-sm text-accenttext">Remote Port:</label>
               <input
                 type="text"
                 className="block w-32 py-2 px-3 text-sm bg-secondarybg rounded-md border border-gray-700 focus:outline-none focus:border-accentx text-white"
@@ -129,8 +129,11 @@ export const ReverseProxy = () => {
           </button>
         </div>
 
-        <div className="bg-primarybg border border-gray-700 rounded-lg p-4 flex items-start gap-3">
-          <IconInfoCircle size={22} className="text-accentx shrink-0 mt-0.5" />
+        <div className="bg-primarybg border border-accentx rounded-lg p-4 flex items-start gap-3">
+          <IconInfoCircle
+            size={22}
+            className="text-accenttext shrink-0 mt-0.5"
+          />
           <div>
             <h4 className="text-white font-medium mb-1">
               Connection Information
@@ -141,16 +144,16 @@ export const ReverseProxy = () => {
             </p>
             <ul className="mt-2 space-y-1 text-sm text-white">
               <li>
-                <span className="text-accentx">Proxy Type:</span> SOCKS5
+                <span className="text-accenttext">Proxy Type:</span> SOCKS5
               </li>
               <li>
-                <span className="text-accentx">Address:</span> 127.0.0.1
+                <span className="text-accenttext">Address:</span> 127.0.0.1
               </li>
               <li>
-                <span className="text-accentx">Port:</span> {localPort}
+                <span className="text-accenttext">Port:</span> {localPort}
               </li>
               <li>
-                <span className="text-accentx">Authentication:</span> None
+                <span className="text-accenttext">Authentication:</span> None
                 required
               </li>
             </ul>
@@ -159,8 +162,8 @@ export const ReverseProxy = () => {
       </div>
 
       <div className="mt-auto pt-4">
-        <div className="bg-secondarybg bg-opacity-70 rounded-lg px-4 py-3 border border-gray-700 flex items-center gap-3 max-w-4xl mx-auto">
-          <IconInfoCircle size={18} className="text-accentx shrink-0" />
+        <div className="bg-secondarybg bg-opacity-70 rounded-lg px-4 py-3 border border-accentx flex items-center gap-3 max-w-4xl mx-auto">
+          <IconInfoCircle size={18} className="text-accenttext shrink-0" />
           <p className="text-sm text-gray-300">
             This SOCKS5 proxy allows you to redirect network traffic through the
             remote device. Perfect for accessing internal networks, bypassing

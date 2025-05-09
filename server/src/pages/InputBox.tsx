@@ -71,25 +71,27 @@ export const InputBox = () => {
 
       <div className="flex-1 p-3 flex flex-col gap-3 overflow-hidden">
         <div className="bg-primarybg rounded-lg p-3">
-          <h3 className="text-accentx font-semibold mb-2 text-xs flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-2 text-xs flex items-center gap-1">
             <IconMessageDots size={14} />
             <span>SEND INPUT BOX</span>
           </h3>
 
           <div className="space-y-2">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Title</label>
+              <label className="block text-xs text-accenttext mb-1">
+                Title
+              </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter box title"
-                className="w-full bg-secondarybg text-white border border-gray-700 rounded p-1.5 text-sm focus:border-accentx focus:outline-none"
+                className="w-full bg-secondarybg text-white border border-gray-600 rounded-lg p-1.5 text-sm focus:border-accentx focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1">
+              <label className="block text-xs text-accenttext mb-1">
                 Message
               </label>
               <textarea
@@ -97,7 +99,7 @@ export const InputBox = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Enter message text"
                 rows={3}
-                className="w-full bg-secondarybg text-white border border-gray-700 rounded p-1.5 text-sm focus:border-accentx focus:outline-none resize-none"
+                className="w-full bg-secondarybg text-white border border-gray-600 rounded-lg p-1.5 text-sm focus:border-accentx focus:outline-none resize-none"
               ></textarea>
             </div>
 
@@ -107,8 +109,8 @@ export const InputBox = () => {
                 disabled={!title.trim() || !message.trim() || isSending}
                 className={`flex items-center gap-1 py-1 px-3 rounded text-sm ${
                   !title.trim() || !message.trim() || isSending
-                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : "bg-accentx text-white hover:bg-opacity-80"
+                    ? "bg-accentx border border-accentx text-black !cursor-not-allowed"
+                    : "bg-accentx text-white hover:bg-white hover:text-accentx border border-accentx cursor-pointer"
                 } transition-colors`}
               >
                 <IconSend size={14} />
@@ -119,7 +121,7 @@ export const InputBox = () => {
         </div>
 
         <div className="bg-primarybg rounded-lg p-3 flex-1 flex flex-col min-h-0">
-          <h3 className="text-accentx font-semibold mb-2 text-xs flex items-center gap-1">
+          <h3 className="text-accenttext font-semibold mb-2 text-xs flex items-center gap-1">
             <IconHistory size={14} />
             <span>RESPONSE LOG</span>
           </h3>
@@ -130,7 +132,7 @@ export const InputBox = () => {
                 {inputBoxResults.map((result, index) => (
                   <div
                     key={index}
-                    className="border border-gray-700 rounded p-2"
+                    className="border border-accentx rounded-lg p-2"
                   >
                     <div className="flex items-center gap-1 mb-1">
                       {result.text.toLowerCase() === "ok" ||
@@ -142,11 +144,11 @@ export const InputBox = () => {
                       ) : (
                         <IconClock size={16} className="text-blue-400" />
                       )}
-                      <span className="font-medium text-xs">
+                      <span className="font-medium text-xs text-accenttext">
                         {result.timestamp}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-300 break-words whitespace-pre-wrap overflow-hidden">
+                    <p className="text-xs text-white break-words whitespace-pre-wrap overflow-hidden">
                       {result.text}
                     </p>
                   </div>

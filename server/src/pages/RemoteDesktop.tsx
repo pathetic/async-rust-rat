@@ -572,8 +572,8 @@ export const RemoteDesktop: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             <div className="flex flex-col gap-4">
-              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
-                <label className="text-sm text-accentx mr-2">Display:</label>
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-500">
+                <label className="text-sm text-white mr-2">Display:</label>
                 <select
                   className={`block w-full text-sm bg-transparent focus:outline-none ${
                     streaming ? "text-accentx cursor-not-allowed" : "text-white"
@@ -586,8 +586,8 @@ export const RemoteDesktop: React.FC = () => {
                 </select>
               </div>
 
-              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
-                <label className="text-sm text-accentx mr-2">Quality:</label>
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-500">
+                <label className="text-sm text-white mr-2">Quality:</label>
                 <div className="flex-1 flex items-center gap-1">
                   <input
                     type="range"
@@ -606,8 +606,8 @@ export const RemoteDesktop: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-700">
-                <label className="text-sm text-accentx mr-2">FPS:</label>
+              <div className="bg-secondarybg bg-opacity-70 rounded-lg flex items-center px-3 py-2 border border-gray-500">
+                <label className="text-sm text-white mr-2">FPS:</label>
                 <div className="flex-1 flex items-center gap-1">
                   <input
                     type="range"

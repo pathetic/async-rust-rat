@@ -253,7 +253,7 @@ export const FileManager = () => {
       {contextMenu.visible && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 bg-secondarybg border border-gray-700 rounded-md shadow-xl"
+          className="fixed z-50 bg-secondarybg border border-gray-500 rounded-md shadow-xl"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
           <ul>
@@ -296,7 +296,7 @@ export const FileManager = () => {
 
         <div className="flex items-center gap-3">
           <button
-            className="cursor-pointer px-3 py-1.5 bg-accentx text-white hover:bg-opacity-80 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="cursor-pointer px-3 py-1.5 bg-accentx text-white hover:bg-accentx/80 rounded flex items-center gap-1.5 text-xs font-medium transition-colors"
             onClick={uploadAndExecuteFile}
             title="Upload & Execute File"
           >
@@ -322,7 +322,7 @@ export const FileManager = () => {
 
       <div className="flex gap-4 w-full flex-1 overflow-hidden">
         <div className="w-[320px] bg-secondarybg rounded-xl overflow-hidden flex flex-col h-full">
-          <div className="flex items-center justify-between p-4 border-b border-gray-800">
+          <div className="flex items-center justify-between p-4 border-b border-accentx">
             <h3 className="text-base font-medium text-white">Folders</h3>
             <div className="relative w-36">
               <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
@@ -332,7 +332,7 @@ export const FileManager = () => {
                 value={folderFilter}
                 onChange={(e) => setFolderFilter(e.target.value)}
                 type="text"
-                className="pl-7 pr-2 py-1 w-full text-xs bg-primarybg rounded-md border border-gray-700 focus:border-accentx focus:outline-none"
+                className="pl-7 pr-2 py-1 w-full text-xs bg-primarybg rounded-md border border-gray-500 focus:border-accentx focus:outline-none"
                 placeholder="Filter folders"
               />
             </div>
@@ -414,7 +414,7 @@ export const FileManager = () => {
           ref={filesRef}
           className="flex-1 bg-secondarybg rounded-xl overflow-hidden flex flex-col h-full"
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-800">
+          <div className="flex items-center justify-between p-4 border-b border-accentx">
             <h3 className="text-base font-medium text-white">Files</h3>
             <div className="relative w-36">
               <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
@@ -424,7 +424,7 @@ export const FileManager = () => {
                 value={fileFilter}
                 onChange={(e) => setFileFilter(e.target.value)}
                 type="text"
-                className="pl-7 pr-2 py-1 w-full text-xs bg-primarybg rounded-md border border-gray-700 focus:border-accentx focus:outline-none"
+                className="pl-7 pr-2 py-1 w-full text-xs bg-primarybg rounded-md border border-gray-500 focus:border-accentx focus:outline-none"
                 placeholder="Filter files"
               />
             </div>
@@ -444,12 +444,12 @@ export const FileManager = () => {
                 {filteredFiles.map((file) => (
                   <div
                     key={file.name}
-                    className="flex flex-col justify-between p-4 bg-primarybg rounded-lg hover:bg-gray-800 transition group relative"
+                    className="flex flex-col justify-between p-4 bg-primarybg rounded-lg hover:bg-accentx/80 transition group relative"
                     onContextMenu={(e) => handleContextMenu(e, file.name)}
                   >
                     <div className="absolute top-2 right-2">
                       <button
-                        className="w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 bg-gray-700 hover:bg-accentx flex items-center justify-center transition-all text-white"
+                        className="cursor-pointer w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 bg-accentx hover:bg-accentx flex items-center justify-center transition-all text-white"
                         onClick={(e) => {
                           e.stopPropagation();
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -471,7 +471,7 @@ export const FileManager = () => {
                       <span className="block truncate px-2">{file.name}</span>
                     </div>
                     <div className="flex flex-col">
-                      <div className="text-center mb-2 text-xs text-gray-400">
+                      <div className="text-center mb-2 text-xs text-gray-300">
                         <em>Right-click for more options</em>
                       </div>
                     </div>
@@ -495,7 +495,7 @@ export const FileManager = () => {
           </div>
 
           {filteredFiles.length > 0 && (
-            <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-800">
+            <div className="px-4 py-2 text-xs text-gray-400 border-t border-accentx">
               Showing {filteredFiles.length}{" "}
               {filteredFiles.length === 1 ? "file" : "files"}
             </div>
