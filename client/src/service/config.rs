@@ -14,7 +14,7 @@ pub fn get_config() -> ClientConfig {
 
         mutex_enabled: false,
         mutex: "TEST123".to_string(),
-        unattended_mode: true,
+        unattended_mode: false,
     };
 
     let config_link_sec: Result<ClientConfig, rmp_serde::decode::Error> = rmp_serde::from_read(
