@@ -59,12 +59,6 @@ const menuOptions = [
         optionType: OptionType.WINDOW,
       },
       {
-        label: "Hidden VNC",
-        type: "hvnc",
-        icon: <IconDeviceDesktopPlus size={24} />,
-        optionType: OptionType.WINDOW,
-      },
-      {
         label: "File Manager",
         type: "file-manager",
         icon: <IconFolder size={24} />,
