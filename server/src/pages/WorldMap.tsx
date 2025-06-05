@@ -1,115 +1,126 @@
-import { VectorMap } from "@south-paw/react-vector-maps";
 import { RATContext } from "../rat/RATContext";
-import { useContext, useMemo, useState, useRef } from "react";
-import {
-  extendedWorldData,
-  computePosition,
-  ToolTip,
-} from "../components/world/world";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import ReactECharts from "echarts-for-react";
+import * as echarts from "echarts";
+
+import worldmap from "../components/world/world.json";
 
 export const WorldMap = () => {
   const { clientList } = useContext(RATContext)!;
-  const [tooltipContent, setTooltipContent] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  const [isMapRegistered, setIsMapRegistered] = useState(false);
 
   const clientCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     clientList.forEach(({ data }) => {
       const code = data.country_code.toUpperCase();
       counts[code] = (counts[code] || 0) + 1;
+      if (
+        data.addr.includes("127.0.0.1") ||
+        data.country_code == "LOCAL_HOST"
+      ) {
+        counts["Localhost"] = (counts["Localhost"] || 0) + 1;
+      }
     });
+
+    counts["Total Clients"] = clientList.length;
     return counts;
   }, [clientList]);
 
-  const generatedStyles = useMemo(() => {
-    let styles = "";
+  const maxClients = useMemo(() => {
+    const filteredCounts = Object.entries(clientCounts)
+      .filter(([key]) => key !== "Total Clients")
+      .filter(([key]) => key !== "Localhost")
+      .map(([, count]) => count);
 
-    for (const [countryCode, count] of Object.entries(clientCounts)) {
-      console.log(countryCode);
-      const normalized = Math.min(count / 10, 1);
-      const opacity = 0.2 + normalized * 0.8; // 0.2 to 1.0 opacity scaling
-      styles += `
-        .world-map svg path[id="${countryCode.toLowerCase()}"] {
-          fill: rgba(20,71,230,${opacity.toFixed(2)});
-        }
-      `;
-    }
-
-    styles += `
-    .world-map svg path[id="private"] {
-      fill: rgba(255,255,255, 1) !important;
-    }
-    `;
-
-    styles += `
-    .world-map svg path[id="total_clients"] {
-      fill: rgba(255, 255, 255, 1) !important;
-    }
-    `;
-
-    return styles;
+    return filteredCounts.length > 0 ? Math.max(...filteredCounts) : 1;
   }, [clientCounts]);
 
-  const layerProps = {
-    onMouseEnter: (event: any) => {
-      const countryName = event.target.attributes.name?.value;
-      const countryId = event.target.attributes.id?.value?.toUpperCase();
-      const count = clientCounts[countryId] || 0;
+  useEffect(() => {
+    if (!isMapRegistered) {
+      echarts.registerMap("WORLD", worldmap as any);
+      setIsMapRegistered(true);
+    }
+  }, []);
 
-      const { x, y } = computePosition(event, mapRef);
-      setTooltipPosition({ x, y });
+  const chartOptions = {
+    backgroundColor: "#0e0e0e",
+    series: [
+      {
+        name: "Connected Clients",
+        type: "map",
+        roam: true,
+        map: "WORLD",
+        data: Object.entries(clientCounts).map(([code, count]) => ({
+          name: code,
+          value: count,
+        })),
+        itemStyle: {
+          areaColor: "rgba(23,23,23,0.1)",
+          borderColor: "white",
+        },
+        label: {
+          show: false,
+        },
+        emphasis: {
+          label: {
+            show: false,
+          },
+          itemStyle: {
+            areaColor: "rgba(255,255,255,0.7)",
+            borderColor: "white",
+          },
+        },
+        selectedMode: false,
+      },
+    ],
+    visualMap: {
+      right: 10,
+      bottom: 10,
+      min: 0,
+      max: maxClients,
+      inRange: {
+        color: ["rgba(20,71,230,0)", "rgba(20,71,230,1)"],
+      },
+      text: ["High", "Low"],
+      textStyle: {
+        color: "white",
+      },
+      calculable: true,
+    },
+    toolbox: {
+      show: true,
+      left: 5,
+      top: 5,
 
-      if (countryName === "Total Clients") {
-        setTooltipContent(
-          `${countryName}: ${clientList.length} Client${
-            clientList.length !== 1 ? "s" : ""
-          }`
-        );
-      } else {
-        setTooltipContent(
-          `${countryName}: ${count} Client${count !== 1 ? "s" : ""}`
-        );
-      }
+      feature: {
+        restore: {},
+        saveAsImage: {},
+      },
+      iconStyle: {
+        borderColor: "white",
+      },
+      textStyle: {
+        color: "white",
+      },
     },
-    onMouseMove: (event: any) => {
-      const { x, y } = computePosition(event, mapRef);
-      setTooltipPosition({ x, y });
-    },
-    onMouseLeave: () => {
-      setTooltipContent(null);
-      setTooltipPosition(null);
-    },
-    onClick: (event: any) => {
-      const countryName = event.target.attributes.name?.value;
-      console.log("Clicked on", countryName);
-    },
+    tooltip: {},
   };
+
+  if (!isMapRegistered) {
+    return <div>Loading map...</div>;
+  }
 
   return (
     <>
-      <style>{generatedStyles}</style>
-
       <div
         ref={mapRef}
         className="world-map relative w-full h-full bg-secondarybg world-map"
       >
-        <VectorMap
-          {...extendedWorldData}
-          layerProps={layerProps}
-          style={{
-            width: "100%",
-            height: "100%",
-            padding: "5px",
-          }}
-        />
-
-        <ToolTip
-          tooltipContent={tooltipContent}
-          tooltipPosition={tooltipPosition}
+        <ReactECharts
+          option={chartOptions}
+          style={{ width: "100%", height: "100%" }}
         />
       </div>
     </>

@@ -14,7 +14,7 @@ import { fetchStateCmd } from "./RATCommands";
 import { PhysicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 
-//import clientsTest from "../../../python_utils_testing/test_clients.json";
+import clientsTest from "../../../python_utils_testing/clients/test_clients.json";
 
 const translateWindowType = (type: string) => {
   switch (type) {
@@ -85,7 +85,7 @@ const windowTypeSizes = {
 export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const [port, setPort] = useState<string>("1337");
   const [running, setRunning] = useState<boolean>(false);
-  const [clientList, setClientList] = useState<RATClient[]>([]);
+  const [clientList, setClientList] = useState<RATClient[]>(clientsTest as any);
   const [notificationClient, setNotificationClient] = useState<boolean>(true);
   const notificationClientRef = useRef(false);
   const [listenClientNotif, setListenClientNotif] = useState<boolean>(false);
