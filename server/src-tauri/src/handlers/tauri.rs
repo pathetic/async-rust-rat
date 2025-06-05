@@ -831,7 +831,6 @@ pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
 }
 
 pub fn get_assembly_info(exe_path: &str, rcedit_path: &str) -> Result<AssemblyInfo, String> {
-    // Helper closure to get a value or return empty string on failure
     let get_value = |key: &str| -> String {
         let output = Command::new(rcedit_path)
             .arg(exe_path)
@@ -959,17 +958,14 @@ pub async fn upload_and_execute(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle
 ) -> Result<String, String> {
-    // Read the file from disk
     let file_data = fs::read(file_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
     
-    // Get the filename from the path
     let file_name = std::path::Path::new(file_path)
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("unknown.exe");
     
-    // Create FileData struct
     let file_data = FileData {
         name: file_name.to_string(),
         data: file_data,

@@ -32,7 +32,6 @@ export const ProcessViewer: React.FC = () => {
   const handleKillProcess = async (pid: string, name: string) => {
     try {
       await killProcessCmd(addr, parseInt(pid), name);
-      // Remove the process from the local state
       setProcesses((prevProcesses) =>
         prevProcesses
           ? prevProcesses.filter((process) => process.pid !== pid)
@@ -71,7 +70,6 @@ export const ProcessViewer: React.FC = () => {
 
     try {
       await startProcessCmd(addr, startProcessName);
-      // After starting the process, refresh the list
       fetchProcessList();
     } catch (error) {
       console.error("Failed to start process:", error);
