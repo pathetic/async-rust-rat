@@ -17,6 +17,8 @@
     "@tauri-apps/plugin-dialog": "^2.2.1",
     "@tauri-apps/plugin-shell": "^2.2.1",
     "daisyui": "^5.0.25",
+    "echarts": "^5.6.0",
+    "echarts-for-react": "^3.0.2",
     "lodash": "^4.17.21",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
