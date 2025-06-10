@@ -1,0 +1,3372 @@
+[
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "ASUS",
+      "serial_number": "CQ92QQ8BRB1QRX",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2498,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 6,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "176"
+    },
+    "data": {
+      "addr": "127.0.0.1:25890",
+      "country_code": "NL",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "6438",
+      "uuidv4": "81f1d55c-2997-4eb4-a48f-201d52e5ca59"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2030.15
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.2.782.9995",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 36.3,
+      "used_gb": 3.26
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-971",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "42209-17270-86963-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user95"
+    },
+    "unique": {
+      "mac_address": "336EF86AB8D8",
+      "volume_serial": "6617A3E"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Lenovo",
+      "serial_number": "RBBR1P3VJWXK",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4605,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "229"
+    },
+    "data": {
+      "addr": "127.0.0.1:51368",
+      "country_code": "CH",
+      "disconnected": null,
+      "group": "Default",
+      "reverse_proxy_port": "2899",
+      "uuidv4": "5cfc5e5b-0bb6-4e11-9192-bbeed8d93d4d"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1327.58
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 713.58
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.5.264.5310",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      },
+      {
+        "driver_version": "31.1.445.5873",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      }
+    ],
+    "ram": {
+      "total_gb": 53.75,
+      "used_gb": 7.69
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-257",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "41191-20851-92221-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "MSI",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user74"
+    },
+    "unique": {
+      "mac_address": "67CC89BF514C",
+      "volume_serial": "054AFC4"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "ASUS",
+      "serial_number": "4YQFZT3KAMYSX",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3383,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 16,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "208"
+    },
+    "data": {
+      "addr": "127.0.0.1:18861",
+      "country_code": "ZA",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "6d7d704b-7785-40af-bacb-0e73a0757b20"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1136.03
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 564.44
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.0.665.3762",
+        "name": "AMD Radeon RX 6700 XT"
+      },
+      {
+        "driver_version": "30.7.601.3093",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 22.09,
+      "used_gb": 10.97
+    },
+    "security": {
+      "antivirus_names": [
+        "Norton"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-laptop-458",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "84387-87061-43231-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "MSI",
+      "system_model": "OptiPlex 7090",
+      "username": "user34"
+    },
+    "unique": {
+      "mac_address": "ABD9D2BC1A5E",
+      "volume_serial": "7A1785D"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "XJKB2HX2HC2F6",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3121,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "218"
+    },
+    "data": {
+      "addr": "127.0.0.1:42879",
+      "country_code": "CA",
+      "disconnected": true,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "afda3b08-62d4-4cf2-820a-db5eb2713ed8"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 1933.46
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 667.02
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.5.828.9708",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 57.88,
+      "used_gb": 9.8
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-655",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "86516-86590-82456-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "MSI",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user84"
+    },
+    "unique": {
+      "mac_address": "B5902C50B296",
+      "volume_serial": "2B8B4B3"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "932IURRZ7K2",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4696,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 4,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "243"
+    },
+    "data": {
+      "addr": "127.0.0.1:14556",
+      "country_code": "CN",
+      "disconnected": true,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "6618",
+      "uuidv4": "fd6021e2-357d-4606-aa84-290d7f2b1de6"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 2954.67
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3043.52
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.8.305.1230",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      },
+      {
+        "driver_version": "32.1.407.9786",
+        "name": "AMD Radeon RX 7900 XTX"
+      }
+    ],
+    "ram": {
+      "total_gb": 116.16,
+      "used_gb": 46.99
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-workstation-011",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "27348-86436-12344-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "EliteBook 850 G8",
+      "username": "user76"
+    },
+    "unique": {
+      "mac_address": "251DB711FCC6",
+      "volume_serial": "337D0C7"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "1LUQJPJ5B9P3O",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3169,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "248"
+    },
+    "data": {
+      "addr": "127.0.0.1:10243",
+      "country_code": "CH",
+      "disconnected": null,
+      "group": "Default",
+      "reverse_proxy_port": "",
+      "uuidv4": "78fbc7cc-2353-4005-b8f2-13e7bdfacb78"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 427.87
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3828.05
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.6.462.3002",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 102.44,
+      "used_gb": 27.01
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-626",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "83456-76254-77040-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "OptiPlex 7090",
+      "username": "user98"
+    },
+    "unique": {
+      "mac_address": "2033B8871254",
+      "volume_serial": "7D0C4BB"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "MHWCF9S02QZ6",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2691,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "164"
+    },
+    "data": {
+      "addr": "127.0.0.1:35043",
+      "country_code": "GB",
+      "disconnected": true,
+      "group": "Power Users",
+      "reverse_proxy_port": "",
+      "uuidv4": "d82b5d6f-2166-45a2-903b-9b4d7f2d6bb9"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1361.81
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1262.82
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1067.46
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.8.987.7256",
+        "name": "AMD Radeon RX 7900 XTX"
+      }
+    ],
+    "ram": {
+      "total_gb": 125.37,
+      "used_gb": 85.93
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-533",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "26889-10337-70053-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "HP Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user61"
+    },
+    "unique": {
+      "mac_address": "467C5C027B30",
+      "volume_serial": "DB602E1"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Dell Inc.",
+      "serial_number": "9CGRQNOY2STBLYY",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3461,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 16,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "238"
+    },
+    "data": {
+      "addr": "127.0.0.1:30438",
+      "country_code": "GB",
+      "disconnected": false,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "13a21564-157b-46d2-8d3d-b8cedfe4cfe9"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 2355.08
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 2795.24
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 1258.8
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.3.603.3305",
+        "name": "NVIDIA GeForce RTX 4090"
+      },
+      {
+        "driver_version": "35.1.136.3746",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 34.11,
+      "used_gb": 9.46
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-pc-016",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "58004-78164-16168-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "ROG Strix G15",
+      "username": "user100"
+    },
+    "unique": {
+      "mac_address": "CD84F3A9D663",
+      "volume_serial": "6F6E3D3"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "ASUS",
+      "serial_number": "JTZCDYBW0TVJZ",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3820,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "239"
+    },
+    "data": {
+      "addr": "127.0.0.1:14999",
+      "country_code": "DE",
+      "disconnected": false,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "5ed3f2ae-72c9-4c92-8821-0fa7a02fbeba"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2514.53
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.4.184.4351",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 96.46,
+      "used_gb": 10.87
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-409",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "97682-28883-41733-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user4"
+    },
+    "unique": {
+      "mac_address": "3333928577FC",
+      "volume_serial": "CB9B474"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "IBOUVJ5087",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4490,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "186"
+    },
+    "data": {
+      "addr": "127.0.0.1:25924",
+      "country_code": "MX",
+      "disconnected": false,
+      "group": "Default",
+      "reverse_proxy_port": "",
+      "uuidv4": "856b7783-8469-442f-aa70-01f6b4e5d6b8"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3037.66
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.2.885.7043",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      }
+    ],
+    "ram": {
+      "total_gb": 52.98,
+      "used_gb": 7.94
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-547",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "17394-43486-45848-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user26"
+    },
+    "unique": {
+      "mac_address": "82127C6E84E2",
+      "volume_serial": "B9D5778"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "HP Inc.",
+      "serial_number": "0AINH3YDEVNO",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2142,
+      "cpu_name": "12th Gen Intel(R) Core(TM) i9-12900K",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "209"
+    },
+    "data": {
+      "addr": "127.0.0.1:39781",
+      "country_code": "MX",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "437c9f6f-0d98-48fa-9817-67af56d425b0"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 550.62
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2718.38
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.8.233.2786",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 97.45,
+      "used_gb": 2.12
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-895",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "78468-31345-98710-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "ROG Strix G15",
+      "username": "user75"
+    },
+    "unique": {
+      "mac_address": "CC7CD07B4D99",
+      "volume_serial": "CBEA985"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "HP Inc.",
+      "serial_number": "Q8K6HQVGAQ9G",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2582,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "227"
+    },
+    "data": {
+      "addr": "127.0.0.1:43512",
+      "country_code": "ZA",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "31c3862e-4534-4dd0-b4bc-0ce6f39fb4ae"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 3461.18
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1651.95
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3501.39
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.5.964.6185",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 20.45,
+      "used_gb": 2.24
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-091",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "46270-80745-47594-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "ASUS",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user72"
+    },
+    "unique": {
+      "mac_address": "F3873D839E4D",
+      "volume_serial": "B2C6198"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "FKK0SFDNGBE",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2379,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "208"
+    },
+    "data": {
+      "addr": "127.0.0.1:13931",
+      "country_code": "AU",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "1333",
+      "uuidv4": "8669bc42-4ce2-45e1-b747-406e517a2104"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 3512.87
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 3536.94
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3109.67
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.3.715.5916",
+        "name": "AMD Radeon RX 6700 XT"
+      },
+      {
+        "driver_version": "34.1.377.7086",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 91.32,
+      "used_gb": 70.86
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-815",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "64536-99746-65158-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "MSI",
+      "system_model": "Aspire 5",
+      "username": "user72"
+    },
+    "unique": {
+      "mac_address": "C6E4A93C4B04",
+      "volume_serial": "C7E6D4C"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "ASUS",
+      "serial_number": "RULEWBCF85HQ",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4519,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "199"
+    },
+    "data": {
+      "addr": "127.0.0.1:52968",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "f4601c7a-1c3e-4e01-8700-32b918b4c5bb"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2557.24
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 302.3
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.1.858.7241",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 12.17,
+      "used_gb": 4.5
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-798",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "99966-76223-77883-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "Aspire 5",
+      "username": "user37"
+    },
+    "unique": {
+      "mac_address": "02E7C0B1BA2F",
+      "volume_serial": "618C377"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "4PQJVQW07D5X36",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3857,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 24,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "222"
+    },
+    "data": {
+      "addr": "127.0.0.1:44548",
+      "country_code": "US",
+      "disconnected": null,
+      "group": "Power Users",
+      "reverse_proxy_port": "3974",
+      "uuidv4": "0c2d6b6e-6751-4f6e-a620-cf56482d5633"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 2488.24
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.2.381.3168",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 82.73,
+      "used_gb": 3.2
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-474",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "52943-90166-81204-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user22"
+    },
+    "unique": {
+      "mac_address": "6409F9F51FFB",
+      "volume_serial": "6B43ECD"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "HP Inc.",
+      "serial_number": "ML5KSM7BPKV1E",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2642,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "189"
+    },
+    "data": {
+      "addr": "127.0.0.1:27332",
+      "country_code": "CA",
+      "disconnected": true,
+      "group": "Power Users",
+      "reverse_proxy_port": "",
+      "uuidv4": "6b997bed-2246-46a4-bea4-65ab40ec8d35"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 3480.99
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 2658.53
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1622.64
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.7.353.8156",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      },
+      {
+        "driver_version": "31.6.260.9526",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      }
+    ],
+    "ram": {
+      "total_gb": 61.21,
+      "used_gb": 14.56
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-781",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "80656-24480-15687-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "OptiPlex 7090",
+      "username": "user16"
+    },
+    "unique": {
+      "mac_address": "79C84F77D605",
+      "volume_serial": "3E51040"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "HP Inc.",
+      "serial_number": "DNDTH3JU4S",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 1989,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "217"
+    },
+    "data": {
+      "addr": "127.0.0.1:30255",
+      "country_code": "NL",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "a84d4e04-e8a3-414a-bc82-377469d29e5f"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 1452.39
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.2.657.7958",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      }
+    ],
+    "ram": {
+      "total_gb": 114.05,
+      "used_gb": 22.9
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-workstation-409",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "24407-60963-69727-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "EliteBook 850 G8",
+      "username": "user25"
+    },
+    "unique": {
+      "mac_address": "8BA670AA1481",
+      "volume_serial": "8926C82"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "Dell Inc.",
+      "serial_number": "ENR6AGNICXUGJDU",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2526,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "182"
+    },
+    "data": {
+      "addr": "127.0.0.1:45613",
+      "country_code": "SE",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "5821",
+      "uuidv4": "efa64b25-573d-4cd9-bbcd-0da1b94de2c5"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3943.77
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3264.45
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.9.430.5648",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 53.39,
+      "used_gb": 35.75
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-pc-215",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "40573-79641-38786-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user57"
+    },
+    "unique": {
+      "mac_address": "D4BAC47D3B02",
+      "volume_serial": "3A07CAF"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "HP Inc.",
+      "serial_number": "CJPWYP80BBV",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3151,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 24,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "180"
+    },
+    "data": {
+      "addr": "127.0.0.1:34426",
+      "country_code": "BR",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "166c1811-e5d9-4ce2-abeb-a99039c70ddb"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 3923.84
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 3864.02
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.4.521.1568",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      },
+      {
+        "driver_version": "34.2.772.3869",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 41.89,
+      "used_gb": 30.1
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-007",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "82721-34427-56179-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "ROG Strix G15",
+      "username": "user51"
+    },
+    "unique": {
+      "mac_address": "F5BB7BCD777A",
+      "volume_serial": "5159021"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "ASUS",
+      "serial_number": "SOJ7FJTO06DMWO",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3233,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 16,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "247"
+    },
+    "data": {
+      "addr": "127.0.0.1:27333",
+      "country_code": "IT",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "2048",
+      "uuidv4": "86ab3bb6-8153-424d-a25b-dd7d570c6604"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 375.01
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 3718.12
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.6.944.3106",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 65.91,
+      "used_gb": 47.54
+    },
+    "security": {
+      "antivirus_names": [
+        "Norton"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-339",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "42792-59196-93065-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "ASUS",
+      "system_model": "OptiPlex 7090",
+      "username": "user28"
+    },
+    "unique": {
+      "mac_address": "74B4E4E5919C",
+      "volume_serial": "ED451BC"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "HP Inc.",
+      "serial_number": "PFWMXPVZLN1ZFRW",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 1844,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "214"
+    },
+    "data": {
+      "addr": "127.0.0.1:35249",
+      "country_code": "CN",
+      "disconnected": false,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "6b2537e3-8bde-4c96-b499-696cd34d3357"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 2903.23
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 3446.6
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.6.420.2072",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      }
+    ],
+    "ram": {
+      "total_gb": 90.24,
+      "used_gb": 54.01
+    },
+    "security": {
+      "antivirus_names": [
+        "Norton"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-088",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "39005-77923-94567-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user30"
+    },
+    "unique": {
+      "mac_address": "86A6FB7C2631",
+      "volume_serial": "3B2AA22"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "Dell Inc.",
+      "serial_number": "B2FNIM16BWRO",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2391,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "152"
+    },
+    "data": {
+      "addr": "127.0.0.1:23847",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "fcda3d82-1a38-4f0b-a2a7-04d3b3d05788"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 778.39
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.5.275.5670",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      },
+      {
+        "driver_version": "35.2.825.2669",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 80.66,
+      "used_gb": 21.85
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-353",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "92140-17487-22637-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "ROG Strix G15",
+      "username": "user94"
+    },
+    "unique": {
+      "mac_address": "DC94FA9DD8EC",
+      "volume_serial": "8CA6F2D"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "HP Inc.",
+      "serial_number": "TRMOR8K8V9",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3906,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "241"
+    },
+    "data": {
+      "addr": "127.0.0.1:52984",
+      "country_code": "IT",
+      "disconnected": null,
+      "group": "Power Users",
+      "reverse_proxy_port": "",
+      "uuidv4": "80b71080-fcd7-4708-acda-2350b62e05fb"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1019.14
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.7.777.4177",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 39.78,
+      "used_gb": 27.02
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-047",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "78978-18199-13536-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "HP Inc.",
+      "system_model": "Aspire 5",
+      "username": "user4"
+    },
+    "unique": {
+      "mac_address": "A19DC02BCAA1",
+      "volume_serial": "A6A1D53"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "RPEAPCDSIM2L2",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2801,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "229"
+    },
+    "data": {
+      "addr": "127.0.0.1:35273",
+      "country_code": "US",
+      "disconnected": true,
+      "group": "Power Users",
+      "reverse_proxy_port": "",
+      "uuidv4": "7899bc91-651b-4dbe-9b73-93d380f89f32"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1297.01
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3580.16
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 2323.53
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.2.700.3493",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 86.32,
+      "used_gb": 60.04
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-laptop-507",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "86077-21338-25101-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "MSI",
+      "system_model": "ROG Strix G15",
+      "username": "user28"
+    },
+    "unique": {
+      "mac_address": "B321159654D8",
+      "volume_serial": "FC89AA9"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "HP Inc.",
+      "serial_number": "IDHIL7FD3A",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3672,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "210"
+    },
+    "data": {
+      "addr": "127.0.0.1:36982",
+      "country_code": "IN",
+      "disconnected": null,
+      "group": "Default",
+      "reverse_proxy_port": "",
+      "uuidv4": "0ba70300-74a6-48ae-978d-3c68c92aa630"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3564.25
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 886.74
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.6.937.9240",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      },
+      {
+        "driver_version": "33.0.616.5283",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 115.76,
+      "used_gb": 5.47
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-254",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "64148-68359-11020-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "EliteBook 850 G8",
+      "username": "user84"
+    },
+    "unique": {
+      "mac_address": "5ADDE291BBB4",
+      "volume_serial": "1301C85"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "ASUS",
+      "serial_number": "P7N0VI4HZXWN4QM",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3925,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "173"
+    },
+    "data": {
+      "addr": "127.0.0.1:45039",
+      "country_code": "NO",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "4728",
+      "uuidv4": "db22de8b-5065-4323-b2da-436bfae6c55d"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 2019.15
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1575.51
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1589.82
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.0.437.4122",
+        "name": "AMD Radeon RX 6700 XT"
+      },
+      {
+        "driver_version": "34.7.919.5080",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 60.46,
+      "used_gb": 4.78
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-pc-498",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "23917-93916-81154-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user90"
+    },
+    "unique": {
+      "mac_address": "B738E87704D4",
+      "volume_serial": "C3618F5"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "Lenovo",
+      "serial_number": "O0FWYGO527T2R",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3077,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 16,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "168"
+    },
+    "data": {
+      "addr": "127.0.0.1:56918",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "8607",
+      "uuidv4": "d6a3fdb5-9263-4f2d-90e0-2c9faead16ab"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 2973.15
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.6.874.9304",
+        "name": "AMD Radeon RX 6700 XT"
+      },
+      {
+        "driver_version": "31.9.170.9212",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 87.5,
+      "used_gb": 9.5
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-551",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "54038-85172-82924-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user94"
+    },
+    "unique": {
+      "mac_address": "3C90983A8D71",
+      "volume_serial": "4413C99"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "YVQW80GFG6",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2483,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 16,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "152"
+    },
+    "data": {
+      "addr": "127.0.0.1:27687",
+      "country_code": "GB",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "8396",
+      "uuidv4": "55835d0e-a7f8-4b02-91c7-688f69b861d7"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 875.78
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 2634.74
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 3860.33
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.8.810.8410",
+        "name": "AMD Radeon RX 7900 XTX"
+      },
+      {
+        "driver_version": "31.9.474.3038",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 38.93,
+      "used_gb": 22.49
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-045",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "50171-35140-18383-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "ASUS",
+      "system_model": "EliteBook 850 G8",
+      "username": "user7"
+    },
+    "unique": {
+      "mac_address": "53A69F45A304",
+      "volume_serial": "4F951D9"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "Lenovo",
+      "serial_number": "CCQIBDOALNPXAZ",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4664,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "244"
+    },
+    "data": {
+      "addr": "127.0.0.1:49399",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "f8549770-3384-4173-8e5f-8e281783b2cb"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 3411.04
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 1117.17
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.1.115.5470",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      },
+      {
+        "driver_version": "31.1.367.2642",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 48.77,
+      "used_gb": 8.4
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-380",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "25864-71628-56508-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "Aspire 5",
+      "username": "user13"
+    },
+    "unique": {
+      "mac_address": "90CA0C5FCA23",
+      "volume_serial": "805A7DE"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Dell Inc.",
+      "serial_number": "RW853MSK0Y8U",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2843,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "229"
+    },
+    "data": {
+      "addr": "127.0.0.1:34090",
+      "country_code": "RU",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "d0f8ad9f-c938-4f1f-9fcf-7813fd0a0f61"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 2417.87
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1769.07
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3004.16
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.6.237.1029",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      },
+      {
+        "driver_version": "33.2.995.3212",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 8.79,
+      "used_gb": 6.38
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-065",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "71613-58872-23461-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "HP Inc.",
+      "system_model": "EliteBook 850 G8",
+      "username": "user51"
+    },
+    "unique": {
+      "mac_address": "848D80023261",
+      "volume_serial": "8CA8FCB"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "Lenovo",
+      "serial_number": "9J5YSCRIC9",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4101,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 16,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "151"
+    },
+    "data": {
+      "addr": "127.0.0.1:46472",
+      "country_code": "CH",
+      "disconnected": true,
+      "group": "Power Users",
+      "reverse_proxy_port": "",
+      "uuidv4": "d86a9fda-f64a-4ad8-9bfa-c80925d86acc"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 847.68
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 596.03
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 954.52
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.5.615.7074",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 115.36,
+      "used_gb": 61.81
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-569",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "56101-72901-59524-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "MSI",
+      "system_model": "OptiPlex 7090",
+      "username": "user89"
+    },
+    "unique": {
+      "mac_address": "A0120439F7E5",
+      "volume_serial": "579E196"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "Lenovo",
+      "serial_number": "4HN39W9J9DLH0",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3876,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 24,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "204"
+    },
+    "data": {
+      "addr": "127.0.0.1:19999",
+      "country_code": "BR",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "3614",
+      "uuidv4": "e0a8eb0b-925d-4e46-9de7-47a72d9dd1ca"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2879.14
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.5.967.5898",
+        "name": "AMD Radeon RX 7900 XTX"
+      }
+    ],
+    "ram": {
+      "total_gb": 37.16,
+      "used_gb": 11.48
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-laptop-353",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "38237-88837-45312-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "OptiPlex 7090",
+      "username": "user49"
+    },
+    "unique": {
+      "mac_address": "9AB31060CA30",
+      "volume_serial": "949CA3E"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Dell Inc.",
+      "serial_number": "VLE5Y69MZBG",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3777,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "242"
+    },
+    "data": {
+      "addr": "127.0.0.1:37306",
+      "country_code": "CA",
+      "disconnected": null,
+      "group": "Default",
+      "reverse_proxy_port": "9146",
+      "uuidv4": "160e9cd0-123a-483d-95c4-085fcb583d94"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 371.87
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 1171.9
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3557.59
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.6.100.3271",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 98.92,
+      "used_gb": 22.77
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-408",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "53381-33360-24521-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "Aspire 5",
+      "username": "user97"
+    },
+    "unique": {
+      "mac_address": "8C4C3CCE65AA",
+      "volume_serial": "2FBD9F2"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "Lenovo",
+      "serial_number": "XJ6Q5L3Q667",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3618,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "170"
+    },
+    "data": {
+      "addr": "127.0.0.1:17290",
+      "country_code": "ES",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "75144817-8999-4b15-bc4c-c5c8f766177d"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2815.15
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.5.880.3260",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 96.0,
+      "used_gb": 27.13
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-777",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "93611-28124-28061-AAOEM",
+      "os_version": "11 (22621)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "EliteBook 850 G8",
+      "username": "user31"
+    },
+    "unique": {
+      "mac_address": "63DE205F3173",
+      "volume_serial": "B7C919B"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "13SVX20IEL50G07",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4981,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "150"
+    },
+    "data": {
+      "addr": "127.0.0.1:48959",
+      "country_code": "ES",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "52bb7cbb-07f8-4172-a245-6568665e2e00"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 3225.63
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "30.8.927.1983",
+        "name": "AMD Radeon RX 6700 XT"
+      },
+      {
+        "driver_version": "30.3.628.3888",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 122.15,
+      "used_gb": 28.44
+    },
+    "security": {
+      "antivirus_names": [
+        "Norton"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-853",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "65635-48494-83122-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "HP Inc.",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user55"
+    },
+    "unique": {
+      "mac_address": "9ECEC19AACD4",
+      "volume_serial": "4BEC4E1"
+    }
+  },
+  {
+    "bios": {
+      "description": "F.49",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "N4MUNITK6NB0J",
+      "version": "F.49"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4912,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 24,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "245"
+    },
+    "data": {
+      "addr": "127.0.0.1:40323",
+      "country_code": "NO",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "130abbd6-1988-46ff-877c-b1a3b1e98545"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3617.77
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1277.6
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 3476.99
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.8.101.9398",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 115.18,
+      "used_gb": 4.49
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-202",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "39853-16506-15932-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "Aspire 5",
+      "username": "user50"
+    },
+    "unique": {
+      "mac_address": "7A9EDB238199",
+      "volume_serial": "926D401"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "GAQR8VX3FFTU88O",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2461,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "187"
+    },
+    "data": {
+      "addr": "127.0.0.1:49161",
+      "country_code": "RU",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "b0329f7a-315c-4464-92af-7434fa5b80eb"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 1406.19
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.2.518.5864",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 29.24,
+      "used_gb": 5.12
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-workstation-386",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "53787-25550-38445-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "ASUS",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user42"
+    },
+    "unique": {
+      "mac_address": "AA141C8DC783",
+      "volume_serial": "F3779D3"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "3ADJYPZX81H2I9",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4434,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "154"
+    },
+    "data": {
+      "addr": "127.0.0.1:45087",
+      "country_code": "CA",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "7d6489b1-4f3b-4f9b-bf95-0bb6e5d88144"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1122.6
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 1305.03
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 2000.33
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.4.367.3261",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      },
+      {
+        "driver_version": "33.1.161.3025",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 119.81,
+      "used_gb": 15.03
+    },
+    "security": {
+      "antivirus_names": [
+        "Norton"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-225",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "76453-76909-97768-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Microsoft Corporation",
+      "system_model": "ROG Strix G15",
+      "username": "user13"
+    },
+    "unique": {
+      "mac_address": "BDBA4EF51ED6",
+      "volume_serial": "76620D9"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "BG9CGVVHIHOB",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3833,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "164"
+    },
+    "data": {
+      "addr": "127.0.0.1:19044",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "5269327e-5d55-424a-a560-4bdf636e2c52"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 1889.87
+      },
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 864.66
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.6.272.5377",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      },
+      {
+        "driver_version": "33.9.233.8621",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 75.6,
+      "used_gb": 60.28
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-723",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "96018-50384-43791-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "OptiPlex 7090",
+      "username": "user3"
+    },
+    "unique": {
+      "mac_address": "460128B53026",
+      "volume_serial": "85BDD9C"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "HP Inc.",
+      "serial_number": "F0A2BCK5LRYBD9",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4163,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 6,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "184"
+    },
+    "data": {
+      "addr": "127.0.0.1:21333",
+      "country_code": "CN",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "1681",
+      "uuidv4": "4a9bcd0d-941d-48dd-aaa7-378d7b17f25c"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3443.66
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1301.26
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3809.56
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.8.511.8317",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 22.74,
+      "used_gb": 16.13
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-791",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "55389-81375-31714-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "EliteBook 850 G8",
+      "username": "user52"
+    },
+    "unique": {
+      "mac_address": "79DD2CE26DFF",
+      "volume_serial": "1D618E2"
+    }
+  },
+  {
+    "bios": {
+      "description": "1.12.2",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "7Q29KU3F2SRAA7",
+      "version": "1.12.2"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4376,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "194"
+    },
+    "data": {
+      "addr": "127.0.0.1:33340",
+      "country_code": "IN",
+      "disconnected": false,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "f0d82f64-f929-4403-9a62-d3abd8cb79b7"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1693.19
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 705.73
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3010.74
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.0.191.6089",
+        "name": "NVIDIA GeForce RTX 4090"
+      },
+      {
+        "driver_version": "33.4.571.1700",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      }
+    ],
+    "ram": {
+      "total_gb": 58.1,
+      "used_gb": 39.18
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-246",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "37930-35872-61421-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "OptiPlex 7090",
+      "username": "user91"
+    },
+    "unique": {
+      "mac_address": "78926AC58314",
+      "volume_serial": "5C1A517"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "HP Inc.",
+      "serial_number": "7Y6HW5BC1XONJ5",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2759,
+      "cpu_name": "Intel(R) Core(TM) i7-10700K",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 8,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "247"
+    },
+    "data": {
+      "addr": "127.0.0.1:56241",
+      "country_code": "CH",
+      "disconnected": null,
+      "group": "Admins",
+      "reverse_proxy_port": "",
+      "uuidv4": "f63cd1fb-b3aa-48ca-8de6-a05beb7e0928"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 1062.75
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2254.54
+      },
+      {
+        "model": "Crucial MX500 500GB",
+        "size_gb": 2244.53
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.1.349.9458",
+        "name": "AMD Radeon RX 7900 XTX"
+      }
+    ],
+    "ram": {
+      "total_gb": 102.76,
+      "used_gb": 46.57
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender",
+        "McAfee"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-workstation-689",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "53539-65718-91800-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "ASUS",
+      "system_model": "ROG Strix G15",
+      "username": "user56"
+    },
+    "unique": {
+      "mac_address": "B38DD28F612C",
+      "volume_serial": "988275C"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "Lenovo",
+      "serial_number": "ID5WEC3FVC7BEW",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2334,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "187"
+    },
+    "data": {
+      "addr": "127.0.0.1:11188",
+      "country_code": "KR",
+      "disconnected": null,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "d1ee27be-b3a8-4615-96e2-ea0c9f2f46be"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 1225.57
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "35.8.882.3286",
+        "name": "NVIDIA GeForce GTX 1660 Ti"
+      },
+      {
+        "driver_version": "32.1.238.8707",
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ],
+    "ram": {
+      "total_gb": 116.48,
+      "used_gb": 88.41
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-461",
+      "os_full_name": "Windows 10 Pro",
+      "os_serial_number": "24248-49199-54828-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "MSI",
+      "system_model": "ThinkPad X1 Carbon",
+      "username": "user56"
+    },
+    "unique": {
+      "mac_address": "1BD315BB1487",
+      "volume_serial": "42EA9E3"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "ASUS",
+      "serial_number": "C4QB86KOJB8PLLR",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3650,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 167 Stepping 1",
+      "logical_processors": 4,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "178"
+    },
+    "data": {
+      "addr": "127.0.0.1:10266",
+      "country_code": "RU",
+      "disconnected": true,
+      "group": "Admins",
+      "reverse_proxy_port": "6569",
+      "uuidv4": "61d65b81-72eb-4bc6-ba4b-7a481e56fe26"
+    },
+    "displays": 1,
+    "drives": [
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 3160.82
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 1265.69
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 1550.68
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.0.742.7473",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 41.95,
+      "used_gb": 28.88
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-952",
+      "os_full_name": "Windows Server 2022",
+      "os_serial_number": "99816-19175-44841-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Dell Inc.",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user74"
+    },
+    "unique": {
+      "mac_address": "5DA96F780403",
+      "volume_serial": "36F31A4"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "Lenovo",
+      "serial_number": "7AG5VY67SSR",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 1935,
+      "cpu_name": "12th Gen Intel(R) Core(TM) i9-12900K",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 24,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "199"
+    },
+    "data": {
+      "addr": "127.0.0.1:24703",
+      "country_code": "AU",
+      "disconnected": false,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "a67c9ac4-62bc-4d85-9366-cd96ee68baf6"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 964.31
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.2.165.2520",
+        "name": "Intel(R) Iris(R) Xe Graphics"
+      },
+      {
+        "driver_version": "31.2.978.6139",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 11.51,
+      "used_gb": 5.41
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-pc-225",
+      "os_full_name": "Windows 11 Home",
+      "os_serial_number": "67168-30678-15258-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "Aspire 5",
+      "username": "user1"
+    },
+    "unique": {
+      "mac_address": "A9C65185AF64",
+      "volume_serial": "B6DC337"
+    }
+  },
+  {
+    "bios": {
+      "description": "2.15.0",
+      "manufacturer": "Microsoft Corporation",
+      "serial_number": "UZ94WQLPW4",
+      "version": "2.15.0"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2492,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 8,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "224"
+    },
+    "data": {
+      "addr": "127.0.0.1:36587",
+      "country_code": "DE",
+      "disconnected": null,
+      "group": "Power Users",
+      "reverse_proxy_port": "2778",
+      "uuidv4": "75bffb05-c190-43f3-a254-6f72dd213d67"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 849.57
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 2012.22
+      },
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 3762.58
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "31.8.971.1305",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 116.68,
+      "used_gb": 71.57
+    },
+    "security": {
+      "antivirus_names": [
+        "Kaspersky"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-desktop-459",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "87835-54058-84868-AAOEM",
+      "os_version": "10 (19044)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user79"
+    },
+    "unique": {
+      "mac_address": "1C1078F9CD1E",
+      "volume_serial": "BA21DE8"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "HP Inc.",
+      "serial_number": "LRDNPKIC8J54HG",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 4037,
+      "cpu_name": "AMD Ryzen 7 5800X",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 20,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "203"
+    },
+    "data": {
+      "addr": "127.0.0.1:17909",
+      "country_code": "FR",
+      "disconnected": null,
+      "group": "Power Users",
+      "reverse_proxy_port": "2918",
+      "uuidv4": "465f05b4-be30-4598-b9af-1a209e0fe9e0"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2488.41
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3367.76
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.1.556.3976",
+        "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU"
+      }
+    ],
+    "ram": {
+      "total_gb": 73.02,
+      "used_gb": 36.77
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-workstation-595",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "70972-18194-69661-AAOEM",
+      "os_version": "11 (22000)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "OptiPlex 7090",
+      "username": "user39"
+    },
+    "unique": {
+      "mac_address": "84688049D4E7",
+      "volume_serial": "B0D3B52"
+    }
+  },
+  {
+    "bios": {
+      "description": "3.02",
+      "manufacturer": "Acer Inc.",
+      "serial_number": "6UE46SEGDL",
+      "version": "3.02"
+    },
+    "cpu": {
+      "clock_speed_mhz": 3923,
+      "cpu_name": "11th Gen Intel(R) Core(TM) i5-1135G7",
+      "description": "Intel64 Family 6 Model 186 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "167"
+    },
+    "data": {
+      "addr": "127.0.0.1:12358",
+      "country_code": "NO",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "df05b002-8280-453a-9fb6-e9f131879627"
+    },
+    "displays": 2,
+    "drives": [
+      {
+        "model": "ST2000DM008-2FR102",
+        "size_gb": 3646.93
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 2060.76
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 391.77
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "34.4.804.5760",
+        "name": "AMD Radeon RX 7900 XTX"
+      }
+    ],
+    "ram": {
+      "total_gb": 46.21,
+      "used_gb": 30.38
+    },
+    "security": {
+      "antivirus_names": [
+        "Avast",
+        "Malwarebytes"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-desktop-628",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "25470-73487-38384-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Acer Inc.",
+      "system_model": "ROG Strix G15",
+      "username": "user18"
+    },
+    "unique": {
+      "mac_address": "7D1DE33B7FF1",
+      "volume_serial": "F9B5D23"
+    }
+  },
+  {
+    "bios": {
+      "description": "21.109.143",
+      "manufacturer": "ASUS",
+      "serial_number": "0WL2IRLHTLNMBM",
+      "version": "21.109.143"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2606,
+      "cpu_name": "13th Gen Intel(R) Core(TM) i7-13800H",
+      "description": "Intel64 Family 6 Model 140 Stepping 1",
+      "logical_processors": 24,
+      "manufacturer": "GenuineIntel",
+      "processor_family": "166"
+    },
+    "data": {
+      "addr": "127.0.0.1:55426",
+      "country_code": "ES",
+      "disconnected": null,
+      "group": "Beta Testers",
+      "reverse_proxy_port": "",
+      "uuidv4": "37985c62-3536-4895-b73e-f0407294a7eb"
+    },
+    "displays": 3,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 252.9
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "32.7.213.2514",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 85.6,
+      "used_gb": 19.06
+    },
+    "security": {
+      "antivirus_names": [
+        "Windows Defender"
+      ],
+      "firewall_enabled": true
+    },
+    "system": {
+      "is_elevated": false,
+      "machine_name": "host-workstation-148",
+      "os_full_name": "Windows 11 Pro",
+      "os_serial_number": "96903-57891-32851-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "MSI",
+      "system_model": "EliteBook 850 G8",
+      "username": "user14"
+    },
+    "unique": {
+      "mac_address": "ECD4EB9CAE69",
+      "volume_serial": "565323C"
+    }
+  },
+  {
+    "bios": {
+      "description": "308",
+      "manufacturer": "HP Inc.",
+      "serial_number": "DE210JM8QAVQ8F",
+      "version": "308"
+    },
+    "cpu": {
+      "clock_speed_mhz": 2301,
+      "cpu_name": "AMD Ryzen 9 7950X",
+      "description": "AMD64 Family 25 Model 97 Stepping 2",
+      "logical_processors": 12,
+      "manufacturer": "AuthenticAMD",
+      "processor_family": "239"
+    },
+    "data": {
+      "addr": "127.0.0.1:14808",
+      "country_code": "AU",
+      "disconnected": false,
+      "group": "Guests",
+      "reverse_proxy_port": "",
+      "uuidv4": "a6395917-4d15-4c63-a792-c13ef59cd040"
+    },
+    "displays": 4,
+    "drives": [
+      {
+        "model": "Samsung SSD 980 PRO 1TB",
+        "size_gb": 2570.35
+      },
+      {
+        "model": "SDCPNRZ-2T00-1124-WD",
+        "size_gb": 323.93
+      },
+      {
+        "model": "WDC WD10EZEX-08WN4A0",
+        "size_gb": 3633.21
+      }
+    ],
+    "gpus": [
+      {
+        "driver_version": "33.5.392.3060",
+        "name": "NVIDIA GeForce RTX 4090"
+      }
+    ],
+    "ram": {
+      "total_gb": 30.65,
+      "used_gb": 14.95
+    },
+    "security": {
+      "antivirus_names": [
+        "Bitdefender"
+      ],
+      "firewall_enabled": false
+    },
+    "system": {
+      "is_elevated": true,
+      "machine_name": "host-laptop-900",
+      "os_full_name": "Windows 10 Home",
+      "os_serial_number": "70117-55426-40708-AAOEM",
+      "os_version": "10 (19045)",
+      "system_manufacturer": "Lenovo",
+      "system_model": "Surface Laptop Studio 2",
+      "username": "user93"
+    },
+    "unique": {
+      "mac_address": "C19AC1CA7713",
+      "volume_serial": "5A96030"
+    }
+  }
+]

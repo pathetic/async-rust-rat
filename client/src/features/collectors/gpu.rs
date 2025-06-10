@@ -1,4 +1,3 @@
-// src/collectors/gpu.rs
 use std::collections::HashMap;
 use wmi::{COMLibrary, Variant, WMIConnection};
 use tokio::task;

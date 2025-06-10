@@ -1,0 +1,3 @@
+*.rs linguist-detectable=true
+*.ts linguist-detectable=true
+*.tsx linguist-detectable=false

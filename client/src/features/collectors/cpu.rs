@@ -1,4 +1,3 @@
-// src/collectors/cpu.rs
 use sysinfo::System;
 use tokio::task;
 use common::client_info::CpuInfo;

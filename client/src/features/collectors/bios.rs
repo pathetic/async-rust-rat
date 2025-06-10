@@ -1,4 +1,3 @@
-// src/collectors/bios.rs
 use std::collections::HashMap;
 use wmi::{COMLibrary, Variant, WMIConnection};
 use tokio::task;

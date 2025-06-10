@@ -1,4 +1,3 @@
-// src/collectors/ram.rs
 use sysinfo::System;
 use tokio::task;
 use common::client_info::RamInfo;
