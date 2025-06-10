@@ -95,9 +95,6 @@ impl TrayIcon {
 
 impl Drop for TrayIcon {
     fn drop(&mut self) {
-        println!(
-            "TrayIcon::drop() called.",
-        );
         self.hide();
     }
 }
