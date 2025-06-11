@@ -18,6 +18,7 @@ import {
   IconFingerprint,
 } from "@tabler/icons-react";
 import { useParams } from "react-router-dom";
+import { getCountryFlagPath } from "../utils/preload_flags";
 
 export const ClientInfo = () => {
   const { addr } = useParams();
@@ -86,12 +87,6 @@ export const ClientInfo = () => {
     } else {
       return <IconDeviceDesktop size={20} className="text-gray-400" />;
     }
-  };
-
-  const getCountryFlagPath = (countryCode: string) => {
-    if (!countryCode || countryCode === "N/A") return "";
-    const code = countryCode.toLowerCase();
-    return `/country_flags/${code}.svg`;
   };
 
   if (loading) {
