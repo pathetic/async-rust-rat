@@ -16,8 +16,8 @@ Compile the client and the server in debug mode with the following commands: `ca
 # Releasing for production
 
 To release the code for production, consider the following steps. Compiling the server in release mode is not recommended for a Tauri project, as it's simpler to create a Windows installer without extra folders from the compiling process. Instead of removing unnecessary files and folders from the release folder, it's more efficient to use the built tools directly.  
-Navigate to the server directory, open a command prompt, and run `npm run tauri build`. This command should produce two bundles: an MSI installer and an NSIS installer. You may use either.  
-The final step is to copy the pre-built client binary from before into the root folder of the server installation location. This step is necessary for the client builder feature in the server.
+First of all, you need to run the `prepare_prod_build.bat` script. This will prepare the release for the server.
+Navigate to the server directory, open a command prompt, and run `npm run tauri build`. (Make sure to have npm packages installed by running `npm install` in the server directory.) This command should produce two bundles: an MSI installer and an NSIS installer. You may use either.
 
 # Working on the code
 
