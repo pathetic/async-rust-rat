@@ -1,3 +1,5 @@
+<img src="/server/src-tauri/icons/512x512.png" alt="logo" title="bloodin" align="right" height="60px" />
+
 # Async Rust RAT
 **WORK IN PROGRESS — If you have suggestions or find issues, please create an issue on the GitHub repository.**
 
