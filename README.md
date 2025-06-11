@@ -1,4 +1,4 @@
-# Rust RAT
+# Async Rust RAT
 **WORK IN PROGRESS — If you have suggestions or find issues, please create an issue on the GitHub repository.**
 
 <p align="center">
