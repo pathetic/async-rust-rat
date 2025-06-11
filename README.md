@@ -1,4 +1,5 @@
 # Rust RAT
+**WORK IN PROGRESS — If you have suggestions or find issues, please create an issue on the GitHub repository.**
 
 <p align="center">
   <strong>A Free and Open-Source Remote Administration Tool for Windows, built with Rust.</strong><br>
@@ -10,8 +11,8 @@
 ## ⚠️ Responsible Use
 
 <p align="center">
-  <strong>This tool is intended for system administration, research, and educational purposes.</strong><br>
-  <em>Please ensure you have proper authorization before connecting to or managing any system.</em>
+  <strong>This tool is designed for legitimate system administration, research, and educational purposes.</strong><br>
+  <em>Always ensure you have explicit permission and proper authorization before connecting to or managing any system. Unauthorized access or use is strictly prohibited.</em>
 </p>
 
 ---
@@ -55,4 +56,4 @@ To learn how to build or contribute to this project, please refer to [USERMANUAL
 
 ## 📄 License
 
-**Rust RAT** is distributed under the [MIT License](LICENSE).
+**Async Rust RAT** is distributed under the [MIT License](LICENSE).
