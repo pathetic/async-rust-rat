@@ -9,9 +9,11 @@ use rmp_serde::Serializer;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
+use crate::utils::resources::{get_rcedit_path, get_client_exe_path, get_client_built_exe_path, get_exe_dir};
 
 pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
-    let bin_data = fs::read("target/debug/client.exe").unwrap();
+    let client_exe_path = get_client_exe_path().unwrap();
+    let bin_data = fs::read(&client_exe_path).unwrap();
     let file = object::File::parse(&*bin_data).unwrap();
 
     let mut output_data = bin_data.clone();
@@ -33,9 +35,13 @@ pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
         output_data[offset..offset + size].copy_from_slice(&new_data);
     }
 
-    let mut file = File::create("target/debug/Client_built.exe").unwrap();
-    let _ = file.write_all(&output_data);
-    drop(file);
+    let exe_dir = get_exe_dir().unwrap();
+    let file_out_path = exe_dir.join("Client_built.exe");
+
+    if let Ok(mut file) = File::create(file_out_path) {
+        let _ = file.write_all(&output_data);
+        drop(file);
+    }
 
     Ok(())
 }
@@ -45,9 +51,12 @@ pub async fn apply_rcedit(
     enable_icon: bool,
     icon_path: &str,
 ) -> Result<(), String> {
-    let mut cmd = Command::new("target/rcedit.exe");
+    let rcedit_path = get_rcedit_path().unwrap();
+    let mut cmd = Command::new(&rcedit_path);
 
-    cmd.arg("target/debug/Client_built.exe");
+    let exe_dir = get_exe_dir().unwrap();
+    let file_out_path = exe_dir.join("Client_built.exe");
+    cmd.arg(file_out_path);
 
     if enable_icon && icon_path != "" {
         cmd.arg("--set-icon").arg(icon_path);

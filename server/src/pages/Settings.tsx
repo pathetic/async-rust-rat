@@ -754,6 +754,27 @@ export const Settings = () => {
                       )}
                     </div>
                   </div>
+
+                  <div className="bg-yellow-950/30 border border-yellow-800/50 rounded-xl p-6">
+                    <h4 className="text-lg font-medium flex items-center text-yellow-300 mb-3">
+                      <IconInfoCircle className="mr-2" size={24} />
+                      Possible Issues
+                    </h4>
+                    <div className="text-gray-300 space-y-2">
+                      <p>
+                        If the client is not building, it's because of the
+                        writing to path permissions.
+                        <p>
+                          (e.g. you won't be able to write to C:\Program Files
+                          without admin).
+                        </p>
+                        <p>
+                          <span className="font-bold">Temporary fix:</span>{" "}
+                          Restart the server with admin privileges.
+                        </p>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

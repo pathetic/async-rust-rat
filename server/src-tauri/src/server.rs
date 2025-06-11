@@ -19,6 +19,7 @@ use common::RSA_BITS;
 use crate::utils::logger::Logger;
 use crate::utils::encryption::{handle_encryption_request, handle_encryption_confirm};
 use common::client_info::ClientInfo;
+use crate::utils::resources::get_countries_path;
 
 pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
@@ -41,7 +42,8 @@ impl ServerWrapper {
             RsaPrivateKey::new(&mut rng, RSA_BITS).with_context(|| "Failed to generate a key.")?;
         let pub_key = RsaPublicKey::from(&priv_key);
 
-        let country_reader = maxminddb::Reader::open_readfile("Country.mmdb").unwrap();
+        let countries_path = get_countries_path().unwrap();
+        let country_reader = maxminddb::Reader::open_readfile(&countries_path).unwrap();
 
         let s = Self {
             receiver,
