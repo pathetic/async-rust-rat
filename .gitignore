@@ -56,3 +56,5 @@ v2.png
 
 server/src-tauri/icons/old
 server/src-tauri/icons/old2
+
+.tauri_installer_assets_staging/
