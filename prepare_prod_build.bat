@@ -3,9 +3,20 @@ setlocal
 
 echo Starting asset preparation for Tauri installer...
 
+:: --- Parameter Handling ---
+set "BuildMode=--release"
+if /I "%1"=="-manual" (
+    echo Manual mode detected. Using debug build.
+    set "BuildMode=--debug"
+)
+
 :: --- Configuration ---
-:: Path to the original client.exe (built from your client Rust project) relative to the project root.
-set "ClientSourcePath=target\release\client.exe"
+:: Path to the original client.exe depending on build mode
+if "%BuildMode%"=="--release" (
+    set "ClientSourcePath=target\release\client.exe"
+) else (
+    set "ClientSourcePath=target\debug\client.exe"
+)
 
 :: IMPORTANT: This should be the 'name' from your client's Cargo.toml (e.g., [package] name = "client")
 set "ClientCargoPackageName=client"
@@ -35,8 +46,8 @@ mkdir "%ResourcesSubdir%" >nul 2>nul
 :: --- Check and Build Client (if needed) ---
 echo Checking for client executable at: %ClientSourcePath%
 if not exist "%ClientSourcePath%" (
-    echo Client executable not found. Running "cargo build -p %ClientCargoPackageName% --release"...
-    cargo build -p "%ClientCargoPackageName%" --release
+    echo Client executable not found. Running "cargo build -p %ClientCargoPackageName% %BuildMode%"...
+    cargo build -p "%ClientCargoPackageName%" %BuildMode%
     if %errorlevel% neq 0 (
         echo Error: Failed to build client package "%ClientCargoPackageName%". Please check your client project setup.
         exit /b %errorlevel%
@@ -49,8 +60,7 @@ if not exist "%ClientSourcePath%" (
 
 :: --- Copying Assets ---
 
-:: 1. Copy the ORIGINAL `client.exe` to the 'stub' subfolder in the staging directory,
-::    keeping its name as `client.exe` for the installer.
+:: 1. Copy client.exe to stub folder
 echo Copying %ClientSourcePath% to %ClientStubDir%\client.exe
 if exist "%ClientSourcePath%" (
     copy /y "%ClientSourcePath%" "%ClientStubDir%\client.exe" >nul
@@ -59,7 +69,7 @@ if exist "%ClientSourcePath%" (
     exit /b 1
 )
 
-:: 2. Copy countries.mmdb from /res/ to the 'resources' subdirectory in the staging directory.
+:: 2. Copy countries.mmdb
 echo Copying %CountriesMmdbSourcePath% to %ResourcesSubdir%
 if exist "%CountriesMmdbSourcePath%" (
     copy /y "%CountriesMmdbSourcePath%" "%ResourcesSubdir%" >nul
@@ -68,7 +78,7 @@ if exist "%CountriesMmdbSourcePath%" (
     exit /b 1
 )
 
-:: 3. Copy rcedit.bkp from /res/, rename it to rcedit.exe, and place it under the 'resources' subdirectory in the staging directory.
+:: 3. Copy and rename rcedit.bkp
 echo Copying and renaming %RceditSourcePath% to %ResourcesSubdir%\rcedit.exe
 if exist "%RceditSourcePath%" (
     copy /y "%RceditSourcePath%" "%ResourcesSubdir%\rcedit.exe" >nul
