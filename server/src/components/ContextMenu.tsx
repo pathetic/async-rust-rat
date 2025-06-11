@@ -18,7 +18,6 @@ import {
 import {
   IconSettings2,
   IconDeviceDesktopCog,
-  IconDeviceDesktopPlus,
   IconPower,
   IconPlugConnected,
   IconFolder,

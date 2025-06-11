@@ -14,12 +14,17 @@
       "icons/192x192.png",
       "icons/512x512.png",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": {
+      "../../.tauri_installer_assets_staging/stub/client.exe": "stub/client.exe",
+      "../../.tauri_installer_assets_staging/resources/countries.mmdb": "resources/countries.mmdb",
+      "../../.tauri_installer_assets_staging/resources/rcedit.exe": "resources/rcedit.exe"
+    }
   },
-  "productName": "server",
-  "mainBinaryName": "server",
-  "version": "0.0.0",
-  "identifier": "com.rat.server",
+  "productName": "Async Rust RAT",
+  "mainBinaryName": "Async Rust RAT",
+  "version": "0.1.0",
+  "identifier": "com.asyncrust.rat",
   "plugins": {},
   "app": {
     "security": {
