@@ -64,16 +64,19 @@ mod windows {
 #[cfg(unix)]
 mod unix {
     use common::client_info::CpuInfo;
+    use common::sysinfo::get_cpu_info;
 
     pub async fn collect_cpu_info() -> CpuInfo {
-        // Return a basic sample response for Linux
-        CpuInfo {
-            cpu_name: "Sample CPU".to_string(),
-            logical_processors: 4,
-            clock_speed_mhz: 2000,
-            processor_family: Some("Sample Family".to_string()),
-            manufacturer: Some("Sample Manufacturer".to_string()),
-            description: Some("Sample CPU Description".to_string()),
+        match get_cpu_info() {
+            Ok(cpu_info) => cpu_info,
+            Err(_) => CpuInfo {
+                cpu_name: "Unknown CPU".to_string(),
+                logical_processors: 0,
+                clock_speed_mhz: 0,
+                processor_family: None,
+                manufacturer: None,
+                description: None,
+            }
         }
     }
 }

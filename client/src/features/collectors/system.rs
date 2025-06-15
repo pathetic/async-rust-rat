@@ -144,6 +144,11 @@ mod unix {
             .trim()
             .to_string();
 
+        // Get system serial number from /sys/devices/virtual/dmi/id/product_serial
+        let os_serial_number = fs::read_to_string("/sys/devices/virtual/dmi/id/product_serial")
+            .ok()
+            .map(|s| s.trim().to_string());
+
         SystemInfo {
             username: std::env::var("USER").unwrap_or_else(|_| "__UNKNOWN__".to_string()),
             machine_name: System::host_name().unwrap_or_else(|| "__UNKNOWN__".to_string()),
@@ -151,7 +156,7 @@ mod unix {
             system_manufacturer: Some(system_manufacturer),
             os_full_name: Some(os_name),
             os_version: Some(os_version),
-            os_serial_number: None,
+            os_serial_number,
             is_elevated: unsafe { libc::geteuid() == 0 },
         }
     }

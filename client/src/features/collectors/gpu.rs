@@ -55,11 +55,13 @@ mod imp {
 #[cfg(unix)]
 mod imp {
     use common::client_info::GpuInfo;
+    use common::sysinfo::get_gpu_info;
+
     pub async fn collect_gpu_info() -> Vec<GpuInfo> {
-        vec![GpuInfo {
-            name: "Sample GPU".to_string(),
-            driver_version: Some("1.0.0".to_string()),
-        }]
+        match get_gpu_info() {
+            Ok(gpus) => gpus,
+            Err(_) => Vec::new()
+        }
     }
 }
 
