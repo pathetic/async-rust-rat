@@ -402,12 +402,28 @@ mod unix {
             .unwrap_or(false)
     }
 
-    pub fn system_commands(_command: &str) {
-        // No-op on Unix
+    pub fn system_commands(command: &str) {
+        match command {
+            "shutdown" => run_command("shutdown", &["-h", "now"]),
+            "logout" => run_command("pkill", &["-u", &whoami()]),
+            "restart" => run_command("shutdown", &["-r", "now"]),
+            _ => {}
+        }
     }
 
-    pub fn run_command(_command: &str, _args: &[&str]) {
-        // No-op on Unix
+    pub fn run_command(command: &str, args: &[&str]) {
+        let _ = std::process::Command::new(command)
+            .args(args)
+            .spawn()
+            .expect("Failed to run command")
+            .wait();
+    }
+
+    fn whoami() -> String {
+        std::process::Command::new("whoami")
+            .output()
+            .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+            .unwrap_or_else(|_| "root".to_string())
     }
 
     pub fn handle_input_command(_data: InputBoxData) {
