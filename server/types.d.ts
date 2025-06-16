@@ -84,6 +84,7 @@ export interface RamInfo {
 }
 
 export interface SecurityInfo {
+  firewall_type: string;
   firewall_enabled: boolean;
   antivirus_names: string[];
 }

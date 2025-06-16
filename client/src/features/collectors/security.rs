@@ -36,6 +36,7 @@ mod imp {
         let (firewall_enabled, antivirus_names) = tokio::join!(firewall_future, av_future);
 
         SecurityInfo {
+            firewall_type: "Windows Firewall".to_string(),
             firewall_enabled: firewall_enabled.unwrap_or(false),
             antivirus_names: antivirus_names.unwrap_or_default(),
         }
@@ -75,12 +76,64 @@ mod imp {
 
 #[cfg(unix)]
 mod imp {
+    use std::process::Command;
+    use std::path::Path;
     use common::client_info::SecurityInfo;
+
     pub async fn collect_security_info() -> SecurityInfo {
+        let (firewall_type, firewall_enabled) = detect_firewall_status();
+        let antivirus_names = detect_antivirus();
+
         SecurityInfo {
-            firewall_enabled: false,
-            antivirus_names: vec!["SampleAV".to_string()],
+            firewall_type,
+            firewall_enabled,
+            antivirus_names,
         }
+    }
+
+    fn detect_firewall_status() -> (String, bool) {
+        // Check for UFW by looking for the binary
+        if Path::new("/usr/sbin/ufw").exists() {
+            return ("UFW".to_string(), true);
+        }
+
+        // Check for firewalld by looking for the binary
+        if Path::new("/usr/bin/firewalld").exists() || Path::new("/usr/sbin/firewalld").exists() {
+            return ("firewalld".to_string(), true);
+        }
+
+        // Check for iptables by looking for the binary
+        if Path::new("/usr/sbin/iptables").exists() {
+            return ("iptables".to_string(), true);
+        }
+
+        // No firewall detected
+        ("None".to_string(), false)
+    }
+
+    fn detect_antivirus() -> Vec<String> {
+        let mut antivirus = Vec::new();
+
+        // Check for ClamAV by looking for the binary
+        if Path::new("/usr/sbin/clamd").exists() {
+            antivirus.push("ClamAV".to_string());
+        }
+
+        // Check for rkhunter by looking for the binary
+        if Path::new("/usr/bin/rkhunter").exists() {
+            antivirus.push("rkhunter".to_string());
+        }
+
+        // Check for chkrootkit by looking for the binary
+        if Path::new("/usr/sbin/chkrootkit").exists() {
+            antivirus.push("chkrootkit".to_string());
+        }
+
+        if antivirus.is_empty() {
+            antivirus.push("No antivirus detected".to_string());
+        }
+
+        antivirus
     }
 }
 

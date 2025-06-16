@@ -357,9 +357,9 @@ export const ClientInfo = () => {
               <div className="text-xs text-gray-400">Firewall</div>
               <div className="text-sm">
                 {client.security.firewall_enabled ? (
-                  <span className="text-green-400">Enabled</span>
+                  <span className="text-green-400">{client.security.firewall_type} - Enabled</span>
                 ) : (
-                  <span className="text-red-400">Disabled</span>
+                  <span className="text-red-400">{client.security.firewall_type} - Disabled</span>
                 )}
               </div>
             </div>
