@@ -56,11 +56,93 @@ mod imp {
 
 #[cfg(unix)]
 mod imp {
+    use std::process::Command;
+    use std::fs;
+    use std::path::Path;
+    use tokio::task;
     use common::client_info::UniqueInfo;
+
     pub async fn collect_unique_info() -> UniqueInfo {
+        let mac_task = task::spawn_blocking(get_mac_address);
+        let vol_task = task::spawn_blocking(get_volume_serial);
+
+        let (mac, vol) = tokio::join!(mac_task, vol_task);
+
         UniqueInfo {
-            mac_address: "00:00:00:00:00:00".to_string(),
-            volume_serial: "0000-0000".to_string(),
+            mac_address: mac.ok().flatten().unwrap_or_else(|| "Unknown".to_string()),
+            volume_serial: vol.ok().flatten().unwrap_or_else(|| "Unknown".to_string()),
+        }
+    }
+
+    fn get_mac_address() -> Option<String> {
+        // Use cat to read all MAC addresses
+        if let Ok(output) = Command::new("cat")
+            .args(&["/sys/class/net/*/address"])
+            .output() {
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let macs: Vec<String> = output_str
+                .lines()
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty() && !s.starts_with("00:00:00:00:00:00"))
+                .filter(|s| !s.contains("lo") && !s.contains("docker") && !s.contains("veth"))
+                .map(|s| s.to_string())
+                .collect();
+
+            if macs.is_empty() {
+                None
+            } else {
+                Some(macs.join(", "))
+            }
+        } else {
+            None
+        }
+    }
+
+    fn get_volume_serial() -> Option<String> {
+        let mut uuids = Vec::new();
+
+        if let Ok(fstab) = fs::read_to_string("/etc/fstab") {
+            for line in fstab.lines() {
+                // Skip comments and empty lines
+                if line.trim_start().starts_with('#') || line.trim().is_empty() {
+                    continue;
+                }
+
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    let device = parts[0];
+                    let mount_point = parts[1];
+
+                    // Skip special filesystems and system mounts
+                    if mount_point.contains("/dev/") || 
+                       mount_point.contains("/sys/") ||
+                       mount_point.contains("/run/") ||
+                       mount_point.contains("swap") {
+                        continue;
+                    }
+
+                    // Extract UUID if present
+                    if device.starts_with("UUID=") {
+                        let uuid = &device[5..];
+                        if !uuid.is_empty() {
+                            uuids.push(format!("{} ({})", uuid, mount_point));
+                        }
+                    }
+                    // Extract LUKS UUID if present
+                    else if device.starts_with("/dev/mapper/luks-") {
+                        let uuid = device.replace("/dev/mapper/luks-", "");
+                        if !uuid.is_empty() {
+                            uuids.push(format!("{} ({})", uuid, mount_point));
+                        }
+                    }
+                }
+            }
+        }
+
+        if uuids.is_empty() {
+            None
+        } else {
+            Some(uuids.join(", "))
         }
     }
 }

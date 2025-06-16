@@ -56,11 +56,46 @@ mod imp {
 #[cfg(unix)]
 mod imp {
     use common::client_info::PhysicalDrive;
+    use tokio::task;
+    use std::fs;
+
     pub async fn collect_physical_drives() -> Vec<PhysicalDrive> {
-        vec![PhysicalDrive {
-            model: "Sample Drive".to_string(),
-            size_gb: 128.0,
-        }]
+        task::spawn_blocking(|| {
+            let mut drives = Vec::new();
+            
+            // Read from /sys/block directory
+            if let Ok(entries) = fs::read_dir("/sys/block") {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if let Some(device_name) = path.file_name().and_then(|n| n.to_str()) {
+                        // Skip loopback and ram devices
+                        if device_name.starts_with("loop") || device_name.starts_with("ram") {
+                            continue;
+                        }
+
+                        // Try to get the model name
+                        let model = fs::read_to_string(path.join("device/model"))
+                            .map(|s| s.trim().to_string())
+                            .unwrap_or_else(|_| "Unknown".to_string());
+
+                        // Try to get the size from /sys/block/{device}/size
+                        let size_bytes = fs::read_to_string(path.join("size"))
+                            .ok()
+                            .and_then(|s| s.trim().parse::<u64>().ok())
+                            .unwrap_or(0) * 512; // Convert sectors to bytes
+
+                        let size_gb = size_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+
+                        drives.push(PhysicalDrive {
+                            model,
+                            size_gb,
+                        });
+                    }
+                }
+            }
+
+            drives
+        }).await.unwrap_or_default()
     }
 }
 

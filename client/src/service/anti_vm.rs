@@ -119,7 +119,6 @@ mod imp {
 
 #[cfg(unix)]
 mod imp {
-    use sysinfo::Disks;
 
     pub fn anti_vm_detection() -> bool {
         false
