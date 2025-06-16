@@ -2,10 +2,6 @@ pub mod globals;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 // #![cfg_attr(debug_assertions, windows_subsystem = "windows")]
 
-#[no_mangle]
-#[link_section = ".zzz"]
-// static CONFIG: [u8; 1024] = [0; 1024];
-
 use std::time::Duration;
 
 #[cfg(windows)]
