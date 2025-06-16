@@ -1,17 +1,8 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use std::sync::Mutex;
-use std::io::{Cursor, Write};
 use std::process::Command;
-use std::fs::{OpenOptions, File};
-use std::os::unix::fs::OpenOptionsExt;
 use x11rb::connection::Connection;
-use x11rb::protocol::xproto::{ConnectionExt, GetImageRequest, ImageFormat, Screen, Window};
+use x11rb::protocol::xproto::{ConnectionExt, ImageFormat};
 use x11rb::rust_connection::RustConnection;
-use image::{ImageOutputFormat, RgbImage};
-use x11rb::protocol::randr::{self, ConnectionExt as RandrExt};
+use x11rb::protocol::randr::ConnectionExt as RandrExt;
 
 // Mock types to match Windows API
 pub type HWND = *mut std::ffi::c_void;
@@ -89,7 +80,7 @@ pub fn capture_display(display_index: usize) -> Option<(Vec<u8>, usize, usize)> 
     };
 
     let data = image_reply.data;
-    let pixel_count = (width as usize * height as usize);
+    let pixel_count = width as usize * height as usize;
     let mut rgb_data = Vec::with_capacity(pixel_count * 3);
     
     // Convert BGRA to RGB - we know the data is valid since it comes from X11
@@ -107,15 +98,15 @@ pub fn get_primary_display() -> usize {
 }
 
 // Desktop manipulation mock implementations
-pub fn toggle_desktop(show: bool) {
+pub fn toggle_desktop(_show: bool) {
     // No-op for Linux
 }
 
-pub fn toggle_taskbar(show: bool) {
+pub fn toggle_taskbar(_show: bool) {
     // No-op for Linux
 }
 
-pub fn toggle_notification_area(show: bool) {
+pub fn toggle_notification_area(_show: bool) {
     // No-op for Linux
 }
 
@@ -127,33 +118,33 @@ pub fn empty_recycle_bin() {
     // No-op on Linux
 }
 
-pub fn toggle_invert_mouse(invert: bool) {
+pub fn toggle_invert_mouse(_invert: bool) {
     // No-op for Linux
 }
 
-pub fn toggle_monitor(on: bool) {
+pub fn toggle_monitor(_on: bool) {
     // No-op for Linux
 }
 
 // Process manipulation mock implementations
-pub fn suspend_process(pid: usize) {
+pub fn suspend_process(_pid: usize) {
     // No-op for Linux
 }
 
-pub fn resume_process(pid: usize) {
+pub fn resume_process(_pid: usize) {
     // No-op for Linux
 }
 
 // Mouse and keyboard input mock implementations
-pub fn set_cursor_pos(x: i32, y: i32) {
+pub fn set_cursor_pos(_x: i32, _y: i32) {
     // No-op for Linux
 }
 
-pub fn send_mouse_event(event_type: u32, x: i32, y: i32) {
+pub fn send_mouse_event(_event_type: u32, _x: i32, _y: i32) {
     // No-op for Linux
 }
 
-pub fn send_keyboard_event(key_code: u16, flags: u32) {
+pub fn send_keyboard_event(_key_code: u16, _flags: u32) {
     // No-op for Linux
 }
 
@@ -303,23 +294,23 @@ pub fn is_elevated() -> bool {
     unsafe { libc::geteuid() == 0 }
 }
 
-pub fn toggle_keyboard(enable: bool) {
+pub fn toggle_keyboard(_enable: bool) {
     // No-op for Linux
 }
 
-pub fn visit_website(url: &str) {
+pub fn visit_website(_url: &str) {
     // No-op for Linux
 }
 
-pub fn show_messagebox(message: &str) {
+pub fn show_messagebox(_message: &str) {
     // No-op for Linux
 }
 
-pub fn show_input_dialog(prompt: &str) -> Option<String> {
+pub fn show_input_dialog(_prompt: &str) -> Option<String> {
     // Return None for Linux
     None
 }
 
-pub fn handle_input_command(input_box_data: &str) {
+pub fn handle_input_command(_input_box_data: &str) {
     // No-op for Linux
 }

@@ -1,5 +1,3 @@
-use common::client_info::SecurityInfo;
-
 #[cfg(windows)]
 mod imp {
     use std::process::Command;
@@ -76,7 +74,6 @@ mod imp {
 
 #[cfg(unix)]
 mod imp {
-    use std::process::Command;
     use std::path::Path;
     use common::client_info::SecurityInfo;
 

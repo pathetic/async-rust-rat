@@ -125,18 +125,6 @@ mod imp {
     pub fn detect_manufacturer() -> bool {
         false
     }
-
-    fn detect_debugger() -> bool {
-        false
-    }
-
-    fn detect_sandboxie() -> bool {
-        false
-    }
-
-    fn is_small_disk() -> bool {
-        false
-    }
 }
 
 pub use imp::{anti_vm_detection, detect_manufacturer};
