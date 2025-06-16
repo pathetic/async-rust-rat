@@ -509,9 +509,21 @@ impl ServerWrapper {
                 DisksResult(addr, disks) => {
                     let files = disks
                         .iter()
-                        .map(|disk| File {
-                            file_type: "dir".to_string(),
-                            name: format!("{}:\\", disk),
+                        .map(|disk| {
+                            #[cfg(windows)]
+                            {
+                                File {
+                                    file_type: "dir".to_string(),
+                                    name: format!("{}:\\", disk),
+                                }
+                            }
+                            #[cfg(unix)]
+                            {
+                                File {
+                                    file_type: "dir".to_string(),
+                                    name: disk.to_string(),
+                                }
+                            }
                         })
                         .collect::<Vec<_>>();
 

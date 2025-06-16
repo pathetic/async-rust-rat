@@ -1,4 +1,5 @@
 use common::ClientConfig;
+use crate::globals::CONFIG;
 
 pub fn get_config() -> ClientConfig {
     let mut config: ClientConfig = ClientConfig {
@@ -18,7 +19,7 @@ pub fn get_config() -> ClientConfig {
     };
 
     let config_link_sec: Result<ClientConfig, rmp_serde::decode::Error> = rmp_serde::from_read(
-        std::io::Cursor::new(&crate::CONFIG)
+        std::io::Cursor::new(&CONFIG)
     );
 
     if let Ok(config_link_sec) = config_link_sec.as_ref() {

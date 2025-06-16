@@ -2,8 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use std::thread;
-use sysinfo::{System, SystemExt};
-use hostname;
+use sysinfo::{System};
 use common::client_info::SystemInfo;
 
 // Mock types to match Windows API
@@ -202,13 +201,13 @@ pub fn get_system_info() -> common::client_info::SystemInfo {
         .to_string();
 
     common::client_info::SystemInfo {
-        machine_name: hostname::get().unwrap_or_default().to_string_lossy().to_string(),
-        username: whoami::username(),
-        system_model,
-        system_manufacturer,
-        os_full_name: os_name,
-        os_version,
-        os_serial_number: "N/A".to_string(), // Linux doesn't have a standard OS serial number
+        machine_name: "".to_string(),
+        username: "".to_string(),
+        system_model: Some(system_model),
+        system_manufacturer: Some(system_manufacturer),
+        os_full_name: Some(os_name),
+        os_version: Some(os_version),
+        os_serial_number: Some("N/A".to_string()), // Linux doesn't have a standard OS serial number
         is_elevated: is_elevated(),
     }
 }
