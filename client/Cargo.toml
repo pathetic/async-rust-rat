@@ -15,6 +15,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 socket2 = "0.5"
 image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
+whoami = "1.4.1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon", "shellapi", "oleauto", "wingdi", "minwindef", "windef"] }
@@ -25,3 +26,5 @@ winreg = "0.55.0"
 [target.'cfg(unix)'.dependencies]
 nokhwa = { version = "0.10.7", features = ["input-native"] }
 libc = "0.2"
+x11rb = { version = "0.12.0", features = ["all-extensions"] }
+x11rb-protocol = "0.12.0"

@@ -39,8 +39,29 @@ mod imp {
 
 #[cfg(unix)]
 mod imp {
+    use x11rb::connection::Connection;
+    use x11rb::rust_connection::RustConnection;
+    use x11rb::protocol::randr::ConnectionExt as RandrExt;
+
     pub fn get_display_count() -> usize {
-        1 // Sample value for Linux
+        let (conn, screen_num) = match RustConnection::connect(None) {
+            Ok((c, sn)) => (c, sn),
+            Err(_) => return 1, // Fallback to 1 if connection fails
+        };
+        let setup = conn.setup();
+        let screen = &setup.roots[screen_num];
+        let root = screen.root;
+
+        // Query RandR for monitor info
+        let res = match conn.randr_get_monitors(root, true) {
+            Ok(cookie) => cookie.reply().ok(),
+            Err(_) => None,
+        };
+
+        match res {
+            Some(monitors) if !monitors.monitors.is_empty() => monitors.monitors.len(),
+            _ => 1, // Fallback to 1 if no monitors found
+        }
     }
 }
 

@@ -1,7 +1,17 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
 use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::sync::Mutex;
+use std::io::{Cursor, Write};
+use std::process::Command;
+use std::fs::{OpenOptions, File};
+use std::os::unix::fs::OpenOptionsExt;
+use x11rb::connection::Connection;
+use x11rb::protocol::xproto::{ConnectionExt, GetImageRequest, ImageFormat, Screen, Window};
+use x11rb::rust_connection::RustConnection;
+use image::{ImageOutputFormat, RgbImage};
+use x11rb::protocol::randr::{self, ConnectionExt as RandrExt};
 
 // Mock types to match Windows API
 pub type HWND = *mut std::ffi::c_void;
@@ -15,18 +25,85 @@ pub const SW_HIDE: i32 = 0;
 pub const HIDE: u32 = 0;
 pub const DETACH: u32 = 0;
 
-// Screen capture mock implementation
-pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
-    let width = 800;
-    let height = 600;
-    let buffer = vec![0u8; width * height * 3];
-    Some((buffer, width, height))
+// --- Display Handling ---
+
+pub fn get_displays() -> Vec<(i32, i32, i32, i32)> {
+    let (conn, screen_num) = match RustConnection::connect(None) {
+        Ok((c, sn)) => (c, sn),
+        Err(_) => return vec![],
+    };
+    let setup = conn.setup();
+    let screen = &setup.roots[screen_num];
+    let root = screen.root;
+
+    // Query RandR for monitor info
+    let res = match conn.randr_get_monitors(root, true) {
+        Ok(cookie) => cookie.reply().ok(),
+        Err(_) => None,
+    };
+    if let Some(monitors) = res {
+        if !monitors.monitors.is_empty() {
+            return monitors.monitors.iter().map(|m| {
+                (m.x as i32, m.y as i32, m.width as i32, m.height as i32)
+            }).collect();
+        }
+    }
+    // Fallback: single virtual screen
+    vec![(0, 0, screen.width_in_pixels as i32, screen.height_in_pixels as i32)]
 }
 
-// Display count mock implementation
-pub fn get_display_count() -> usize {
-    // Return mock single display
-    1
+pub fn capture_screen(display_index: usize) -> Option<(Vec<u8>, usize, usize)> {
+    capture_display(display_index)
+}
+
+pub fn capture_display(display_index: usize) -> Option<(Vec<u8>, usize, usize)> {
+    let (conn, screen_num) = RustConnection::connect(None).ok()?;
+    let setup = conn.setup();
+    let screen = &setup.roots[screen_num];
+    let root = screen.root;
+
+    // Get monitor geometry
+    let monitors = conn.randr_get_monitors(root, true).ok()?.reply().ok()?.monitors;
+    let (x, y, width, height) = if display_index < monitors.len() {
+        let m = &monitors[display_index];
+        (m.x as i16, m.y as i16, m.width as u16, m.height as u16)
+    } else {
+        (0, 0, screen.width_in_pixels as u16, screen.height_in_pixels as u16)
+    };
+
+    // Get image in Z_PIXMAP format
+    let image_reply = match conn.get_image(
+        ImageFormat::Z_PIXMAP,
+        root,
+        x,
+        y,
+        width,
+        height,
+        u32::MAX,
+    ) {
+        Ok(reply) => match reply.reply() {
+            Ok(reply) => reply,
+            Err(_) => return None,
+        },
+        Err(_) => return None,
+    };
+
+    let data = image_reply.data;
+    let pixel_count = (width as usize * height as usize);
+    let mut rgb_data = Vec::with_capacity(pixel_count * 3);
+    
+    // Convert BGRA to RGB - we know the data is valid since it comes from X11
+    rgb_data.extend(
+        data.chunks_exact(4)
+            .map(|chunk| [chunk[0], chunk[1], chunk[2]])
+            .flatten()
+    );
+
+    Some((rgb_data, width as usize, height as usize))
+}
+
+pub fn get_primary_display() -> usize {
+    0
 }
 
 // Desktop manipulation mock implementations
@@ -92,7 +169,7 @@ pub struct TrayIcon {
 
 impl Default for TrayIcon {
     fn default() -> Self {
-        Self::new()
+        TrayIcon { unattended: true }
     }
 }
 
@@ -114,101 +191,106 @@ impl TrayIcon {
     }
 }
 
-pub fn get_displays() -> Vec<(i32, i32, i32, i32)> {
-    // Return a single mock display with 800x600 resolution
-    vec![(0, 0, 800, 600)]
-}
-
-pub fn capture_display(display_index: usize) -> Option<Vec<u8>> {
-    if display_index == 0 {
-        // Return a black 800x600 image
-        Some(vec![0; 800 * 600 * 4])
-    } else {
-        None
-    }
-}
-
-pub fn get_primary_display() -> usize {
-    0
-}
-
 pub fn toggle_screen_saver(enable: bool) {
     // No-op on Linux
     let _ = enable;
 }
 
+fn get_linux_os_info() -> (String, String) {
+    // Try /etc/os-release first
+    if let Ok(os_info) = std::fs::read_to_string("/etc/os-release") {
+        let name = os_info
+            .lines()
+            .find(|line| line.starts_with("PRETTY_NAME="))
+            .and_then(|line| line.split_once('='))
+            .map(|(_, value)| value.trim_matches('"').to_string())
+            .unwrap_or_else(|| "Linux".to_string());
+
+        let version = os_info
+            .lines()
+            .find(|line| line.starts_with("VERSION_ID="))
+            .and_then(|line| line.split_once('='))
+            .map(|(_, value)| value.trim_matches('"').to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        return (name, version);
+    }
+
+    // Try /etc/lsb-release as fallback
+    if let Ok(lsb_info) = std::fs::read_to_string("/etc/lsb-release") {
+        let name = lsb_info
+            .lines()
+            .find(|line| line.starts_with("DISTRIB_DESCRIPTION="))
+            .and_then(|line| line.split_once('='))
+            .map(|(_, value)| value.trim_matches('"').to_string())
+            .unwrap_or_else(|| "Linux".to_string());
+
+        let version = lsb_info
+            .lines()
+            .find(|line| line.starts_with("DISTRIB_RELEASE="))
+            .and_then(|line| line.split_once('='))
+            .map(|(_, value)| value.trim_matches('"').to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        return (name, version);
+    }
+
+    // If all else fails, try to get basic Linux info
+    let uname = Command::new("uname")
+        .args(["-a"])
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .unwrap_or_else(|| "Linux".to_string());
+
+    (uname, "Unknown".to_string())
+}
+
+fn get_username() -> String {
+    Command::new("whoami")
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .unwrap_or_else(|| "unknown".to_string())
+        .trim()
+        .to_string()
+}
+
+fn get_hostname() -> String {
+    Command::new("hostname")
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .unwrap_or_else(|| "unknown".to_string())
+        .trim()
+        .to_string()
+}
+
+fn get_system_model() -> String {
+    std::fs::read_to_string("/sys/devices/virtual/dmi/id/product_name")
+        .unwrap_or_else(|_| "Linux PC".to_string())
+        .trim()
+        .to_string()
+}
+
+fn get_system_manufacturer() -> String {
+    std::fs::read_to_string("/sys/devices/virtual/dmi/id/sys_vendor")
+        .unwrap_or_else(|_| "Unknown".to_string())
+        .trim()
+        .to_string()
+}
+
 pub fn get_system_info() -> common::client_info::SystemInfo {
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
-
-    // Try multiple methods to get OS information
-    let (os_name, os_version) = {
-        // First try /etc/os-release
-        if let Ok(os_info) = std::fs::read_to_string("/etc/os-release") {
-            let name = os_info
-                .lines()
-                .find(|line| line.starts_with("PRETTY_NAME="))
-                .and_then(|line| line.split_once('='))
-                .map(|(_, value)| value.trim_matches('"').to_string())
-                .unwrap_or_else(|| "Linux".to_string());
-
-            let version = os_info
-                .lines()
-                .find(|line| line.starts_with("VERSION_ID="))
-                .and_then(|line| line.split_once('='))
-                .map(|(_, value)| value.trim_matches('"').to_string())
-                .unwrap_or_else(|| "Unknown".to_string());
-
-            (name, version)
-        } else {
-            // Try /etc/lsb-release as fallback
-            if let Ok(lsb_info) = std::fs::read_to_string("/etc/lsb-release") {
-                let name = lsb_info
-                    .lines()
-                    .find(|line| line.starts_with("DISTRIB_DESCRIPTION="))
-                    .and_then(|line| line.split_once('='))
-                    .map(|(_, value)| value.trim_matches('"').to_string())
-                    .unwrap_or_else(|| "Linux".to_string());
-
-                let version = lsb_info
-                    .lines()
-                    .find(|line| line.starts_with("DISTRIB_RELEASE="))
-                    .and_then(|line| line.split_once('='))
-                    .map(|(_, value)| value.trim_matches('"').to_string())
-                    .unwrap_or_else(|| "Unknown".to_string());
-
-                (name, version)
-            } else {
-                // If all else fails, try to get basic Linux info
-                let uname = std::process::Command::new("uname")
-                    .args(["-a"])
-                    .output()
-                    .ok()
-                    .and_then(|output| String::from_utf8(output.stdout).ok())
-                    .unwrap_or_else(|| "Linux".to_string());
-
-                (uname, "Unknown".to_string())
-            }
-        }
-    };
-
-    // Get system model from /sys/devices/virtual/dmi/id/product_name
-    let system_model = std::fs::read_to_string("/sys/devices/virtual/dmi/id/product_name")
-        .unwrap_or_else(|_| "Linux PC".to_string())
-        .trim()
-        .to_string();
-
-    // Get manufacturer from /sys/devices/virtual/dmi/id/sys_vendor
-    let system_manufacturer = std::fs::read_to_string("/sys/devices/virtual/dmi/id/sys_vendor")
-        .unwrap_or_else(|_| "Unknown".to_string())
-        .trim()
-        .to_string();
-
+    
+    let (os_name, os_version) = get_linux_os_info();
+    
     common::client_info::SystemInfo {
-        machine_name: "".to_string(),
-        username: "".to_string(),
-        system_model: Some(system_model),
-        system_manufacturer: Some(system_manufacturer),
+        machine_name: get_hostname(),
+        username: get_username(),
+        system_model: Some(get_system_model()),
+        system_manufacturer: Some(get_system_manufacturer()),
         os_full_name: Some(os_name),
         os_version: Some(os_version),
         os_serial_number: Some("N/A".to_string()), // Linux doesn't have a standard OS serial number

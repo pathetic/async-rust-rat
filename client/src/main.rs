@@ -12,6 +12,7 @@ mod win {
 pub mod features;
 pub mod service;
 pub mod handler;
+pub mod platform;
 
 use tokio::{net::TcpStream, sync::oneshot, time::sleep};
 use common::{connection::Connection, packets::*};

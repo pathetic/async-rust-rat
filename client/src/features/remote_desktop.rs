@@ -4,7 +4,6 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::sync::Mutex;
 use std::io::Cursor;
-use std::ptr::null_mut;
 
 use common::packets::{RemoteDesktopConfig, RemoteDesktopFrame, MouseClickData, KeyboardInputData, ServerboundPacket, ScreenshotData};
 use crate::handler::send_packet;
@@ -61,7 +60,7 @@ static STREAMING_ACTIVE: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 mod windows {
     use super::*;
 
-    pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
+    pub fn capture_screen(display_index: usize) -> Option<(Vec<u8>, usize, usize)> {
         unsafe {
             let hdc_screen = GetDC(null_mut());
             let width = GetSystemMetrics(SM_CXSCREEN);
@@ -292,37 +291,13 @@ mod windows {
     }
 }
 
-#[cfg(unix)]
-mod unix {
-    use common::packets::{MouseClickData, KeyboardInputData};
-
-    pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
-        // Return a simple black image
-        let width = 800;
-        let height = 600;
-        let buffer = vec![0u8; width * height * 4];
-        Some((buffer, width, height))
-    }
-
-    pub fn mouse_click(_click_data: MouseClickData) {
-        // No-op implementation
-    }
-
-    pub fn keyboard_input(_input_data: KeyboardInputData) {
-        // No-op implementation
-    }
-}
-
 #[cfg(windows)]
 pub use windows::*;
 
-#[cfg(unix)]
-pub use unix::*;
-
 pub async fn take_screenshot(display: String) {
-    let _display_number = display.parse::<i32>().unwrap();
+    let display_index = display.parse::<usize>().unwrap_or(0);
 
-    if let Some((raw_data, w, h)) = capture_screen() {
+    if let Some((raw_data, w, h)) = crate::platform::capture_screen(display_index) {
         let mut rgb_data = Vec::with_capacity(w * h * 3);
         for chunk in raw_data.chunks(3) {
             let b = chunk[0];
@@ -374,11 +349,12 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
             .expect("Failed to create Tokio runtime");
 
         let stop_flag = STREAMING_ACTIVE.lock().unwrap().as_ref().unwrap().clone();
+        let display_index = config_clone.display as usize;
 
         while !stop_flag.load(Ordering::Relaxed) {
             let start_time = SystemTime::now();
 
-            if let Some((raw_data, w, h)) = capture_screen() {
+            if let Some((raw_data, w, h)) = crate::platform::capture_screen(display_index) {
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
@@ -407,7 +383,7 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
 
                 let frame = RemoteDesktopFrame {
                     timestamp,
-                    display: config_clone.display,
+                    display: config_clone.display.clone(),
                     width: w,
                     height: h,
                     data: jpeg_bytes.into_inner(),
