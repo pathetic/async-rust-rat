@@ -75,26 +75,49 @@ mod imp {
     }
 
     fn get_mac_address() -> Option<String> {
-        // Use cat to read all MAC addresses
-        if let Ok(output) = Command::new("cat")
-            .args(&["/sys/class/net/*/address"])
+        let mut macs = Vec::new();
+
+        // Try to get MAC addresses using ip command
+        if let Ok(output) = Command::new("ip")
+            .args(&["link", "show"])
             .output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
-            let macs: Vec<String> = output_str
-                .lines()
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty() && !s.starts_with("00:00:00:00:00:00"))
-                .filter(|s| !s.contains("lo") && !s.contains("docker") && !s.contains("veth"))
-                .map(|s| s.to_string())
-                .collect();
-
-            if macs.is_empty() {
-                None
-            } else {
-                Some(macs.join(", "))
+            for line in output_str.lines() {
+                if line.contains("ether") && !line.contains("lo") {
+                    if let Some(mac) = line.split_whitespace()
+                        .find(|s| s.contains(":")) {
+                        macs.push(mac.to_string());
+                    }
+                }
             }
-        } else {
+        }
+
+        // Fallback to reading from /sys/class/net
+        if macs.is_empty() {
+            if let Ok(entries) = fs::read_dir("/sys/class/net") {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = path.file_name().unwrap().to_string_lossy();
+                    
+                    // Skip loopback and virtual interfaces
+                    if name == "lo" || name.starts_with("docker") || name.starts_with("veth") {
+                        continue;
+                    }
+
+                    if let Ok(mac) = fs::read_to_string(path.join("address")) {
+                        let mac = mac.trim();
+                        if !mac.is_empty() && mac != "00:00:00:00:00:00" {
+                            macs.push(mac.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        if macs.is_empty() {
             None
+        } else {
+            Some(macs.join(", "))
         }
     }
 
