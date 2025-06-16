@@ -2,8 +2,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use std::thread;
-use sysinfo::{System};
-use common::client_info::SystemInfo;
 
 // Mock types to match Windows API
 pub type HWND = *mut std::ffi::c_void;
@@ -90,6 +88,12 @@ pub async fn collect_system_info() -> common::client_info::SystemInfo {
 // Tray icon mock implementation
 pub struct TrayIcon {
     unattended: bool,
+}
+
+impl Default for TrayIcon {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TrayIcon {

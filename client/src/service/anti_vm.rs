@@ -1,5 +1,3 @@
-use sysinfo::Disks;
-
 #[cfg(windows)]
 mod imp {
     use wmi::{COMLibrary, Variant, WMIConnection};

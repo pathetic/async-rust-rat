@@ -26,6 +26,7 @@ pub fn kill_process(pid: usize) {
     }
 }
 
+#[allow(clippy::zombie_processes)]
 pub fn start_process(name: String) {
     Command::new(name).spawn().unwrap();
 }

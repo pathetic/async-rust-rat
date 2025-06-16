@@ -1,5 +1,3 @@
-use common::client_info::PhysicalDrive;
-
 #[cfg(windows)]
 mod imp {
     use std::collections::HashMap;

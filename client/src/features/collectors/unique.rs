@@ -1,5 +1,3 @@
-use common::client_info::UniqueInfo;
-
 #[cfg(windows)]
 mod imp {
     use std::process::Command;
@@ -58,7 +56,6 @@ mod imp {
 mod imp {
     use std::process::Command;
     use std::fs;
-    use std::path::Path;
     use tokio::task;
     use common::client_info::UniqueInfo;
 
@@ -79,7 +76,7 @@ mod imp {
 
         // Try to get MAC addresses using ip command
         if let Ok(output) = Command::new("ip")
-            .args(&["link", "show"])
+            .args(["link", "show"])
             .output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
             for line in output_str.lines() {
@@ -145,8 +142,7 @@ mod imp {
                     }
 
                     // Extract UUID if present
-                    if device.starts_with("UUID=") {
-                        let uuid = &device[5..];
+                    if let Some(uuid) = device.strip_prefix("UUID=") {
                         if !uuid.is_empty() {
                             uuids.push(format!("{} ({})", uuid, mount_point));
                         }

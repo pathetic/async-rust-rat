@@ -155,7 +155,7 @@ impl ServerWrapper {
                 CloseClientSessions() => {
                     for (addr, tx) in self.txs.iter_mut() {
                         tx.send(ClientCommand::Close).await.unwrap();
-                        self.reverse_proxy_tasks.remove(&addr);
+                        self.reverse_proxy_tasks.remove(addr);
                     }
                     self.txs.clear();
                     self.connected_users.clear();
@@ -210,7 +210,7 @@ impl ServerWrapper {
                                 format!("Client [{}] [{}] disconnected", addr, client.system.username),
                             )
                             .await;
-                        self.emit_client_status(&client, "client_disconnected")
+                        self.emit_client_status(client, "client_disconnected")
                             .await;
                     }
 

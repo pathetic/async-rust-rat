@@ -92,6 +92,12 @@ mod unix {
         pub reverse_shell: Option<Child>,
     }
 
+    impl Default for ReverseShell {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl ReverseShell {
         pub fn new() -> Self {
             ReverseShell {

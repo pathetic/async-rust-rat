@@ -58,10 +58,7 @@ mod imp {
     use common::sysinfo::get_gpu_info;
 
     pub async fn collect_gpu_info() -> Vec<GpuInfo> {
-        match get_gpu_info() {
-            Ok(gpus) => gpus,
-            Err(_) => Vec::new()
-        }
+        get_gpu_info().unwrap_or_default()
     }
 }
 

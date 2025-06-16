@@ -51,8 +51,6 @@ use winapi::um::winuser::*;
 use winapi::um::winnt::HANDLE;
 use image::{ImageOutputFormat, RgbImage};
 
-use std::mem::zeroed;
-
 tokio::task_local! {
     static SEND_RUNTIME: tokio::runtime::Runtime;
 }
@@ -296,7 +294,6 @@ mod windows {
 
 #[cfg(unix)]
 mod unix {
-    use super::*;
     use common::packets::{MouseClickData, KeyboardInputData};
 
     pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {

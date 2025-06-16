@@ -80,6 +80,12 @@ mod unix {
         mutex_value: String,
     }
 
+    impl Default for MutexLock {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl MutexLock {
         pub fn new() -> Self {
             MutexLock {
@@ -108,7 +114,7 @@ mod unix {
             }
 
             // Create the lock file
-            if let Err(_) = std::fs::File::create(&path) {
+            if std::fs::File::create(&path).is_err() {
                 exit(0);
             }
 
