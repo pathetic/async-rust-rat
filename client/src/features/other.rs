@@ -338,6 +338,8 @@ mod windows {
 #[cfg(unix)]
 mod unix {
     use common::packets::{MessageBoxData, VisitWebsiteData, InputBoxData};
+    use std::process::Command;
+    use std::env;
 
     pub fn open_url(url: &str) {
         let _ = std::process::Command::new("xdg-open").arg(url).spawn();
@@ -358,7 +360,46 @@ mod unix {
     }
 
     pub fn elevate_client() {
-        // No-op on Unix
+        let exe = env::current_exe().unwrap();
+        let path = exe.to_str().unwrap();
+
+        let success = try_pkexec(path) || try_gksudo(path) || try_kdesudo(path) || try_sudo(path);
+
+        if success {
+            std::process::exit(0);
+        }
+    }
+
+    fn try_pkexec(path: &str) -> bool {
+        Command::new("pkexec")
+            .arg(path)
+            .spawn()
+            .map(|_| true)
+            .unwrap_or(false)
+    }
+
+    fn try_gksudo(path: &str) -> bool {
+        Command::new("gksudo")
+            .arg(path)
+            .spawn()
+            .map(|_| true)
+            .unwrap_or(false)
+    }
+
+    fn try_kdesudo(path: &str) -> bool {
+        Command::new("kdesudo")
+            .arg(path)
+            .spawn()
+            .map(|_| true)
+            .unwrap_or(false)
+    }
+
+    fn try_sudo(path: &str) -> bool {
+        Command::new("sudo")
+            .arg(path)
+            .spawn()
+            .map(|_| true)
+            .unwrap_or(false)
     }
 
     pub fn system_commands(_command: &str) {
