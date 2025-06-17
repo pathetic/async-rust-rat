@@ -73,11 +73,16 @@ mod windows {
 mod unix {
     use std::sync::Mutex;
     use std::process::exit;
+    use std::fs::{File, OpenOptions};
+    use std::os::unix::fs::OpenOptionsExt;
+    use std::io::Write;
+    use std::path::Path;
 
     pub struct MutexLock {
-        mutex: Option<Mutex<()>>,
+        lock_file: Option<File>,
         mutex_enabled: bool,
         mutex_value: String,
+        lock_path: String,
     }
 
     impl Default for MutexLock {
@@ -89,15 +94,17 @@ mod unix {
     impl MutexLock {
         pub fn new() -> Self {
             MutexLock {
-                mutex: None,
+                lock_file: None,
                 mutex_enabled: false,
                 mutex_value: String::new(),
+                lock_path: String::new(),
             }
         }
 
         pub fn init(&mut self, mutex_enabled: bool, mutex_value: String) {
             self.mutex_enabled = mutex_enabled;
             self.mutex_value = mutex_value;
+            self.lock_path = format!("/tmp/{}.lock", self.mutex_value);
 
             self.lock();
         }
@@ -107,18 +114,48 @@ mod unix {
                 return;
             }
 
-            // On Unix, we'll use a simple file-based mutex
-            let path = format!("/tmp/{}.lock", self.mutex_value);
-            if std::path::Path::new(&path).exists() {
-                exit(0);
+            // Try to create the lock file with exclusive access
+            match OpenOptions::new()
+                .write(true)
+                .create_new(true) // This fails if file already exists
+                .open(&self.lock_path) 
+            {
+                Ok(mut file) => {
+                    // Write our PID to the lock file
+                    let pid = std::process::id();
+                    let _ = writeln!(file, "{}", pid);
+                    self.lock_file = Some(file);
+                }
+                Err(_) => {
+                    // Lock file already exists, check if it's stale
+                    if let Ok(pid_str) = std::fs::read_to_string(&self.lock_path) {
+                        if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                            // Check if the process is still running
+                            if std::path::Path::new(&format!("/proc/{}", pid)).exists() {
+                                // Process is still running, exit
+                                exit(0);
+                            }
+                        }
+                    }
+                    // Stale lock file, try to remove it and create our own
+                    let _ = std::fs::remove_file(&self.lock_path);
+                    match OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(&self.lock_path) 
+                    {
+                        Ok(mut file) => {
+                            let pid = std::process::id();
+                            let _ = writeln!(file, "{}", pid);
+                            self.lock_file = Some(file);
+                        }
+                        Err(_) => {
+                            // Still can't create lock file, exit
+                            exit(0);
+                        }
+                    }
+                }
             }
-
-            // Create the lock file
-            if std::fs::File::create(&path).is_err() {
-                exit(0);
-            }
-
-            self.mutex = Some(Mutex::new(()));
         }
 
         pub fn unlock(&mut self) {
@@ -126,10 +163,11 @@ mod unix {
                 return;
             }
 
+            // Close the lock file
+            self.lock_file = None;
+            
             // Remove the lock file
-            let path = format!("/tmp/{}.lock", self.mutex_value);
-            let _ = std::fs::remove_file(path);
-            self.mutex = None;
+            let _ = std::fs::remove_file(&self.lock_path);
         }
     }
 

