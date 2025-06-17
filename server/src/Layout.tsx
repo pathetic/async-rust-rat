@@ -68,7 +68,7 @@ export const Layout = () => {
       });
     }
   }
-
+  startServer();
   async function stopServer() {
     let serverMessage = await stopServerCmd();
 

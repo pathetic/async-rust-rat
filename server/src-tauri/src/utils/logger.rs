@@ -25,7 +25,7 @@ impl Logger {
     pub async fn log(&mut self, event_type: &str, message: String) {
         let log = Log {
             event_type: event_type.to_string(),
-            message: message,
+            message,
         };
         self.logs.push(log.clone());
 
