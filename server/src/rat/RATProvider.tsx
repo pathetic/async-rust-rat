@@ -11,8 +11,8 @@ import {
 } from "../../types";
 import { fetchStateCmd } from "./RATCommands";
 
-import { PhysicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
-import { Webview } from "@tauri-apps/api/webview";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 //import clientsTest from "../../../python_utils_testing/clients/test_clients.json";
 
@@ -162,70 +162,55 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
     setupListener();
   }, []);
 
-  const openClientWindow = async (
-    addr: string,
-    type: string,
-    clientFullName: string
-  ) => {
-    try {
-      const fullUrl = `/${type}/${addr}`;
+const openClientWindow = async (
+  addr: string,
+  type: string,
+  clientFullName: string
+) => {
+  try {
+    const fullUrl = `/${type}/${addr}`;
 
-      const windowId = `${type}-${Date.now()}`;
+    const windowId = `${type}-${addr.replace(/\./g, "-")}-${Date.now()}`;
 
-      const windowParent = new Window(windowId, {
-        title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
-        resizable: true,
-        center: true,
-        closable: true,
-        width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
-        height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+    const webviewWindow = new WebviewWindow(windowId, {
+      url: fullUrl,
+      title: `${translateWindowType(type)} - ${clientFullName} - ${addr}`,
+      resizable: true,
+      center: true,
+      closable: true,
+      width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
+      height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+    });
+
+    webviewWindow.once("tauri://created", function () {
+    });
+
+    webviewWindow.once("tauri://error", function () {
+    });
+
+    webviewWindow.onCloseRequested(async () => {
+      setClientWindows((prevWindows) => {
+        const newWindows = prevWindows.filter(
+          (window) => window.id !== windowId
+        );
+        return newWindows;
       });
+    });
 
-      windowParent.once("tauri://created", function () {
-        const window = new Webview(windowParent, windowId, {
-          url: fullUrl,
-          x: 0,
-          y: 0,
-          width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
-          height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
-        });
+    let newWindow: ClientWindowType = {
+      window: webviewWindow,
+      addr,
+      type,
+      id: windowId,
+    };
 
-        windowParent.onResized((event) => {
-          const payload = event.payload as PhysicalSize;
-          window.setSize(payload);
-        });
+    setClientWindows((prevWindows) => [...prevWindows, newWindow]);
 
-        window.once("tauri://created", function () {});
-
-        window.once("tauri://error", function () {});
-
-        windowParent.once("tauri://close-requested", async () => {
-          windowParent.emit("close_window").then(() => {
-            setClientWindows((prevWindows) => {
-              const newWindows = prevWindows.filter(
-                (window) => window.addr !== addr && window.type !== type
-              );
-              return newWindows;
-            });
-            windowParent.close();
-          });
-        });
-      });
-
-      let newWindow: ClientWindowType = {
-        window: windowParent,
-        addr,
-        type,
-        id: windowId,
-      };
-
-      setClientWindows((prevWindows) => [...prevWindows, newWindow]);
-
-      return windowParent;
-    } catch (error) {
-      console.error(`Failed to open ${type} window for client ${addr}:`, error);
-    }
-  };
+    return webviewWindow;
+  } catch (error) {
+    console.error(`Failed to open ${type} window for client ${addr}:`, error);
+  }
+};
 
   async function getClientByAddr(addr: string) {
     console.log(clientList);
