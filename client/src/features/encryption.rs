@@ -18,6 +18,12 @@ pub struct EncryptionState {
     pub nonce_generator_write: Option<ChaCha20Rng>,
 }
 
+impl Default for EncryptionState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EncryptionState {
     pub fn new() -> Self {
         Self {
@@ -74,8 +80,8 @@ pub async fn perform_encryption_handshake(
     };
 
     let mut secret = [0u8; common::SECRET_LEN];
-    for i in 0..common::SECRET_LEN {
-        secret[i] = rand::random::<u8>();
+    for i in secret.iter_mut().take(common::SECRET_LEN) {
+        *i = rand::random::<u8>();
     }
 
     let enc_secret = pub_key

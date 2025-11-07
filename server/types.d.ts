@@ -44,8 +44,8 @@ export interface RATClient {
 }
 
 export interface ClientData {
-  uuidv4: string;
-  addr: string;
+  uuidv4?: string;
+  addr?: string;
   reverse_proxy_port: string;
   disconnected?: boolean;
   group: string;
@@ -84,6 +84,7 @@ export interface RamInfo {
 }
 
 export interface SecurityInfo {
+  firewall_type: string;
   firewall_enabled: boolean;
   antivirus_names: string[];
 }
@@ -93,7 +94,7 @@ export interface SystemInfo {
   machine_name: string;
   system_model: string;
   system_manufacturer: string;
-  os_full_name: string;
+  os_full_name?: string;
   os_version: string;
   os_serial_number: string;
   is_elevated: boolean;

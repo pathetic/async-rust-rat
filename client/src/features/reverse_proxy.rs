@@ -8,6 +8,12 @@ pub struct ReverseProxy {
     task: Option<tokio::task::JoinHandle<()>>,
 }
 
+impl Default for ReverseProxy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReverseProxy {
     pub fn new() -> Self {
         Self { ip: "127.0.0.1".to_string(), con_port: "9876".to_string(), task: None }

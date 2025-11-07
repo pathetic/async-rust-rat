@@ -1,8 +1,4 @@
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use serde::{Deserialize, Serialize};
-use tauri::{AppHandle};
+use std::path::PathBuf;
 use std::io::{Write, BufWriter};
 
 pub fn get_exe_dir() -> Result<PathBuf, String> {

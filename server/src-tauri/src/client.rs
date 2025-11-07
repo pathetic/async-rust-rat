@@ -211,13 +211,7 @@ impl ClientReaderWrapper {
                 },
                 Err(e) => {
                     println!("Error reading from client {}: {:?}", self.addr, e);
-                    if e == "Connection reset by peer" {
-                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr))
-                            .await;
-                    } else {
-                        self.send_server_packet(ServerCommand::ClientDisconnected(self.addr))
-                            .await;
-                    }
+                    self.send_server_packet(ServerCommand::ClientDisconnected(self.addr)).await;
                     break;
                 }
             }

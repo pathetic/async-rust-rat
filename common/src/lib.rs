@@ -6,6 +6,7 @@ pub mod shell;
 pub mod socks;
 pub mod convert;
 pub mod client_info;
+pub mod sysinfo;
 
 pub const RSA_BITS: usize = 1024;
 pub const ENC_TOK_LEN: usize = 32;
