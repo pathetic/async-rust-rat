@@ -35,6 +35,8 @@ jobs:
 
       - name: Build client
         run: cargo build -p client --release
+        env:
+          VCPKG_ROOT: ${{ env.VCPKG_INSTALLATION_ROOT }}
 
       - name: Run prepare_prod_build.bat
         run: .\prepare_prod_build.bat
@@ -42,6 +44,8 @@ jobs:
       - name: Build Tauri app
         working-directory: ./server
         run: npm run tauri build
+        env:
+          VCPKG_ROOT: ${{ env.VCPKG_INSTALLATION_ROOT }}
 
       - name: Prepare Release Artifacts
         run: |
