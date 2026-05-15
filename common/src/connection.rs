@@ -1,8 +1,7 @@
 use std::marker::PhantomData;
 
 use bytes::BytesMut;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, BufWriter};
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt, BufWriter, split, ReadHalf, WriteHalf};
 use tokio::net::TcpStream;
 
 use crate::packets::*;
@@ -12,19 +11,22 @@ use rand_chacha::ChaCha20Rng;
 
 use encryption::*;
 
+pub trait StreamTrait: AsyncRead + AsyncWrite + Send + Unpin {}
+impl<T: AsyncRead + AsyncWrite + Send + Unpin> StreamTrait for T {}
+
 pub struct Connection<I, O> {
-    stream: TcpStream,
+    stream: Box<dyn StreamTrait + Send + Unpin>,
     _marker: PhantomData<(I, O)>,
 }
 
 pub struct ConnectionReader<P: Packet> {
-    stream: OwnedReadHalf,
+    stream: ReadHalf<Box<dyn StreamTrait + Send + Unpin>>,
     buffer: BytesMut,
     _marker: PhantomData<P>,
 }
 
 pub struct ConnectionWriter<P: Packet> {
-    stream: BufWriter<OwnedWriteHalf>,
+    stream: BufWriter<WriteHalf<Box<dyn StreamTrait + Send + Unpin>>>,
     _marker: PhantomData<P>,
 }
 
@@ -35,13 +37,20 @@ where
 {
     pub fn new(stream: TcpStream) -> Self {
         Self {
+            stream: Box::new(stream),
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn new_from_boxed(stream: Box<dyn StreamTrait + Send + Unpin>) -> Self {
+        Self {
             stream,
             _marker: PhantomData,
         }
     }
 
     pub fn split(self) -> (ConnectionReader<I>, ConnectionWriter<O>) {
-        let (read, write) = self.stream.into_split();
+        let (read, write) = split(self.stream);
         let read = ConnectionReader::<I> {
             stream: read,
             buffer: BytesMut::with_capacity(4096),

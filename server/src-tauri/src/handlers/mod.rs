@@ -7,12 +7,15 @@ use tokio::sync::mpsc::Sender;
 
 pub struct SharedTauriState(pub Arc<Mutex<TauriState>>);
 
+use crate::utils::tor::TorManager;
+
 pub struct TauriState {
     pub port: String,
     pub running: bool,
     channel_tx: OnceCell<Sender<ServerCommand>>,
     server_task: Option<tokio::task::JoinHandle<()>>,
     listener_task: Option<tokio::task::JoinHandle<()>>,
+    pub tor_manager: Option<Arc<TorManager>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +38,7 @@ impl Default for TauriState {
             channel_tx: OnceCell::new(),
             server_task: None,
             listener_task: None,
+            tor_manager: None,
         }
     }
 }
