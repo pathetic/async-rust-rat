@@ -4,3 +4,4 @@ pub mod logger;
 pub mod reverse_proxy;
 pub mod webcam;
 pub mod resources;
+pub mod tor;

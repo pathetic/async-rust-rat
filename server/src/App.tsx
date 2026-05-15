@@ -23,10 +23,12 @@ import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
 import { FunPanel } from "./pages/Fun";
 import { InputBox } from "./pages/InputBox";
+import { TorStartupModal } from "./components/TorStartupModal";
 
 export const App: React.FC = () => {
   return (
     <RATProvider>
+      <TorStartupModal />
       <Routes>
         <Route
           path="/reverse-proxy/:addr"

