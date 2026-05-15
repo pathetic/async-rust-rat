@@ -15,6 +15,9 @@ pub fn get_config() -> ClientConfig {
         mutex_enabled: false,
         mutex: "TEST123".to_string(),
         unattended_mode: false,
+
+        use_tor: false,
+        tor_address: "".to_string(),
     };
 
     let config_link_sec: Result<ClientConfig, rmp_serde::decode::Error> = rmp_serde::from_read(
