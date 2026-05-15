@@ -19,5 +19,5 @@ nokhwa = { version = "0.10.7", features = ["input-native"] }
 socket2 = "0.5"
 image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
 winreg = "0.55.0"
-arti-client = { version = "0.26", features = ["tokio", "rustls"] }
-tor-rtcompat = { version = "0.26", features = ["tokio", "rustls"] }
+arti-client = { version = "0.42.0", features = ["tokio", "rustls"] }
+tor-rtcompat = { version = "0.42.0", features = ["tokio", "rustls"] }

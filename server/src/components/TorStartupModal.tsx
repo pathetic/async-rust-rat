@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { createOnionCmd, initTorCmd } from "../rat/RATCommands";
-import { OnionServiceInfo } from "../types";
+import { OnionServiceInfo } from "../../types";
 import { IconWifi, IconCloudPlus, IconCheck } from "@tabler/icons-react";
 import { RATContext } from "../rat/RATContext";
 
