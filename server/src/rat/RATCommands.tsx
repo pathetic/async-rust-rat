@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { RATClient, RATState, AssemblyInfo, TrollCommand } from "../../types";
+import {
+  RATClient,
+  RATState,
+  AssemblyInfo,
+  TrollCommand,
+  OnionServiceInfo,
+} from "../../types";
 
 export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });

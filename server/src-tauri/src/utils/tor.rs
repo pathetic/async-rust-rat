@@ -11,6 +11,7 @@ use serde::{Serialize, Deserialize};
 pub struct OnionServiceInfo {
     pub nickname: String,
     pub onion_address: String,
+    pub port: u16,
 }
 
 pub struct TorManager {
@@ -22,10 +23,15 @@ pub struct TorManager {
 
 impl TorManager {
     pub async fn new(storage_path: PathBuf) -> Result<Self> {
-        let mut config = TorClientConfig::default();
-        // Use the provided storage path for state and cache
-        // config.storage.state_dir = Some(storage_path.join("state").into());
-        // config.storage.cache_dir = Some(storage_path.join("cache").into());
+        let state_dir = storage_path.join("state");
+        let cache_dir = storage_path.join("cache");
+
+        let config = TorClientConfig::builder()
+            .storage(arti_client::config::StorageConfig::builder()
+                .state_dir(state_dir)
+                .cache_dir(cache_dir)
+                .build()?)
+            .build()?;
 
         let client = TorClient::create_bootstrapped(config).await?;
 
@@ -43,34 +49,44 @@ impl TorManager {
 
     async fn load_existing_services(&self) -> Result<()> {
         if !self.storage_path.exists() {
-            std::fs::create_dir_all(&self.storage_path)?;
+            tokio::fs::create_dir_all(&self.storage_path).await?;
             return Ok(());
         }
 
         let metadata_path = self.storage_path.join("services.json");
         if metadata_path.exists() {
-            let data = std::fs::read_to_string(&metadata_path)?;
+            let data = tokio::fs::read_to_string(&metadata_path).await?;
             let saved_services: Vec<OnionServiceInfo> = serde_json::from_str(&data)?;
 
             for info in saved_services {
-                // We should ideally resume these services.
-                // For the sake of this task, we will re-launch them using the same nickname.
-                // Arti will look for keys associated with this nickname in the keystore.
-                let _ = self.create_onion_service(&info.nickname, 1337).await; // Use a default or saved port
+                if let Err(e) = self.create_onion_service(&info.nickname, info.port).await {
+                    eprintln!("Failed to restore onion service '{}': {}", info.nickname, e);
+                }
             }
         }
         Ok(())
     }
 
-    fn save_services(&self) -> Result<()> {
+    async fn save_services(&self) -> Result<()> {
         let metadata_path = self.storage_path.join("services.json");
-        let services = self.services.lock().unwrap();
-        let data = serde_json::to_string_pretty(&*services)?;
-        std::fs::write(metadata_path, data)?;
+        let services = {
+            let services_guard = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            services_guard.clone()
+        };
+        let data = serde_json::to_string_pretty(&services)?;
+        tokio::fs::write(metadata_path, data).await?;
         Ok(())
     }
 
     pub async fn create_onion_service(&self, nickname: &str, port: u16) -> Result<OnionServiceInfo> {
+        // Check for duplicates first
+        {
+            let services = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            if let Some(existing) = services.iter().find(|s| s.nickname == nickname) {
+                return Ok(existing.clone());
+            }
+        }
+
         let nick = nickname.parse::<HsNickname>()?;
         let config = OnionServiceConfigBuilder::default()
             .nickname(nick.clone())
@@ -80,22 +96,21 @@ impl TorManager {
 
         let onion_address = service.onion_name()
             .context("Service should have a name")?
-            .to_string() + ".onion";
+            .to_string(); // No ".onion" suffix, it's included in Display
 
         let info = OnionServiceInfo {
             nickname: nickname.to_string(),
             onion_address: onion_address.clone(),
+            port,
         };
 
         {
-            let mut services = self.services.lock().unwrap();
-            if !services.iter().any(|s| s.nickname == info.nickname) {
-                services.push(info.clone());
-            }
+            let mut services = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            services.push(info.clone());
         }
 
-        self.running_handles.lock().unwrap().push(service);
-        let _ = self.save_services();
+        self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?.push(service);
+        let _ = self.save_services().await;
 
         // Handle requests
         tokio::spawn(async move {
@@ -119,6 +134,9 @@ impl TorManager {
     }
 
     pub fn get_services(&self) -> Vec<OnionServiceInfo> {
-        self.services.lock().unwrap().clone()
+        match self.services.lock() {
+            Ok(s) => s.clone(),
+            Err(e) => e.into_inner().clone()
+        }
     }
 }

@@ -89,9 +89,15 @@ async fn main() {
             match tor.connect(config.tor_address.clone()).await {
                 Ok(s) => Box::new(s) as Box<dyn StreamTrait + Unpin + Send>,
                 Err(e) => {
-                    println!("Tor connection failed: {}. Retrying in 5 seconds...", e);
-                    sleep(Duration::from_secs(5)).await;
-                    continue;
+                    println!("Tor connection failed: {}. Falling back to direct TCP...", e);
+                    match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
+                        Ok(socket) => Box::new(socket) as Box<dyn StreamTrait + Unpin + Send>,
+                        Err(e) => {
+                            println!("Direct connection failed after Tor failure: {}. Retrying in 5 seconds...", e);
+                            sleep(Duration::from_secs(5)).await;
+                            continue;
+                        }
+                    }
                 }
             }
         } else {

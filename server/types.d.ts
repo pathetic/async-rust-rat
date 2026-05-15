@@ -185,6 +185,7 @@ export type AssemblyInfo = {
 export type OnionServiceInfo = {
   nickname: string;
   onion_address: string;
+  port: number;
 };
 
 export type WindowWrapperProps = {
