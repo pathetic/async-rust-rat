@@ -26,6 +26,9 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Install SQLite3 (Required for Arti/Tor)
+        run: vcpkg install sqlite3:x64-windows
+
       - name: Install dependencies
         working-directory: ./server
         run: npm install
