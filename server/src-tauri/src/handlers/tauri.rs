@@ -1026,15 +1026,25 @@ pub async fn upload_file_to_folder(
 pub async fn init_tor(
     tauri_state: State<'_, SharedTauriState>,
 ) -> Result<Vec<OnionServiceInfo>, String> {
-    let mut state = tauri_state.0.lock().unwrap();
-    if state.tor_manager.is_none() {
-        let exe_dir = get_exe_dir().map_err(|e| e.to_string())?;
-        let tor_dir = exe_dir.join("tor_data");
-        let manager = TorManager::new(tor_dir).await.map_err(|e| e.to_string())?;
-        state.tor_manager = Some(Arc::new(manager));
+    // Fast path
+    {
+        let state = tauri_state.0.lock().unwrap();
+        if let Some(manager) = &state.tor_manager {
+            return Ok(manager.get_services());
+        }
     }
 
-    Ok(state.tor_manager.as_ref().unwrap().get_services())
+    // Slow path
+    let exe_dir = get_exe_dir().map_err(|e| e.to_string())?;
+    let tor_dir = exe_dir.join("tor_data");
+    let manager = Arc::new(TorManager::new(tor_dir).await.map_err(|e| e.to_string())?);
+
+    {
+        let mut state = tauri_state.0.lock().unwrap();
+        state.tor_manager = Some(manager.clone());
+    }
+
+    Ok(manager.get_services())
 }
 
 #[tauri::command]

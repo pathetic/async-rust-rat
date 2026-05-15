@@ -77,16 +77,24 @@ export const Settings = () => {
   const [isInitializingTor, setIsInitializingTor] = useState(false);
 
   useEffect(() => {
-    initTorCmd().then(setOnionServices);
+    initTorCmd()
+      .then(setOnionServices)
+      .catch((e) => {
+        console.error("Failed to initialize Tor services", e);
+        setOnionServices([]);
+      });
   }, []);
 
   const handleCreateOnion = async () => {
+    const parsedPort = parseInt(buildPort, 10);
+    if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      console.error("Invalid server port for onion creation");
+      return;
+    }
+
     setIsInitializingTor(true);
     try {
-      const newOnion = await createOnionCmd(
-        `onion-${Date.now()}`,
-        parseInt(buildPort)
-      );
+      const newOnion = await createOnionCmd(`onion-${Date.now()}`, parsedPort);
       setOnionServices((prev) => [...prev, newOnion]);
       setTorAddress(newOnion.onion_address);
       setUseTor(true);
@@ -893,6 +901,12 @@ export const Settings = () => {
                 <button
                   className="cursor-pointer bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center"
                   onClick={() => {
+                    if (useTor && !torAddress) {
+                      console.error(
+                        "Select or create an onion address before building with Tor."
+                      );
+                      return;
+                    }
                     buildClientCmd(
                       buildIp,
                       buildPort,

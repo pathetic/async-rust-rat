@@ -24,11 +24,20 @@ import { WorldMap } from "./pages/WorldMap";
 import { FunPanel } from "./pages/Fun";
 import { InputBox } from "./pages/InputBox";
 import { TorStartupModal } from "./components/TorStartupModal";
+import { useLocation } from "react-router-dom";
+
+const TorStartupModalContainer: React.FC = () => {
+  const location = useLocation();
+  const isMainAppRoute = /^\/($|logs|worldmap|settings)/.test(location.pathname);
+
+  if (!isMainAppRoute) return null;
+  return <TorStartupModal />;
+};
 
 export const App: React.FC = () => {
   return (
     <RATProvider>
-      <TorStartupModal />
+      <TorStartupModalContainer />
       <Routes>
         <Route
           path="/reverse-proxy/:addr"

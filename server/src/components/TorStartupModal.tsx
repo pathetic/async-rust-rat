@@ -24,9 +24,15 @@ export const TorStartupModal: React.FC = () => {
   }, []);
 
   const handleCreateNew = async () => {
+    const parsedPort = parseInt(port, 10);
+    if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      console.error("Invalid server port for onion creation");
+      return;
+    }
+
     setLoading(true);
     try {
-      await createOnionCmd(`onion-${Date.now()}`, parseInt(port));
+      await createOnionCmd(`onion-${Date.now()}`, parsedPort);
       setShow(false);
     } catch (e) {
       console.error(e);
