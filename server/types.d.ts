@@ -182,6 +182,11 @@ export type AssemblyInfo = {
   assembly_file_version: string;
 };
 
+export type OnionServiceInfo = {
+  nickname: string;
+  onion_address: string;
+};
+
 export type WindowWrapperProps = {
   feature_cleanup: (params: Record<string, string | undefined>) => void;
 };

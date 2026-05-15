@@ -27,6 +27,10 @@ image = "0.24.5"
 maxminddb = "0.26.0"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+arti-client = { version = "0.26", features = ["tokio", "rustls", "onion-service-service"] }
+tor-hsservice = "0.26"
+tor-rtcompat = { version = "0.26", features = ["tokio", "rustls"] }
+tor-config = "0.26"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
