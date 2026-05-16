@@ -86,10 +86,11 @@ async fn main() {
         
         let stream = if config.use_tor && tor_client.is_some() {
             let tor = tor_client.as_ref().unwrap();
-            match tor.connect(config.tor_address.clone()).await {
+            let port = config.port.parse::<u16>().unwrap_or(1337);
+            match tor.connect((config.tor_address.clone(), port)).await {
                 Ok(s) => Box::new(s) as Box<dyn StreamTrait + Unpin + Send>,
                 Err(e) => {
-                    println!("Tor connection failed: {}. Falling back to direct TCP...", e);
+                    println!("Tor connection failed for {}:{}: {}. Falling back to direct TCP...", config.tor_address, port, e);
                     match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
                         Ok(socket) => Box::new(socket) as Box<dyn StreamTrait + Unpin + Send>,
                         Err(e) => {

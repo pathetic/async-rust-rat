@@ -307,6 +307,15 @@ export const OnionManager = () => {
     try {
       const list = await initTorCmd();
       setServices(list);
+      
+      // Initialize statuses from the response
+      const initialStatuses: Record<string, string> = {};
+      list.forEach(svc => {
+        if (svc.status) {
+          initialStatuses[svc.nickname] = svc.status;
+        }
+      });
+      setServiceStatuses(prev => ({ ...prev, ...initialStatuses }));
     } catch (e: any) {
       toast.error(String(e), { className: toastStyle });
     } finally {

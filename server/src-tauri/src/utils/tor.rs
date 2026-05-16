@@ -15,12 +15,15 @@ pub struct OnionServiceInfo {
     pub nickname: String,
     pub onion_address: String,
     pub port: u16,
+    #[serde(default)]
+    pub status: Option<String>,
 }
 
 pub struct TorManager {
     client: TorClient<PreferredRuntime>,
     services: Arc<Mutex<Vec<OnionServiceInfo>>>,
-    running_handles: Arc<Mutex<Vec<Arc<RunningOnionService>>>>,
+    running_handles: Arc<Mutex<std::collections::HashMap<String, Arc<RunningOnionService>>>>,
+    status_cache: Arc<Mutex<std::collections::HashMap<String, String>>>,
     storage_path: PathBuf,
 }
 
@@ -50,7 +53,8 @@ impl TorManager {
         let manager = Self {
             client,
             services: Arc::new(Mutex::new(Vec::new())),
-            running_handles: Arc::new(Mutex::new(Vec::new())),
+            running_handles: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            status_cache: Arc::new(Mutex::new(std::collections::HashMap::new())),
             storage_path: storage_path.clone(),
         };
 
@@ -130,8 +134,13 @@ impl TorManager {
         let mut status_events = service.status_events();
         let nickname_clone = nickname.to_string();
         let app_handle_clone = app_handle.clone();
+        let status_cache_clone = self.status_cache.clone();
         tokio::spawn(async move {
             while let Some(status) = status_events.next().await {
+                let state_str = format!("{:?}", status.state());
+                if let Ok(mut cache) = status_cache_clone.lock() {
+                    cache.insert(nickname_clone.clone(), state_str.clone());
+                }
                 #[derive(Serialize, Clone)]
                 struct OnionStatusEvent {
                     nickname: String,
@@ -139,20 +148,25 @@ impl TorManager {
                 }
                 let _ = app_handle_clone.emit("tor_service_status", OnionStatusEvent {
                     nickname: nickname_clone.clone(),
-                    status: format!("{:?}", status.state()),
+                    status: state_str,
                 });
             }
         });
 
-        let onion_address = service.onion_address()
+        let mut onion_address = service.onion_address()
             .context("Service should have a name")?
             .display_unredacted()
             .to_string();
+        
+        if !onion_address.ends_with(".onion") {
+            onion_address.push_str(".onion");
+        }
 
         let info = OnionServiceInfo {
             nickname: nickname.to_string(),
             onion_address: onion_address.clone(),
             port,
+            status: None,
         };
 
         {
@@ -160,7 +174,8 @@ impl TorManager {
             services.push(info.clone());
         }
 
-        self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?.push(service);
+        self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?
+            .insert(nickname.to_string(), service);
         let _ = self.save_services().await;
 
         // Handle requests
@@ -186,28 +201,31 @@ impl TorManager {
     }
 
     pub fn get_services(&self) -> Vec<OnionServiceInfo> {
-        match self.services.lock() {
+        let mut svcs = match self.services.lock() {
             Ok(s) => s.clone(),
             Err(e) => e.into_inner().clone()
+        };
+        if let Ok(cache) = self.status_cache.lock() {
+            for svc in &mut svcs {
+                if let Some(status) = cache.get(&svc.nickname) {
+                    svc.status = Some(status.clone());
+                }
+            }
         }
+        svcs
     }
 
     pub async fn delete_onion_service(&self, nickname: &str) -> Result<()> {
         // Drop the running handle → arti stops the service
         {
             let mut handles = self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
-            handles.retain(|h| {
-                // RunningOnionService exposes nickname() indirectly via onion_address keymgr lookup.
-                // We stored them in order with services vec, so match by index isn't clean.
-                // Instead we drop all and re-launch remaining ones (simple & correct).
-                let _ = h; // keep borrow checker happy
-                true
-            });
-            // Actually filter: we need to check the nickname on the handle.
-            // Since RunningOnionService doesn't expose nickname directly, we clear all and
-            // rely on the services vec being the source of truth. Services not in the vec
-            // won't be re-launched on next restart anyway.
-            handles.clear();
+            handles.remove(nickname);
+        }
+
+        // Remove from status cache
+        {
+            let mut cache = self.status_cache.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            cache.remove(nickname);
         }
 
         // Remove from services list
