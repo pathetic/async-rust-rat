@@ -38,6 +38,8 @@ const translateWindowType = (type: string) => {
       return "Fun Stuff";
     case "input-box":
       return "Input Box";
+    case "keylogger":
+      return "Keylogger";
     default:
       return type;
   }
@@ -79,6 +81,10 @@ const windowTypeSizes = {
   "input-box": {
     width: 400,
     height: 500,
+  },
+  keylogger: {
+    width: 1000,
+    height: 700,
   },
 };
 

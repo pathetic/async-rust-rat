@@ -39,7 +39,7 @@ use winapi::um::wingdi::*;
 use winapi::um::winnt::HANDLE;
 use winapi::um::winuser::ReleaseDC;
 use winapi::um::winuser::GetDC;
-use image::{ImageOutputFormat, RgbImage};
+use image::RgbImage;
 
 use std::mem::zeroed;
 
@@ -152,10 +152,8 @@ pub async fn take_screenshot(display: String) {
             .expect("Failed to create RGB image");
 
         let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
-        if img
-            .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(75))
-            .is_err()
-        {
+        let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, 80);
+        if encoder.encode_image(&img).is_err() {
             eprintln!("❌ JPEG compression failed (screenshot)");
             return;
         }
@@ -214,10 +212,8 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 let img = RgbImage::from_raw(w as u32, h as u32, rgb_data)
                     .expect("Failed to create RGB image");
                 let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
-                if img
-                    .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(config_clone.quality))
-                    .is_err()
-                {
+                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, config_clone.quality);
+                if encoder.encode_image(&img).is_err() {
                     eprintln!("❌ JPEG compression failed");
                     continue;
                 }
