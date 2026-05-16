@@ -306,6 +306,10 @@ export const createOnionCmd = async (
   return invoke("create_onion", { nickname, port });
 };
 
+export const deleteOnionCmd = async (nickname: string): Promise<void> => {
+  return invoke("delete_onion", { nickname });
+};
+
 export const sendTrollCommand = async (
   addr: string | undefined,
   command: TrollCommand

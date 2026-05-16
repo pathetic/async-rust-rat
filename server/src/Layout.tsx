@@ -112,6 +112,12 @@ export const Layout = () => {
           active={location.pathname === "/logs"}
         />
         <SidebarButton
+          icon={IconWorld}
+          label="Onion"
+          to="/onion"
+          active={location.pathname === "/onion"}
+        />
+        <SidebarButton
           icon={IconSettings}
           label="Settings"
           to="/settings"

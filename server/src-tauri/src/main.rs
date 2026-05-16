@@ -57,6 +57,7 @@ async fn main() {
             send_troll_command,
             init_tor,
             create_onion,
+            delete_onion,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
