@@ -26,6 +26,10 @@ pub fn detect_image_dimensions(frame: &[u8]) -> (u32, u32) {
 }
 
 pub fn process_webcam_frame(frame: Vec<u8>) -> Result<Vec<u8>, String> {    
+    if frame.len() > 3 && frame[0] == 0xFF && frame[1] == 0xD8 && frame[2] == 0xFF {
+        return Ok(frame);
+    }
+    
     let (width, height) = detect_image_dimensions(&frame);
     
     convert_yuv_to_jpeg(frame, width, height)

