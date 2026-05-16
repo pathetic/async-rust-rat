@@ -1,0 +1,18 @@
+- WiFi password extraction - Dump saved WiFi networks and passwords from Windows
+- Software inventory - List all installed software and versions
+- Git credentials - Stored git tokens and configs
+- SSH keys & configs - ~/.ssh/ directory extraction
+- Crypto wallets - MetaMask, Exodus, Electrum wallet files
+- Game credentials - Steam, Epic, Battle.net session tokens
+- Clipboard monitor - Track clipboard changes in real-time
+- Proxy injection - Route traffic through attacker-controlled proxy
+- Scheduled tasks - Create persistence via Windows Task Scheduler
+- WMI event subscription - Advanced persistence technique
+- Service creation - Install as a Windows service
+- DLL injection - Inject into legitimate processes like svchost.exe
+- Notification capture - Intercept Windows notification center messages
+- Blue screen trigger - Force BSOD (use with caution)
+- Display manipulation - Rotate screens, change resolution, invert colors
+- File encryption - Ransomware-like behavior (for testing)
+- AMSI bypass - Bypass Windows Antimalware Scan Interface
+- ETW patching - Disable Event Tracing for Windows
