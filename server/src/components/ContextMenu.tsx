@@ -40,6 +40,8 @@ import {
   IconMessageCog,
   IconKeyboard,
   IconBrowser,
+  IconMicrophone,
+  IconDeviceDesktop,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -57,6 +59,18 @@ const menuOptions = [
         label: "Remote Desktop",
         type: "remote-desktop",
         icon: <IconShareplay size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Mic Access",
+        type: "mic-access",
+        icon: <IconMicrophone size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Desktop Recording",
+        type: "desktop-recording",
+        icon: <IconDeviceDesktop size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

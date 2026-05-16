@@ -29,6 +29,8 @@ import { TorStartupModal } from "./components/TorStartupModal";
 import { useLocation } from "react-router-dom";
 import { Keylogger } from "./pages/Keylogger";
 import { BrowserData } from "./pages/BrowserData";
+import { MicAccess } from "./pages/MicAccess";
+import { DesktopRecording } from "./pages/DesktopRecording";
 
 const TorStartupModalContainer: React.FC = () => {
   const location = useLocation();
@@ -82,6 +84,22 @@ export const App: React.FC = () => {
               }}
             >
               <RemoteDesktop />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/mic-access/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <MicAccess />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/desktop-recording/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DesktopRecording />
             </WindowWrapper>
           }
         />

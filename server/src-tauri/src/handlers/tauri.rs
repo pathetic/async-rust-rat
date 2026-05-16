@@ -398,6 +398,130 @@ pub async fn stop_remote_desktop(
 }
 
 #[tauri::command]
+pub async fn request_mic_devices(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::RequestMicDevices(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic devices requested".to_string())
+}
+
+#[tauri::command]
+pub async fn start_mic_live(
+    addr: &str,
+    device_id: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartMicLive(addr.parse().unwrap(), device_id.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic live started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_mic_live(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopMicLive(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic live stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_mic_recording(
+    addr: &str,
+    device_id: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartMicRecording(addr.parse().unwrap(), device_id.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic recording started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_mic_recording(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopMicRecording(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic recording stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_desktop_recording(
+    addr: &str,
+    display: i32,
+    quality: u8,
+    fps: u8,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartDesktopRecording(
+            addr.parse().unwrap(),
+            RemoteDesktopConfig {
+                display,
+                quality,
+                fps,
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Desktop recording started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_desktop_recording(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopDesktopRecording(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Desktop recording stopped".to_string())
+}
+
+#[tauri::command]
 pub async fn send_mouse_click(
     addr: &str,
     display: i32,
