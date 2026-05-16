@@ -29,6 +29,7 @@ import { TorStartupModal } from "./components/TorStartupModal";
 import { useLocation } from "react-router-dom";
 import { Keylogger } from "./pages/Keylogger";
 import { BrowserData } from "./pages/BrowserData";
+import { DataCollector } from "./pages/DataCollector";
 import { MicAccess } from "./pages/MicAccess";
 import { DesktopRecording } from "./pages/DesktopRecording";
 import { DiscordExtractor } from "./pages/DiscordExtractor";
@@ -177,6 +178,14 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <BrowserData />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/data-collector/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DataCollector />
             </WindowWrapper>
           }
         />

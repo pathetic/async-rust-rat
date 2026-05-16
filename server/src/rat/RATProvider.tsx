@@ -42,6 +42,8 @@ const translateWindowType = (type: string) => {
       return "Keylogger";
     case "browser-data":
       return "Browser Recovery";
+    case "data-collector":
+      return "Data Collector";
     case "mic-access":
       return "Mic Access";
     case "desktop-recording":
@@ -97,6 +99,10 @@ const windowTypeSizes = {
   "browser-data": {
     width: 1200,
     height: 800,
+  },
+  "data-collector": {
+    width: 1200,
+    height: 900,
   },
   "discord-extractor": {
     width: 1000,

