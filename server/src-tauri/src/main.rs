@@ -62,6 +62,8 @@ async fn main() {
             stop_keylogger,
             get_offline_logs,
             clear_offline_logs,
+            get_browser_data,
+            set_auto_upload_anonfiles,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

