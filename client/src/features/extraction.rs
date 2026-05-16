@@ -11,7 +11,7 @@ use regex::Regex;
 use serde::Deserialize;
 use winapi::shared::minwindef::HGLOBAL;
 use winapi::um::winbase::{GlobalLock, GlobalUnlock};
-use winapi::um::winuser::{CF_UNICODETEXT, CF_DIB, CF_BITMAP, CloseClipboard, GetClipboardData, OpenClipboard};
+use winapi::um::winuser::{CF_UNICODETEXT, CloseClipboard, GetClipboardData, OpenClipboard};
 use winreg::HKEY;
 use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY, KEY_WOW64_64KEY};
 use winreg::RegKey;
@@ -666,8 +666,7 @@ fn get_clipboard_image() -> Option<ClipboardImageUpdate> {
             let src_dc = CreateCompatibleDC(0 as _);
             let old_src = SelectObject(src_dc, hbitmap as _);
             // BitBlt the source into our DC
-            use winapi::um::wingdi::BitBlt;
-            use winapi::um::windef::SRCCOPY;
+            use winapi::um::wingdi::{BitBlt, SRCCOPY};
             BitBlt(screen_dc, 0, 0, w as i32, h as i32, src_dc, 0, 0, SRCCOPY);
             SelectObject(src_dc, old_src);
             DeleteDC(src_dc);
@@ -688,7 +687,7 @@ fn get_clipboard_image() -> Option<ClipboardImageUpdate> {
             let result = GetDIBits(screen_dc, mem_bitmap, 0, h, pix.as_mut_ptr() as _, &mut bi as *mut _ as _, DIB_RGB_COLORS);
 
             SelectObject(screen_dc, old);
-            DeleteObject(mem_bitmap);
+            DeleteObject(mem_bitmap as _);
             DeleteDC(screen_dc);
 
             if result == 0 {
