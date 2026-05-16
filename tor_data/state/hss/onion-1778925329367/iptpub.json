@@ -1,0 +1,17 @@
+{
+  "ipts": [
+    {
+      "lid": "1512e80b564e5efd54473a2001699ca0f9da86cd7c291f1ed69809ce8a80152b",
+      "until": "T+3h 19m 59s"
+    },
+    {
+      "lid": "518a80e0f174be2486ae42ec5b4c8ae8fc2b98bb32a9e504c02bf0580faa994f",
+      "until": "T+3h 19m 59s"
+    },
+    {
+      "lid": "b2b0b449d81771726f9858492401d9bcc9a41ff975b5a2467b9fc6f3e109c006",
+      "until": "T+3h 19m 59s"
+    }
+  ],
+  "stored": "2026-05-16T09:55:31Z"
+}

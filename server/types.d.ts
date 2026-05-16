@@ -186,6 +186,7 @@ export type OnionServiceInfo = {
   nickname: string;
   onion_address: string;
   port: number;
+  status?: string;
 };
 
 export type WindowWrapperProps = {
