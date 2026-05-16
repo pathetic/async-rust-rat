@@ -247,6 +247,11 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            ClipboardImageUpdate(data) => {
+                self.send_server_packet(ServerCommand::ClipboardImageUpdate(self.addr, data))
+                    .await;
+            }
+
             NotificationEvent(data) => {
                 self.send_server_packet(ServerCommand::NotificationEvent(self.addr, data))
                     .await;
