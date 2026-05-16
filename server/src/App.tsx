@@ -30,6 +30,9 @@ import { useLocation } from "react-router-dom";
 import { Keylogger } from "./pages/Keylogger";
 import { BrowserData } from "./pages/BrowserData";
 import { DataCollector } from "./pages/DataCollector";
+import { Clipboard } from "./pages/Clipboard";
+import { Software } from "./pages/Software";
+import { SteamAccount } from "./pages/SteamAccount";
 import { MicAccess } from "./pages/MicAccess";
 import { DesktopRecording } from "./pages/DesktopRecording";
 import { DiscordExtractor } from "./pages/DiscordExtractor";
@@ -186,6 +189,30 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <DataCollector />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/clipboard/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <Clipboard />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/software/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <Software />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/steam-account/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <SteamAccount />
             </WindowWrapper>
           }
         />

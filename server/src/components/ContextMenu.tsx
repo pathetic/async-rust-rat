@@ -44,6 +44,8 @@ import {
   IconDeviceDesktop,
   IconBrandDiscord,
   IconApps,
+  IconClipboard,
+  IconSteam,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -97,6 +99,24 @@ const menuOptions = [
         label: "Data Collector",
         type: "data-collector",
         icon: <IconApps size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Clipboard Monitor",
+        type: "clipboard",
+        icon: <IconClipboard size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Software Manager",
+        type: "software",
+        icon: <IconApps size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Steam Accounts",
+        type: "steam-account",
+        icon: <IconSteam size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

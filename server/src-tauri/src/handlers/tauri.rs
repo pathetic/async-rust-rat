@@ -463,6 +463,57 @@ pub async fn request_software_inventory(
 }
 
 #[tauri::command]
+pub async fn launch_software(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::LaunchSoftware(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software launch requested".to_string())
+}
+
+#[tauri::command]
+pub async fn uninstall_software(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::UninstallSoftware(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software uninstall requested".to_string())
+}
+
+#[tauri::command]
+pub async fn get_software_icon(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSoftwareIcon(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software icon requested".to_string())
+}
+
+#[tauri::command]
 pub async fn request_git_data(
     addr: &str,
     tauri_state: State<'_, SharedTauriState>,

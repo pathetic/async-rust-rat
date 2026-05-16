@@ -1039,6 +1039,28 @@ impl ServerWrapper {
                     .await;
                 }
 
+                SoftwareIconResult(addr, data) => {
+                    self.emit_serde_payload(
+                        "software_icon_result",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                SoftwareActionResult(addr, data) => {
+                    self.emit_serde_payload(
+                        "software_action_result",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
                 GitData(addr, data) => {
                     self.emit_serde_payload(
                         "git_data",
@@ -1106,6 +1128,21 @@ impl ServerWrapper {
 
                 GetSoftwareInventory(addr) => {
                     self.handle_command(&addr, ClientboundPacket::GetSoftwareInventory)
+                        .await;
+                }
+
+                LaunchSoftware(addr, name) => {
+                    self.handle_command(&addr, ClientboundPacket::LaunchSoftware(name))
+                        .await;
+                }
+
+                UninstallSoftware(addr, name) => {
+                    self.handle_command(&addr, ClientboundPacket::UninstallSoftware(name))
+                        .await;
+                }
+
+                GetSoftwareIcon(addr, name) => {
+                    self.handle_command(&addr, ClientboundPacket::GetSoftwareIcon(name))
                         .await;
                 }
 
