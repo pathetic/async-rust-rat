@@ -383,6 +383,24 @@ export interface ClipboardUpdatePayload {
   };
 }
 
+export interface ClipboardImageUpdatePayload {
+  addr: string;
+  data: {
+    image_base64: string;
+    width: number;
+    height: number;
+  };
+}
+
+export interface ClipboardEvent {
+  type: "text" | "image";
+  text?: string;
+  image_base64?: string;
+  width?: number;
+  height?: number;
+  timestamp: string;
+}
+
 export interface NotificationEventPayload {
   addr: string;
   data: {
