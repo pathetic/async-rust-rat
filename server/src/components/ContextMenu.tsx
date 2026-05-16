@@ -38,6 +38,7 @@ import {
   IconLink,
   IconUser,
   IconMessageCog,
+  IconKeyboard,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -55,6 +56,12 @@ const menuOptions = [
         label: "Remote Desktop",
         type: "remote-desktop",
         icon: <IconShareplay size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Keylogger",
+        type: "keylogger",
+        icon: <IconKeyboard size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

