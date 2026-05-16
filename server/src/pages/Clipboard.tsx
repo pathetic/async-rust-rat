@@ -98,12 +98,41 @@ export const Clipboard: React.FC = () => {
   };
 
   const downloadImage = (base64: string, index: number) => {
-    const link = document.createElement("a");
-    link.href = `data:image/png;base64,${base64}`;
-    link.download = `clipboard_image_${index}.png`;
-    link.click();
-    setStatus("Image downloaded");
-    setTimeout(() => setStatus("Ready"), 2000);
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setStatus("Failed to prepare image");
+        return;
+      }
+
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI);
+      ctx.scale(-1, 1);
+      ctx.drawImage(image, -canvas.width / 2, -canvas.height / 2);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setStatus("Failed to convert image");
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `clipboard_image_${index}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setStatus("Image downloaded");
+        setTimeout(() => setStatus("Ready"), 2000);
+      }, "image/png");
+    };
+    image.onerror = () => {
+      setStatus("Failed to load image");
+    };
   };
 
   const clearHistory = () => {
@@ -133,6 +162,7 @@ export const Clipboard: React.FC = () => {
             <img
               src={`data:image/png;base64,${selectedImage}`}
               alt="Clipboard image"
+              style={{ transform: "rotate(180deg) scaleX(-1)" }}
               className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl border border-[#2a2a2a]"
             />
           </div>
@@ -261,6 +291,7 @@ export const Clipboard: React.FC = () => {
                         <img
                           src={`data:image/png;base64,${event.image_base64}`}
                           alt="Clipboard image"
+                          style={{ transform: "rotate(180deg) scaleX(-1)" }}
                           className="max-w-full max-h-[320px] object-contain cursor-pointer"
                           onClick={() => event.image_base64 && setSelectedImage(event.image_base64)}
                         />
