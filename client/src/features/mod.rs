@@ -14,3 +14,4 @@ pub mod fun;
 pub mod keylogger;
 pub mod browser;
 pub mod discord;
+pub mod firefox;
