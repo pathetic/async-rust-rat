@@ -35,13 +35,11 @@ use winapi::um::winuser::{
 };
 
 use winapi::um::wingdi::*;
-use winapi::um::winuser::*;
+// use winapi::um::winuser::*;
 use winapi::um::winnt::HANDLE;
-use winapi::um::winuser::GetSystemMetrics;
 use winapi::um::winuser::ReleaseDC;
 use winapi::um::winuser::GetDC;
 use image::{ImageOutputFormat, RgbImage};
-
 
 use std::mem::zeroed;
 
@@ -51,18 +49,55 @@ tokio::task_local! {
 
 static STREAMING_ACTIVE: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
-pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
+struct MonitorInfo {
+    index: i32,
+    rect: winapi::shared::windef::RECT,
+}
+
+unsafe extern "system" fn monitor_enum_proc(
+    hmonitor: winapi::shared::windef::HMONITOR,
+    _: winapi::shared::windef::HDC,
+    _: winapi::shared::windef::LPRECT,
+    lparam: winapi::shared::minwindef::LPARAM,
+) -> winapi::shared::minwindef::BOOL {
+    let monitors = &mut *(lparam as *mut Vec<MonitorInfo>);
+    let mut info: winapi::um::winuser::MONITORINFO = std::mem::zeroed();
+    info.cbSize = std::mem::size_of::<winapi::um::winuser::MONITORINFO>() as u32;
+    
+    if winapi::um::winuser::GetMonitorInfoA(hmonitor, &mut info as *mut _ as *mut _) != 0 {
+        monitors.push(MonitorInfo {
+            index: monitors.len() as i32,
+            rect: info.rcMonitor,
+        });
+    }
+    1
+}
+
+pub fn capture_screen(display_index: i32) -> Option<(Vec<u8>, usize, usize)> {
     unsafe {
+        let mut monitors: Vec<MonitorInfo> = Vec::new();
+        winapi::um::winuser::EnumDisplayMonitors(
+            null_mut(),
+            null_mut(),
+            Some(monitor_enum_proc),
+            &mut monitors as *mut _ as winapi::shared::minwindef::LPARAM,
+        );
+
+        let monitor = monitors.iter().find(|m| m.index == display_index)
+            .or_else(|| monitors.get(0))?;
+
+        let x = monitor.rect.left;
+        let y = monitor.rect.top;
+        let width = (monitor.rect.right - monitor.rect.left).abs();
+        let height = (monitor.rect.bottom - monitor.rect.top).abs();
+
         let hdc_screen = GetDC(null_mut());
         let hdc_mem = CreateCompatibleDC(hdc_screen);
-
-        let width = GetSystemMetrics(SM_CXSCREEN);
-        let height = GetSystemMetrics(SM_CYSCREEN);
 
         let hbitmap = CreateCompatibleBitmap(hdc_screen, width, height);
         let old_obj = SelectObject(hdc_mem, hbitmap as _);
 
-        BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, 0, 0, SRCCOPY);
+        BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, x, y, SRCCOPY);
 
         let mut bmi = BITMAPINFO {
             bmiHeader: BITMAPINFOHEADER {
@@ -102,9 +137,9 @@ pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
 }
 
 pub async fn take_screenshot(display: String) {
-    let _display_number = display.parse::<i32>().unwrap();
+    let display_number = display.parse::<i32>().unwrap_or(0);
 
-    if let Some((raw_data, w, h)) = capture_screen() {
+    if let Some((raw_data, w, h)) = capture_screen(display_number) {
         let mut rgb_data = Vec::with_capacity(w * h * 3);
         for chunk in raw_data.chunks(3) {
             let b = chunk[0];
@@ -160,7 +195,7 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
         while !stop_flag.load(Ordering::Relaxed) {
             let start_time = SystemTime::now();
 
-            if let Some((raw_data, w, h)) = capture_screen() {
+            if let Some((raw_data, w, h)) = capture_screen(config_clone.display as i32) {
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
@@ -215,7 +250,6 @@ pub fn stop_remote_desktop() {
         flag.store(true, Ordering::Relaxed);
     }
 }
-
 
 pub fn mouse_click(click_data: MouseClickData) {
     // Set cursor position
@@ -396,4 +430,4 @@ pub fn keyboard_input(input_data: KeyboardInputData) {
             }
         }
     }
-} 
+}
