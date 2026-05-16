@@ -576,9 +576,9 @@ fn get_clipboard_text() -> Option<String> {
 
 fn get_clipboard_image() -> Option<ClipboardImageUpdate> {
     use base64::{Engine as _, engine::general_purpose};
+    use winapi::um::wingdi::{BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, GetDIBits, CreateCompatibleDC, CreateCompatibleBitmap, SelectObject, DeleteDC, DeleteObject, GetObjectW, BITMAP};
+    use winapi::um::winuser::{GetClipboardData, OpenClipboard, CloseClipboard, CF_DIB, CF_BITMAP, IsClipboardFormatAvailable};
     use winapi::shared::windef::HBITMAP;
-    use winapi::um::wingdi::{GetObjectW, BITMAP, CreateCompatibleDC, SelectObject, DeleteDC, DeleteObject, GetDIBits, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS};
-    use winapi::um::winuser::{GetClipboardData, OpenClipboard, CloseClipboard, CF_DIB};
     use image::RgbaImage;
 
     unsafe {
@@ -586,67 +586,136 @@ fn get_clipboard_image() -> Option<ClipboardImageUpdate> {
             return None;
         }
 
-        // Try CF_DIB first (preferred, includes alpha channel info)
-        let handle = GetClipboardData(CF_DIB);
-        if handle.is_null() {
+        // Check which image formats are available
+        let has_dib = IsClipboardFormatAvailable(CF_DIB) != 0;
+        let has_bitmap = IsClipboardFormatAvailable(CF_BITMAP) != 0;
+
+        if !has_dib && !has_bitmap {
             CloseClipboard();
             return None;
         }
 
-        let dib = GlobalLock(handle as HGLOBAL) as *const u8;
-        if dib.is_null() {
-            CloseClipboard();
-            return None;
-        }
+        let (width, height, pixels, bit_count) = if has_dib {
+            // Try CF_DIB first (device-independent bitmap, includes pixel data directly)
+            let handle = GetClipboardData(CF_DIB);
+            if handle.is_null() {
+                CloseClipboard();
+                return None;
+            }
 
-        // Parse BITMAPINFOHEADER from DIB
-        let bmi_header = &*(dib as *const BITMAPINFOHEADER);
-        let width = bmi_header.biWidth as u32;
-        let height = bmi_header.biHeight.abs() as u32;
-        let bit_count = bmi_header.biBitCount as u32;
+            let dib = GlobalLock(handle as HGLOBAL) as *const u8;
+            if dib.is_null() {
+                CloseClipboard();
+                return None;
+            }
 
-        if width == 0 || height == 0 || (bit_count != 24 && bit_count != 32) {
+            let bmi_header = &*(dib as *const BITMAPINFOHEADER);
+            let w = bmi_header.biWidth as u32;
+            let h = bmi_header.biHeight.abs() as u32;
+            let bc = bmi_header.biBitCount as u32;
+
+            if w == 0 || h == 0 || (bc != 24 && bc != 32) {
+                GlobalUnlock(handle as HGLOBAL);
+                CloseClipboard();
+                return None;
+            }
+
+            let row_size = ((w * (bc / 8) + 3) / 4) * 4;
+            let data_size = (row_size * h) as usize;
+            let color_table_size = if bc <= 8 { (1 << bc) * 4 } else { 0 };
+            let pixel_offset = std::mem::size_of::<BITMAPINFOHEADER>() + color_table_size;
+            let pix = std::slice::from_raw_parts(dib.add(pixel_offset), data_size).to_vec();
+
             GlobalUnlock(handle as HGLOBAL);
-            CloseClipboard();
-            return None;
-        }
-
-        // Calculate row size (DIB rows are 4-byte aligned)
-        let row_size = ((width * (bit_count / 8) + 3) / 4) * 4;
-        let data_size = (row_size * height) as usize;
-
-        // DIB pixel data starts after BITMAPINFOHEADER + color table
-        let color_table_size = if bit_count <= 8 {
-            (1 << bit_count) * 4 // RGBA entries for palette
+            (w, h, pix, bc)
         } else {
-            0
-        };
-        let pixel_offset = std::mem::size_of::<BITMAPINFOHEADER>() + color_table_size;
-        let pixels = std::slice::from_raw_parts(dib.add(pixel_offset), data_size);
+            // Fallback: CF_BITMAP (GDI bitmap handle) — render to memory DC and extract bits
+            let handle = GetClipboardData(CF_BITMAP);
+            if handle.is_null() {
+                CloseClipboard();
+                return None;
+            }
 
-        // Build RgbaImage from DIB data (bottom-up, BGRA order)
+            let hbitmap = handle as HBITMAP;
+            let mut bitmap = std::mem::zeroed::<BITMAP>();
+            if GetObjectW(hbitmap as _, std::mem::size_of::<BITMAP>() as i32, &mut bitmap as *mut _ as _) == 0 {
+                CloseClipboard();
+                return None;
+            }
+
+            let w = bitmap.bmWidth as u32;
+            let h = bitmap.bmHeight as u32;
+
+            // Create a compatible DC and bitmap to extract pixel data
+            let screen_dc = CreateCompatibleDC(0 as _);
+            if screen_dc.is_null() {
+                CloseClipboard();
+                return None;
+            }
+
+            let mem_bitmap = CreateCompatibleBitmap(screen_dc, w as i32, h as i32);
+            if mem_bitmap.is_null() {
+                DeleteDC(screen_dc);
+                CloseClipboard();
+                return None;
+            }
+
+            let old = SelectObject(screen_dc, mem_bitmap as _);
+
+            // Copy source bitmap into our memory DC
+            let src_dc = CreateCompatibleDC(0 as _);
+            let old_src = SelectObject(src_dc, hbitmap as _);
+            // BitBlt the source into our DC
+            use winapi::um::wingdi::BitBlt;
+            use winapi::um::windef::SRCCOPY;
+            BitBlt(screen_dc, 0, 0, w as i32, h as i32, src_dc, 0, 0, SRCCOPY);
+            SelectObject(src_dc, old_src);
+            DeleteDC(src_dc);
+
+            // Now extract the bits as 32-bit RGBA
+            let mut bi = std::mem::zeroed::<BITMAPINFOHEADER>();
+            bi.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
+            bi.biWidth = w as i32;
+            bi.biHeight = -(h as i32); // top-down
+            bi.biPlanes = 1;
+            bi.biBitCount = 32;
+            bi.biCompression = BI_RGB;
+
+            let row_size = (w * 4 + 3) & !3;
+            let data_size = (row_size * h) as usize;
+            let mut pix = vec![0u8; data_size];
+
+            let result = GetDIBits(screen_dc, mem_bitmap, 0, h, pix.as_mut_ptr() as _, &mut bi as *mut _ as _, DIB_RGB_COLORS);
+
+            SelectObject(screen_dc, old);
+            DeleteObject(mem_bitmap);
+            DeleteDC(screen_dc);
+
+            if result == 0 {
+                CloseClipboard();
+                return None;
+            }
+
+            (w, h, pix, 32)
+        };
+
+        CloseClipboard();
+
+        // Build RgbaImage from pixel data
         let mut img = RgbaImage::new(width, height);
+        let row_size = (width * (bit_count / 8) + 3) & !3;
         for y in 0..height {
-            // DIB stores rows bottom-up when biHeight > 0
-            let src_row = if bmi_header.biHeight > 0 {
-                (height - 1 - y) as usize * row_size as usize
-            } else {
-                y as usize * row_size as usize
-            };
+            let src_row = (y * row_size) as usize;
             for x in 0..width {
                 let idx = src_row + (x * (bit_count / 8)) as usize;
                 let (r, g, b, a) = if bit_count == 32 {
                     (pixels[idx + 2], pixels[idx + 1], pixels[idx], pixels[idx + 3])
                 } else {
-                    // 24-bit: BGR, no alpha
                     (pixels[idx + 2], pixels[idx + 1], pixels[idx], 255)
                 };
                 img.put_pixel(x, y, image::Rgba([r, g, b, a]));
             }
         }
-
-        GlobalUnlock(handle as HGLOBAL);
-        CloseClipboard();
 
         // Encode as PNG in memory
         let mut png_data = Vec::new();
