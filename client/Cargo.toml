@@ -19,6 +19,6 @@ nokhwa = { version = "0.10.7", features = ["input-native"] }
 socket2 = "0.5"
 image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
 winreg = "0.55.0"
-arti-client = { version = "0.42.0", features = ["tokio", "rustls"] }
+arti-client = { version = "0.42.0", features = ["tokio", "rustls", "onion-service-client"] }
 tor-rtcompat = { version = "0.42.0", features = ["tokio", "rustls"] }
 rusqlite = { version = "0.36.0", features = ["bundled"] }
