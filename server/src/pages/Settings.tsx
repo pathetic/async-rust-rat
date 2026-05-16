@@ -29,10 +29,10 @@ import {
 import { RATContext } from "../rat/RATContext";
 import { AssemblyInfo, OnionServiceInfo } from "../../types";
 import { invoke } from "@tauri-apps/api/core";
-import { buildClientCmd, createOnionCmd, initTorCmd } from "../rat/RATCommands";
+import { buildClientCmd, createOnionCmd, initTorCmd, setAutoUploadAnonFilesCmd } from "../rat/RATCommands";
 
 export const Settings = () => {
-  const { setNotificationClient, notificationClient } = useContext(RATContext)!;
+  const { setNotificationClient, notificationClient, autoUploadAnonFiles, setAutoUploadAnonFiles } = useContext(RATContext)!;
 
   const [currentStep, setCurrentStep] = useState(0);
   // const [enableAutoSave, setEnableAutoSave] = useState(false);
@@ -158,6 +158,32 @@ export const Settings = () => {
                     }`}
                   >
                     {notificationClient ? (
+                      <IconToggleRight size={24} />
+                    ) : (
+                      <IconToggleLeft size={24} />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {autoUploadAnonFiles ? (
+                      <IconCloudPlus className="mr-2 text-green-400" size={20} />
+                    ) : (
+                      <IconCloudPlus className="mr-2 text-gray-400" size={20} />
+                    )}
+                    <span>AnonFiles Auto-Upload</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAutoUploadAnonFiles(!autoUploadAnonFiles);
+                      setAutoUploadAnonFilesCmd(!autoUploadAnonFiles);
+                    }}
+                    className={`p-1 rounded-lg cursor-pointer ${
+                      autoUploadAnonFiles ? "bg-green-700" : "bg-gray-700"
+                    }`}
+                  >
+                    {autoUploadAnonFiles ? (
                       <IconToggleRight size={24} />
                     ) : (
                       <IconToggleLeft size={24} />

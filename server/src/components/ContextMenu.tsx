@@ -39,6 +39,7 @@ import {
   IconUser,
   IconMessageCog,
   IconKeyboard,
+  IconBrowser,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -62,6 +63,12 @@ const menuOptions = [
         label: "Keylogger",
         type: "keylogger",
         icon: <IconKeyboard size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Browser Recovery",
+        type: "browser-data",
+        icon: <IconBrowser size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

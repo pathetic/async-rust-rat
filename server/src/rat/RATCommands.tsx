@@ -353,3 +353,15 @@ export const clearOfflineLogsCmd = async (
 ): Promise<void> => {
   return invoke("clear_offline_logs", { addr });
 };
+
+export const getBrowserDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("get_browser_data", { addr });
+};
+
+export const setAutoUploadAnonFilesCmd = async (
+  enabled: boolean
+): Promise<void> => {
+  return invoke("set_auto_upload_anonfiles", { enabled });
+};

