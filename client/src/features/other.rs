@@ -6,7 +6,7 @@ use std::os::windows::{process::CommandExt, ffi::OsStrExt};
 use winapi::um::{shellapi::ShellExecuteW, winuser};
 use winapi::um::winuser::SW_HIDE;
 use winapi::shared::minwindef::UINT;
-use winapi::um::wingdi::{CreateSolidBrush, RGB};
+use winapi::um::wingdi::LOGBRUSH;
 
 use crate::service::install::is_elevated;
 use common::packets::{MessageBoxData, VisitWebsiteData, InputBoxData, ServerboundPacket};

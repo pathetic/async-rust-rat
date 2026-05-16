@@ -12,7 +12,7 @@ pub mod features;
 pub mod service;
 pub mod handler;
 
-use tokio::{io::AsyncRead, io::AsyncWrite, net::TcpStream, sync::oneshot, time::sleep};
+use tokio::{net::TcpStream, sync::oneshot, time::sleep};
 use arti_client::{TorClient, TorClientConfig};
 use common::{connection::Connection, connection::StreamTrait, packets::*};
 

