@@ -271,6 +271,10 @@ const openClientWindow = async (
           customToast("❌", message, genericStyle);
         }
 
+        if (event_type == "server_info" && message.includes("Auto-uploaded")) {
+          customToast("✅", message, genericStyle);
+        }
+
         if (event_type == "build_client") {
           customToast("🔨", message, genericStyle);
         }

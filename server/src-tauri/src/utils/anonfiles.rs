@@ -7,7 +7,7 @@ pub async fn upload_to_anonfiles(filename: &str, data: Vec<u8>) -> Result<String
     let form = multipart::Form::new()
         .part("file", multipart::Part::bytes(data).file_name(filename.to_string()));
 
-    let response = client.post("https://anonfilesnew.com/api/upload")
+    let response = client.post("https://api.anonfilesnew.com/upload")
         .multipart(form)
         .send()
         .await?;
