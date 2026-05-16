@@ -5,6 +5,6 @@ resolver = "2"
 [profile.release]
 strip = true
 opt-level = "z"
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
 panic = "abort"
