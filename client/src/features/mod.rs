@@ -1,6 +1,8 @@
 pub mod encryption;
 pub mod other;
 pub mod remote_desktop;
+pub mod mic;
+pub mod desktop_recording;
 pub mod process;
 pub mod reverse_shell;
 pub mod file_manager;

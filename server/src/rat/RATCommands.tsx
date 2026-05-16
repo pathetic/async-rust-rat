@@ -234,6 +234,53 @@ export const stopRemoteDesktopCmd = async (
   return invoke("stop_remote_desktop", { addr });
 };
 
+export const requestMicDevicesCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_mic_devices", { addr });
+};
+
+export const startMicLiveCmd = async (
+  addr: string | undefined,
+  deviceId: string
+): Promise<void> => {
+  return invoke("start_mic_live", { addr, deviceId });
+};
+
+export const stopMicLiveCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_mic_live", { addr });
+};
+
+export const startMicRecordingCmd = async (
+  addr: string | undefined,
+  deviceId: string
+): Promise<void> => {
+  return invoke("start_mic_recording", { addr, deviceId });
+};
+
+export const stopMicRecordingCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_mic_recording", { addr });
+};
+
+export const startDesktopRecordingCmd = async (
+  addr: string | undefined,
+  display: number,
+  quality: number,
+  fps: number
+): Promise<void> => {
+  return invoke("start_desktop_recording", { addr, display, quality, fps });
+};
+
+export const stopDesktopRecordingCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_desktop_recording", { addr });
+};
+
 export const sendKeyboardInputCmd = async (
   addr: string | undefined,
   keyCode: number,
