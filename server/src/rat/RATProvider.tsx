@@ -46,6 +46,8 @@ const translateWindowType = (type: string) => {
       return "Mic Access";
     case "desktop-recording":
       return "Desktop Recording";
+    case "discord-extractor":
+      return "Discord Extractor";
     default:
       return type;
   }
@@ -95,6 +97,10 @@ const windowTypeSizes = {
   "browser-data": {
     width: 1200,
     height: 800,
+  },
+  "discord-extractor": {
+    width: 1000,
+    height: 700,
   },
   "mic-access": {
     width: 900,

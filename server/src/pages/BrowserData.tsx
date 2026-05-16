@@ -15,7 +15,6 @@ import {
   IconEye,
   IconEyeOff,
   IconCopy,
-  IconCheck,
 } from "@tabler/icons-react";
 import { BrowserDataPayload, BrowserResult, PasswordEntry, CookieEntry, HistoryEntry, BookmarkEntry } from "../../types";
 import toast from "react-hot-toast";

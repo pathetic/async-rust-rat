@@ -51,36 +51,62 @@ const base64ToUint8Array = (base64: string) => {
 };
 
 const generateWaveform = (payload: MicAudioPayload) => {
-    const bytes = base64ToUint8Array(payload.data);
-    const samples = new Int16Array(bytes.buffer);
-    const channelCount = payload.channels;
-    const frameCount = Math.floor(samples.length / channelCount);
-    const bucketSize = Math.max(1, Math.floor(frameCount / 128));
-    const waveformPoints: number[] = [];
+  const bytes = base64ToUint8Array(payload.data);
+  const samples = new Int16Array(bytes.buffer);
+  const channelCount = payload.channels;
+  const frameCount = Math.floor(samples.length / channelCount);
 
-    for (let bucket = 0; bucket < 128; bucket += 1) {
-      const start = bucket * bucketSize * channelCount;
-      const end = Math.min(samples.length, start + bucketSize * channelCount);
-      let maxAmp = 0;
-      for (let i = start; i < end; i += channelCount) {
-        const left = Math.abs(samples[i]);
-        const right = channelCount > 1 && i + 1 < samples.length ? Math.abs(samples[i + 1]) : 0;
-        maxAmp = Math.max(maxAmp, left, right);
-      }
-      waveformPoints.push(maxAmp / 32768);
+  const bucketCount = 128;
+  const bucketSize = Math.max(1, Math.floor(frameCount / bucketCount));
+  const waveformPoints: number[] = [];
+
+  let peak = 0;
+  for (let bucket = 0; bucket < bucketCount; bucket += 1) {
+    const start = bucket * bucketSize * channelCount;
+    const end = Math.min(samples.length, start + bucketSize * channelCount);
+    let maxAmp = 0;
+    for (let i = start; i < end; i += channelCount) {
+      const left = Math.abs(samples[i]);
+      const right =
+        channelCount > 1 && i + 1 < samples.length
+          ? Math.abs(samples[i + 1])
+          : 0;
+      maxAmp = Math.max(maxAmp, left, right);
     }
+    const normalized = maxAmp / 32768;
+    waveformPoints.push(normalized);
+    if (normalized > peak) peak = normalized;
+  }
 
-    return waveformPoints;
-  };
+  // Soft compression to make low amplitudes more visible (sqrt boosts small values)
+  const compressed = waveformPoints.map((v) => Math.sqrt(v));
 
-  const playAudioChunk = async (payload: MicAudioPayload, audioContext: AudioContext) => {
+  // Auto-normalize: scale so the peak maps closer to targetPeak.
+  // Cap the maximum gain to avoid extreme amplification of silence/noise.
+  const targetPeak = 0.85;
+  const minPeak = 1e-4;
+  const maxGain = 8; // don't amplify more than 8x
+  const gain =
+    peak > 0
+      ? Math.min(maxGain, targetPeak / Math.max(Math.sqrt(peak), minPeak))
+      : 1;
+
+  const amplified = compressed.map((v) => Math.min(1, v * gain));
+
+  return amplified;
+};
+
+const playAudioChunk = async (
+  payload: MicAudioPayload,
+  audioContext: AudioContext,
+) => {
   const bytes = base64ToUint8Array(payload.data);
   const samples = new Int16Array(bytes.buffer);
   const frameCount = Math.floor(samples.length / payload.channels);
   const buffer = audioContext.createBuffer(
     payload.channels,
     frameCount,
-    payload.sampleRate
+    payload.sampleRate,
   );
 
   for (let channel = 0; channel < payload.channels; channel += 1) {
@@ -111,7 +137,9 @@ export const MicAccess: React.FC = () => {
   const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    audioContextRef.current = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
 
     const unlistenMic = listen("mic_audio_chunk", (event: any) => {
       const payload = event.payload as MicAudioPayload;
@@ -155,30 +183,63 @@ export const MicAccess: React.FC = () => {
 
   useEffect(() => {
     const canvas = waveformCanvasRef.current;
-    if (!canvas || waveform.length === 0) return;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const width = canvas.width;
     const height = canvas.height;
 
+    // Clear background
+    ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, width, height);
-    ctx.strokeStyle = "#34d399";
-    ctx.lineWidth = 2;
+
+    if (waveform.length === 0) return;
+
+    const midY = height / 2;
+    const amplitude = height / 2 - 4;
+
+    // Draw filled, mirrored waveform (top + bottom) for stronger visual presence
     ctx.beginPath();
+    for (let i = 0; i < waveform.length; i += 1) {
+      const value = waveform[i];
+      const x = (i / (waveform.length - 1)) * width;
+      const y = midY - value * amplitude;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
 
-    waveform.forEach((value, index) => {
-      const x = (index / (waveform.length - 1)) * width;
-      const y = height / 2 - value * (height / 2 - 4);
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
+    for (let i = waveform.length - 1; i >= 0; i -= 1) {
+      const value = waveform[i];
+      const x = (i / (waveform.length - 1)) * width;
+      const y = midY + value * amplitude;
+      ctx.lineTo(x, y);
+    }
 
+    ctx.closePath();
+
+    // subtle fill and stroke to emphasize waveform even at low volumes
+    ctx.fillStyle = "rgba(52,211,153,0.12)"; // tailwind emerald-400 with low alpha
+    ctx.fill();
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#34d399";
+    // add a little glow for visibility
+    ctx.shadowColor = "rgba(52,211,153,0.6)";
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    for (let i = 0; i < waveform.length; i += 1) {
+      const value = waveform[i];
+      const x = (i / (waveform.length - 1)) * width;
+      const y = midY - value * amplitude;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
     ctx.stroke();
+
+    // reset shadow so it doesn't affect other drawings
+    ctx.shadowBlur = 0;
   }, [waveform]);
 
   const startLive = async () => {
@@ -230,7 +291,9 @@ export const MicAccess: React.FC = () => {
         <IconMicrophone size={28} />
         <div>
           <h1 className="text-2xl font-semibold">Mic Access</h1>
-          <p className="text-sm text-gray-400">Live listen or record microphone audio from the client.</p>
+          <p className="text-sm text-gray-400">
+            Live listen or record microphone audio from the client.
+          </p>
         </div>
       </div>
 
@@ -260,35 +323,39 @@ export const MicAccess: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
-          className="py-3 px-5 rounded-xl bg-green-600 hover:bg-green-500 transition"
-          onClick={startLive}
-          disabled={liveActive}
-        >
-          <IconPlayerPlay size={18} className="inline-block mr-2" /> Start Live Listen
-        </button>
-        <button
-          className="py-3 px-5 rounded-xl bg-red-600 hover:bg-red-500 transition"
-          onClick={stopLive}
-          disabled={!liveActive}
-        >
-          <IconPlayerPause size={18} className="inline-block mr-2" /> Stop Live Listen
-        </button>
-        <button
-          className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 transition"
-          onClick={startRecording}
-          disabled={recordingActive}
-        >
-          <IconDeviceFloppy size={18} className="inline-block mr-2" /> Start Recording
-        </button>
-        <button
-          className="py-3 px-5 rounded-xl bg-orange-600 hover:bg-orange-500 transition"
-          onClick={stopRecording}
-          disabled={!recordingActive}
-        >
-          <IconPlayerPause size={18} className="inline-block mr-2" /> Stop Recording
-        </button>
+            className="py-3 px-5 rounded-xl bg-green-600 hover:bg-green-500 transition"
+            onClick={startLive}
+            disabled={liveActive}
+          >
+            <IconPlayerPlay size={18} className="inline-block mr-2" /> Start
+            Live Listen
+          </button>
+          <button
+            className="py-3 px-5 rounded-xl bg-red-600 hover:bg-red-500 transition"
+            onClick={stopLive}
+            disabled={!liveActive}
+          >
+            <IconPlayerPause size={18} className="inline-block mr-2" /> Stop
+            Live Listen
+          </button>
+          <button
+            className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 transition"
+            onClick={startRecording}
+            disabled={recordingActive}
+          >
+            <IconDeviceFloppy size={18} className="inline-block mr-2" /> Start
+            Recording
+          </button>
+          <button
+            className="py-3 px-5 rounded-xl bg-orange-600 hover:bg-orange-500 transition"
+            onClick={stopRecording}
+            disabled={!recordingActive}
+          >
+            <IconPlayerPause size={18} className="inline-block mr-2" /> Stop
+            Recording
+          </button>
+        </div>
       </div>
-    </div>
 
       <div className="space-y-4">
         <div className="rounded-xl border border-accentx p-4 bg-secondarybg">
@@ -318,7 +385,8 @@ export const MicAccess: React.FC = () => {
                 className="text-sm text-blue-300 hover:text-white"
                 onClick={exportFile}
               >
-                <IconDownload size={18} className="inline-block mr-2" /> Export file
+                <IconDownload size={18} className="inline-block mr-2" /> Export
+                file
               </button>
             </div>
             <p className="text-gray-300">{fileName}</p>

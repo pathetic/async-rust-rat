@@ -36,6 +36,7 @@ tor-config = "0.42.0"
 tor-cell = "0.42.0"
 rusqlite = { version = "0.36.0", features = ["bundled"] }
 reqwest = { version = "0.12", features = ["json", "multipart"] }
+tauri-plugin-fs = "2"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 fn restore_assets_for_dev_and_standalone() {
@@ -32,7 +32,6 @@ fn restore_assets_for_dev_and_standalone() {
         );
     }
 
-
     let res_dir = project_root.join("res");
 
     let rcedit_source_bkp_path = res_dir.join("rcedit.bkp");
@@ -50,11 +49,10 @@ fn restore_assets_for_dev_and_standalone() {
         "Creating destination directory for dev/standalone assets: {:?}",
         destination_resources_dir
     );
-    fs::create_dir_all(&destination_resources_dir)
-        .expect(&format!(
-            "Failed to create resources directory: {:?}",
-            destination_resources_dir
-        ));
+    fs::create_dir_all(&destination_resources_dir).expect(&format!(
+        "Failed to create resources directory: {:?}",
+        destination_resources_dir
+    ));
 
     let rcedit_destination_exe_path = destination_resources_dir.join("rcedit.exe");
     println!(
@@ -98,18 +96,30 @@ fn restore_assets_for_dev_and_standalone() {
         fs::remove_file(&countries_mmdb_destination_path)
             .expect("Failed to remove existing countries.mmdb");
     }
-    fs::copy(&countries_mmdb_source_path, &countries_mmdb_destination_path)
-        .expect("Failed to copy countries.mmdb to countries.mmdb");
+    fs::copy(
+        &countries_mmdb_source_path,
+        &countries_mmdb_destination_path,
+    )
+    .expect("Failed to copy countries.mmdb to countries.mmdb");
     println!("Successfully copied countries.mmdb to countries.mmdb.");
 
     let dev_resources_path_str = destination_resources_dir
         .to_str()
         .expect("Failed to convert resources path to string")
         .to_string();
-    println!("cargo:rustc-env=DEV_RESOURCES_PATH={}", dev_resources_path_str);
+    println!(
+        "cargo:rustc-env=DEV_RESOURCES_PATH={}",
+        dev_resources_path_str
+    );
 
-    println!("cargo:rerun-if-changed={}", rcedit_source_bkp_path.display());
-    println!("cargo:rerun-if-changed={}", countries_mmdb_source_path.display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        rcedit_source_bkp_path.display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        countries_mmdb_source_path.display()
+    );
     println!("cargo:rerun-if-changed={}", batch_path.display()); // re-run if batch file changes
 }
 

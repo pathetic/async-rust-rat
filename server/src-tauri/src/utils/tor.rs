@@ -1,14 +1,14 @@
-use arti_client::{TorClient, TorClientConfig};
-use tor_hsservice::{HsNickname, RunningOnionService};
-use tor_hsservice::config::OnionServiceConfig;
-use safelog::DisplayRedacted;
-use tor_rtcompat::PreferredRuntime;
-use std::sync::{Arc, Mutex};
-use std::path::PathBuf;
 use anyhow::{Context, Result};
+use arti_client::{TorClient, TorClientConfig};
 use futures::StreamExt;
-use serde::{Serialize, Deserialize};
+use safelog::DisplayRedacted;
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use tauri::Emitter;
+use tor_hsservice::config::OnionServiceConfig;
+use tor_hsservice::{HsNickname, RunningOnionService};
+use tor_rtcompat::PreferredRuntime;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OnionServiceInfo {
@@ -33,12 +33,19 @@ impl TorManager {
         let cache_dir = storage_path.join("cache");
 
         let mut builder = TorClientConfig::builder();
-        builder.storage()
-            .state_dir(arti_client::config::CfgPath::new(state_dir.to_string_lossy().into_owned()))
-            .cache_dir(arti_client::config::CfgPath::new(cache_dir.to_string_lossy().into_owned()));
+        builder
+            .storage()
+            .state_dir(arti_client::config::CfgPath::new(
+                state_dir.to_string_lossy().into_owned(),
+            ))
+            .cache_dir(arti_client::config::CfgPath::new(
+                cache_dir.to_string_lossy().into_owned(),
+            ));
         let config = builder.build()?;
 
-        let client = TorClient::builder().config(config).create_unbootstrapped()?;
+        let client = TorClient::builder()
+            .config(config)
+            .create_unbootstrapped()?;
 
         let mut events = client.bootstrap_events();
         let app_handle_clone = app_handle.clone();
@@ -94,9 +101,17 @@ impl TorManager {
             let saved_services: Vec<OnionServiceInfo> = serde_json::from_str(&data)?;
 
             for info in saved_services {
-                match self.create_onion_service(&info.nickname, info.port, app_handle).await {
-                    Ok(svc) => println!("[TorManager] Restored onion service '{}' at {}.onion", svc.nickname, svc.onion_address),
-                    Err(e) => eprintln!("[TorManager] Failed to restore '{}': {}", info.nickname, e),
+                match self
+                    .create_onion_service(&info.nickname, info.port, app_handle)
+                    .await
+                {
+                    Ok(svc) => println!(
+                        "[TorManager] Restored onion service '{}' at {}.onion",
+                        svc.nickname, svc.onion_address
+                    ),
+                    Err(e) => {
+                        eprintln!("[TorManager] Failed to restore '{}': {}", info.nickname, e)
+                    }
                 }
             }
         }
@@ -106,7 +121,10 @@ impl TorManager {
     async fn save_services(&self) -> Result<()> {
         let metadata_path = self.storage_path.join("services.json");
         let services = {
-            let services_guard = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let services_guard = self
+                .services
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             services_guard.clone()
         };
         let data = serde_json::to_string_pretty(&services)?;
@@ -114,10 +132,18 @@ impl TorManager {
         Ok(())
     }
 
-    pub async fn create_onion_service(&self, nickname: &str, port: u16, app_handle: &tauri::AppHandle) -> Result<OnionServiceInfo> {
+    pub async fn create_onion_service(
+        &self,
+        nickname: &str,
+        port: u16,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<OnionServiceInfo> {
         // Check for duplicates first
         {
-            let services = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let services = self
+                .services
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             if let Some(existing) = services.iter().find(|s| s.nickname == nickname) {
                 return Ok(existing.clone());
             }
@@ -128,7 +154,9 @@ impl TorManager {
             .nickname(nick.clone())
             .build()?;
 
-        let (service, requests) = self.client.launch_onion_service(config)?
+        let (service, requests) = self
+            .client
+            .launch_onion_service(config)?
             .context("Onion services not enabled")?;
 
         let mut status_events = service.status_events();
@@ -146,18 +174,22 @@ impl TorManager {
                     nickname: String,
                     status: String,
                 }
-                let _ = app_handle_clone.emit("tor_service_status", OnionStatusEvent {
-                    nickname: nickname_clone.clone(),
-                    status: state_str,
-                });
+                let _ = app_handle_clone.emit(
+                    "tor_service_status",
+                    OnionStatusEvent {
+                        nickname: nickname_clone.clone(),
+                        status: state_str,
+                    },
+                );
             }
         });
 
-        let mut onion_address = service.onion_address()
+        let mut onion_address = service
+            .onion_address()
             .context("Service should have a name")?
             .display_unredacted()
             .to_string();
-        
+
         if !onion_address.ends_with(".onion") {
             onion_address.push_str(".onion");
         }
@@ -170,11 +202,16 @@ impl TorManager {
         };
 
         {
-            let mut services = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let mut services = self
+                .services
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             services.push(info.clone());
         }
 
-        self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?
+        self.running_handles
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?
             .insert(nickname.to_string(), service);
         let _ = self.save_services().await;
 
@@ -182,16 +219,20 @@ impl TorManager {
         tokio::spawn(async move {
             let mut stream_requests = tor_hsservice::handle_rend_requests(requests);
             while let Some(stream_request) = stream_requests.next().await {
-                let mut stream = match stream_request.accept(tor_cell::relaycell::msg::Connected::new_empty()).await {
+                let mut stream = match stream_request
+                    .accept(tor_cell::relaycell::msg::Connected::new_empty())
+                    .await
+                {
                     Ok(s) => s,
                     Err(_) => continue,
                 };
 
                 tokio::spawn(async move {
-                    let mut target = match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port)).await {
-                        Ok(t) => t,
-                        Err(_) => return,
-                    };
+                    let mut target =
+                        match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port)).await {
+                            Ok(t) => t,
+                            Err(_) => return,
+                        };
                     let _ = tokio::io::copy_bidirectional(&mut stream, &mut target).await;
                 });
             }
@@ -203,7 +244,7 @@ impl TorManager {
     pub fn get_services(&self) -> Vec<OnionServiceInfo> {
         let mut svcs = match self.services.lock() {
             Ok(s) => s.clone(),
-            Err(e) => e.into_inner().clone()
+            Err(e) => e.into_inner().clone(),
         };
         if let Ok(cache) = self.status_cache.lock() {
             for svc in &mut svcs {
@@ -218,19 +259,28 @@ impl TorManager {
     pub async fn delete_onion_service(&self, nickname: &str) -> Result<()> {
         // Drop the running handle → arti stops the service
         {
-            let mut handles = self.running_handles.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let mut handles = self
+                .running_handles
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             handles.remove(nickname);
         }
 
         // Remove from status cache
         {
-            let mut cache = self.status_cache.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let mut cache = self
+                .status_cache
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             cache.remove(nickname);
         }
 
         // Remove from services list
         {
-            let mut services = self.services.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            let mut services = self
+                .services
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
             services.retain(|s| s.nickname != nickname);
         }
 
@@ -240,7 +290,8 @@ impl TorManager {
         // Remove keys/state so the .onion address is truly deleted
         let hss_dir = self.storage_path.join("state").join("hss").join(nickname);
         if hss_dir.exists() {
-            tokio::fs::remove_dir_all(&hss_dir).await
+            tokio::fs::remove_dir_all(&hss_dir)
+                .await
                 .unwrap_or_else(|e| eprintln!("[TorManager] Failed to remove hss dir: {}", e));
         }
 

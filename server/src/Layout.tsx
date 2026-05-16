@@ -12,6 +12,7 @@ import { RATContext } from "./rat/RATContext";
 import { startServerCmd, stopServerCmd } from "./rat/RATCommands";
 import { useContext } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { TransferProgress } from "./components/TransferProgress";
 
 const SidebarButton = ({ icon: Icon, label, to, active }: any) => {
   const navigate = useNavigate();
@@ -179,6 +180,7 @@ export const Layout = () => {
           <Outlet />
         </main>
       </div>
+      <TransferProgress />
       <Toaster position="bottom-right" reverseOrder={false} />
     </div>
   );
