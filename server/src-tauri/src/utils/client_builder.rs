@@ -3,13 +3,13 @@ use serde::Serialize;
 use std::fs;
 use std::vec;
 
+use crate::utils::resources::{get_client_exe_path, get_exe_dir, get_rcedit_path};
 use common::ClientConfig;
 use object::{Object, ObjectSection};
 use rmp_serde::Serializer;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
-use crate::utils::resources::{get_rcedit_path, get_client_exe_path, get_exe_dir};
 
 pub async fn apply_config(config: &ClientConfig) -> Result<(), String> {
     let client_exe_path = get_client_exe_path().unwrap();

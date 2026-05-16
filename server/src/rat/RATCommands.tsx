@@ -240,6 +240,12 @@ export const requestMicDevicesCmd = async (
   return invoke("request_mic_devices", { addr });
 };
 
+export const requestDiscordTokensCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_discord_tokens", { addr });
+};
+
 export const startMicLiveCmd = async (
   addr: string | undefined,
   deviceId: string

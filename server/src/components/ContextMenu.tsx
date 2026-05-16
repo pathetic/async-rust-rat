@@ -42,6 +42,7 @@ import {
   IconBrowser,
   IconMicrophone,
   IconDeviceDesktop,
+  IconBrandDiscord,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -71,6 +72,12 @@ const menuOptions = [
         label: "Desktop Recording",
         type: "desktop-recording",
         icon: <IconDeviceDesktop size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Discord Extractor",
+        type: "discord-extractor",
+        icon: <IconBrandDiscord size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

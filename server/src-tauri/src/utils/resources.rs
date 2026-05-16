@@ -1,15 +1,17 @@
-use std::path::{PathBuf};
-use std::io::{Write, BufWriter};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
 
 pub fn get_exe_dir() -> Result<PathBuf, String> {
     let current_exe_path = std::env::current_exe()
         .map_err(|e| format!("Failed to get current executable path: {}", e))?;
-    let exe_dir = current_exe_path.parent()
+    let exe_dir = current_exe_path
+        .parent()
         .ok_or_else(|| "Could not determine parent directory of current executable".to_string())?;
     Ok(exe_dir.to_path_buf())
 }
 
-pub fn get_rcedit_path() -> Result<PathBuf, String> { // _app_handle if not used
+pub fn get_rcedit_path() -> Result<PathBuf, String> {
+    // _app_handle if not used
     let exe_dir = get_exe_dir()?;
     let resources_subdir = exe_dir.join("resources");
     let rcedit_filename = "rcedit.exe";
@@ -76,7 +78,8 @@ pub fn get_client_exe_path() -> Result<PathBuf, String> {
 pub fn get_client_built_exe_path() -> Result<PathBuf, String> {
     let current_exe_path = std::env::current_exe()
         .map_err(|e| format!("Failed to get current executable path: {}", e))?;
-    let exe_dir = current_exe_path.parent()
+    let exe_dir = current_exe_path
+        .parent()
         .ok_or_else(|| "Could not determine parent directory of current executable".to_string())?;
 
     let path = exe_dir.join("Client_built.exe");
@@ -98,12 +101,15 @@ pub fn log_to_file(message: &str) {
         Ok(f) => {
             let mut writer = BufWriter::new(f);
             if let Err(e) = writeln!(writer, "{}", message) {
-                eprintln!("ERROR: Could not write to log file {:?}: {}", log_file_path, e);
+                eprintln!(
+                    "ERROR: Could not write to log file {:?}: {}",
+                    log_file_path, e
+                );
             }
             if let Err(e) = writer.flush() {
                 eprintln!("ERROR: Could not flush log file {:?}: {}", log_file_path, e);
             }
-        },
+        }
         Err(e) => eprintln!("ERROR: Could not open log file {:?}: {}", log_file_path, e),
     }
 }
