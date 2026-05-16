@@ -5,7 +5,7 @@
         "ed25519": "jarnBvRsrNCzn1yp4OChaPHTcJMQP4A34gKPuKS0sfY",
         "rsa": "ef7bb352aac0d67a6f97d42ef636c90af8b36e90"
       },
-      "planned_retirement": "T+20h 24m 3s",
+      "planned_retirement": "T+15h 30m 48s",
       "ipts": [
         {
           "lid": "1512e80b564e5efd54473a2001699ca0f9da86cd7c291f1ed69809ce8a80152b",
@@ -18,7 +18,7 @@
         "ed25519": "77VASdzBiRLT34lcSW6BxjZEWWD8IZQzUfx5PSNH8QE",
         "rsa": "21926e3247c41dc078c1b62678618d7aa4b75a26"
       },
-      "planned_retirement": "T+18h 5m 56s",
+      "planned_retirement": "T+13h 12m 41s",
       "ipts": [
         {
           "lid": "b2b0b449d81771726f9858492401d9bcc9a41ff975b5a2467b9fc6f3e109c006",
@@ -31,7 +31,7 @@
         "ed25519": "jvdmOYy/DRJy2jvYEuQm4KCWV7k0ehY/jTkHDqzgb0Q",
         "rsa": "46b716f602eb0af7bd5bc1ced5a9737fd8d46bf9"
       },
-      "planned_retirement": "T+23h 14m 29s",
+      "planned_retirement": "T+18h 21m 14s",
       "ipts": [
         {
           "lid": "518a80e0f174be2486ae42ec5b4c8ae8fc2b98bb32a9e504c02bf0580faa994f",
@@ -40,5 +40,5 @@
       ]
     }
   ],
-  "stored": "2026-05-16T09:55:29Z"
+  "stored": "2026-05-16T14:48:44Z"
 }
