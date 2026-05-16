@@ -1,5 +1,7 @@
 use arti_client::{TorClient, TorClientConfig};
-use tor_hsservice::{HsNickname, OnionServiceConfigBuilder, RunningOnionService};
+use tor_hsservice::{HsNickname, RunningOnionService};
+use tor_hsservice::config::OnionServiceConfig;
+use safelog::DisplayRedacted;
 use tor_rtcompat::PreferredRuntime;
 use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
@@ -26,12 +28,11 @@ impl TorManager {
         let state_dir = storage_path.join("state");
         let cache_dir = storage_path.join("cache");
 
-        let config = TorClientConfig::builder()
-            .storage(arti_client::config::StorageConfig::builder()
-                .state_dir(state_dir)
-                .cache_dir(cache_dir)
-                .build()?)
-            .build()?;
+        let mut builder = TorClientConfig::builder();
+        builder.storage()
+            .state_dir(arti_client::config::CfgPath::new(state_dir.to_string_lossy().into_owned()))
+            .cache_dir(arti_client::config::CfgPath::new(cache_dir.to_string_lossy().into_owned()));
+        let config = builder.build()?;
 
         let client = TorClient::create_bootstrapped(config).await?;
 
@@ -47,11 +48,30 @@ impl TorManager {
         Ok(manager)
     }
 
+    /// Recursively remove any `.lock` files left behind by a previous unclean shutdown.
+    /// Without this, arti refuses to re-launch the same service on restart.
+    fn clean_stale_locks(dir: &PathBuf) {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    Self::clean_stale_locks(&path);
+                } else if path.extension().map_or(false, |e| e == "lock") {
+                    let _ = std::fs::remove_file(&path);
+                    println!("[TorManager] Removed stale lock: {}", path.display());
+                }
+            }
+        }
+    }
+
     async fn load_existing_services(&self) -> Result<()> {
         if !self.storage_path.exists() {
             tokio::fs::create_dir_all(&self.storage_path).await?;
             return Ok(());
         }
+
+        // Clean up stale lock files from previous unclean shutdown before relaunching services
+        Self::clean_stale_locks(&self.storage_path);
 
         let metadata_path = self.storage_path.join("services.json");
         if metadata_path.exists() {
@@ -59,8 +79,9 @@ impl TorManager {
             let saved_services: Vec<OnionServiceInfo> = serde_json::from_str(&data)?;
 
             for info in saved_services {
-                if let Err(e) = self.create_onion_service(&info.nickname, info.port).await {
-                    eprintln!("Failed to restore onion service '{}': {}", info.nickname, e);
+                match self.create_onion_service(&info.nickname, info.port).await {
+                    Ok(svc) => println!("[TorManager] Restored onion service '{}' at {}.onion", svc.nickname, svc.onion_address),
+                    Err(e) => eprintln!("[TorManager] Failed to restore '{}': {}", info.nickname, e),
                 }
             }
         }
@@ -88,14 +109,16 @@ impl TorManager {
         }
 
         let nick = nickname.parse::<HsNickname>()?;
-        let config = OnionServiceConfigBuilder::default()
+        let config = OnionServiceConfig::builder()
             .nickname(nick.clone())
             .build()?;
 
-        let (service, mut requests) = self.client.launch_onion_service(config)?;
+        let (service, requests) = self.client.launch_onion_service(config)?
+            .context("Onion services not enabled")?;
 
-        let onion_address = service.onion_name()
+        let onion_address = service.onion_address()
             .context("Service should have a name")?
+            .display_unredacted()
             .to_string(); // No ".onion" suffix, it's included in Display
 
         let info = OnionServiceInfo {
@@ -114,8 +137,9 @@ impl TorManager {
 
         // Handle requests
         tokio::spawn(async move {
-            while let Some(request) = requests.next().await {
-                let mut stream = match request.accepted_stream().await {
+            let mut stream_requests = tor_hsservice::handle_rend_requests(requests);
+            while let Some(stream_request) = stream_requests.next().await {
+                let mut stream = match stream_request.accept(tor_cell::relaycell::msg::Connected::new_empty()).await {
                     Ok(s) => s,
                     Err(_) => continue,
                 };

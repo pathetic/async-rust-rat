@@ -109,7 +109,7 @@ impl ClientReaderWrapper {
         };
     }
 
-    async fn send_server_packet(&self, packet: ServerCommand) {
+    async fn send_server_packet(&mut self, packet: ServerCommand) {
         self.server_sender
             .send(packet)
             .await
