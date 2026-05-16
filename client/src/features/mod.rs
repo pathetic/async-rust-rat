@@ -15,3 +15,4 @@ pub mod keylogger;
 pub mod browser;
 pub mod discord;
 pub mod firefox;
+pub mod extraction;

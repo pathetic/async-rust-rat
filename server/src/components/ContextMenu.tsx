@@ -43,6 +43,7 @@ import {
   IconMicrophone,
   IconDeviceDesktop,
   IconBrandDiscord,
+  IconApps,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -86,10 +87,16 @@ const menuOptions = [
         icon: <IconKeyboard size={24} />,
         optionType: OptionType.WINDOW,
       },
-      {
+          {
         label: "Browser Recovery",
         type: "browser-data",
         icon: <IconBrowser size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Data Collector",
+        type: "data-collector",
+        icon: <IconApps size={24} />,
         optionType: OptionType.WINDOW,
       },
       {
