@@ -143,6 +143,7 @@ pub enum ServerCommand {
     SSHData(SocketAddr, SSHData),
     SteamData(SocketAddr, SteamData),
     ClipboardUpdate(SocketAddr, ClipboardUpdate),
+    ClipboardImageUpdate(SocketAddr, ClipboardImageUpdate),
     NotificationEvent(SocketAddr, NotificationEvent),
     SetAutoUploadAnonFiles(bool),
 }

