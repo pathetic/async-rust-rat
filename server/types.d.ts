@@ -319,6 +319,8 @@ export interface SoftwareEntry {
   publisher: string;
   install_location: string;
   uninstall_command: string;
+  executable_path: string;
+  icon_base64: string;
 }
 
 export interface SoftwareInventoryPayload {
@@ -388,5 +390,22 @@ export interface NotificationEventPayload {
     title: string;
     message: string;
     timestamp: string;
+  };
+}
+
+export interface SoftwareIconResultPayload {
+  addr: string;
+  data: {
+    name: string;
+    icon_base64: string;
+  };
+}
+
+export interface SoftwareActionResultPayload {
+  addr: string;
+  data: {
+    name: string;
+    success: boolean;
+    message: string;
   };
 }

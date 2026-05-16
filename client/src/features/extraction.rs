@@ -130,6 +130,18 @@ fn collect_installed_software(
                 let publisher: String = subkey.get_value("Publisher").unwrap_or_default();
                 let install_location: String = subkey.get_value("InstallLocation").unwrap_or_default();
                 let uninstall_command: String = subkey.get_value("UninstallString").unwrap_or_default();
+                let executable_path: String = subkey.get_value("DisplayIcon").ok()
+                    .or_else(|| subkey.get_value("InstallLocation").ok().map(|p: String| {
+                        // Try to find the main executable in the install location
+                        if p.is_empty() { return p; }
+                        // Use the install location as-is; the icon extraction will find the exe
+                        p
+                    }))
+                    .unwrap_or_default();
+                
+                // Extract icon as base64
+                let icon_base64 = extract_software_icon(&executable_path, &name);
+                
                 let signature = format!("{}|{}", name, version);
                 if seen.insert(signature) {
                     applications.push(SoftwareEntry {
@@ -138,11 +150,180 @@ fn collect_installed_software(
                         publisher,
                         install_location,
                         uninstall_command,
+                        executable_path,
+                        icon_base64,
                     });
                 }
             }
         }
     }
+}
+
+fn extract_software_icon(executable_path: &str, name: &str) -> String {
+    let path = if executable_path.is_empty() {
+        find_executable_by_name(name)
+    } else {
+        let p = executable_path.split(',').next().unwrap_or(executable_path);
+        PathBuf::from(p)
+    };
+
+    if !path.exists() {
+        return String::new();
+    }
+
+    extract_icon_as_base64(&path)
+}
+
+fn find_executable_by_name(name: &str) -> PathBuf {
+    let search_paths = [
+        "C:\\Program Files",
+        "C:\\Program Files (x86)",
+    ];
+
+    for base in &search_paths {
+        if let Ok(entries) = std::fs::read_dir(base) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let dir_name = path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("")
+                        .to_lowercase();
+                    let search_name = name.to_lowercase();
+                    if dir_name.contains(&search_name) || search_name.contains(&dir_name) {
+                        if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                            for sub_entry in sub_entries.flatten() {
+                                if sub_entry.path().extension()
+                                    .and_then(|e| e.to_str()) == Some("exe") {
+                                    return sub_entry.path();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    PathBuf::new()
+}
+
+fn extract_icon_as_base64(path: &Path) -> String {
+    use base64::{Engine as _, engine::general_purpose};
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use winapi::shared::minwindef::HINSTANCE;
+    use winapi::um::shellapi::ExtractIconW;
+    use winapi::um::winuser::{DestroyIcon, GetIconInfo, DrawIconEx};
+    use winapi::um::wingdi::{BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, GetDIBits, BITMAP, CreateCompatibleDC, CreateCompatibleBitmap, SelectObject, DeleteDC, DeleteObject, GetObjectW};
+    use image::RgbaImage;
+
+    const DI_NORMAL: u32 = 0x0003;
+
+    unsafe {
+        let path_wide: Vec<u16> = OsStr::new(path)
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+
+        let hicon = ExtractIconW(0 as HINSTANCE, path_wide.as_ptr(), 0);
+        if hicon.is_null() {
+            return String::new();
+        }
+
+        let mut icon_info = std::mem::zeroed::<winapi::um::winuser::ICONINFO>();
+        if GetIconInfo(hicon, &mut icon_info) == 0 {
+            DestroyIcon(hicon);
+            return String::new();
+        }
+
+        let mut bitmap = std::mem::zeroed::<BITMAP>();
+        if GetObjectW(icon_info.hbmColor as _, std::mem::size_of::<BITMAP>() as i32, &mut bitmap as *mut _ as _) == 0 {
+            DestroyIcon(hicon);
+            if !icon_info.hbmColor.is_null() { DeleteObject(icon_info.hbmColor as _); }
+            if !icon_info.hbmMask.is_null() { DeleteObject(icon_info.hbmMask as _); }
+            return String::new();
+        }
+
+        let width = bitmap.bmWidth as u32;
+        let height = bitmap.bmHeight as u32;
+
+        let screen_dc = CreateCompatibleDC(0 as _);
+        if screen_dc.is_null() {
+            DestroyIcon(hicon);
+            if !icon_info.hbmColor.is_null() { DeleteObject(icon_info.hbmColor as _); }
+            if !icon_info.hbmMask.is_null() { DeleteObject(icon_info.hbmMask as _); }
+            return String::new();
+        }
+
+        let mem_bitmap = CreateCompatibleBitmap(screen_dc, width as i32, height as i32);
+        if mem_bitmap.is_null() {
+            DeleteDC(screen_dc);
+            DestroyIcon(hicon);
+            if !icon_info.hbmColor.is_null() { DeleteObject(icon_info.hbmColor as _); }
+            if !icon_info.hbmMask.is_null() { DeleteObject(icon_info.hbmMask as _); }
+            return String::new();
+        }
+
+        let old_bitmap = SelectObject(screen_dc, mem_bitmap as _);
+
+        if DrawIconEx(screen_dc, 0, 0, hicon, width as i32, height as i32, 0, 0 as _, DI_NORMAL) == 0 {
+            SelectObject(screen_dc, old_bitmap);
+            DeleteObject(mem_bitmap as _);
+            DeleteDC(screen_dc);
+            DestroyIcon(hicon);
+            if !icon_info.hbmColor.is_null() { DeleteObject(icon_info.hbmColor as _); }
+            if !icon_info.hbmMask.is_null() { DeleteObject(icon_info.hbmMask as _); }
+            return String::new();
+        }
+
+        let mut bi = std::mem::zeroed::<BITMAPINFOHEADER>();
+        bi.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
+        bi.biWidth = width as i32;
+        bi.biHeight = -(height as i32);
+        bi.biPlanes = 1;
+        bi.biBitCount = 32;
+        bi.biCompression = BI_RGB;
+
+        let row_size = (width * 4 + 3) & !3;
+        let data_size = (row_size * height) as usize;
+        let mut pixels = vec![0u8; data_size];
+
+        let result = GetDIBits(screen_dc, mem_bitmap, 0, height, pixels.as_mut_ptr() as _, &mut bi as *mut _ as _, DIB_RGB_COLORS);
+
+        SelectObject(screen_dc, old_bitmap);
+        DeleteObject(mem_bitmap as _);
+        DeleteDC(screen_dc);
+        DestroyIcon(hicon);
+        if !icon_info.hbmColor.is_null() { DeleteObject(icon_info.hbmColor as _); }
+        if !icon_info.hbmMask.is_null() { DeleteObject(icon_info.hbmMask as _); }
+
+        if result == 0 {
+            return String::new();
+        }
+
+        // Build an RgbaImage from the pixel data
+        let mut img = RgbaImage::new(width, height);
+        for y in 0..height {
+            let row_start = (y * row_size) as usize;
+            for x in 0..width {
+                let idx = row_start + (x * 4) as usize;
+                let b = pixels[idx];
+                let g = pixels[idx + 1];
+                let r = pixels[idx + 2];
+                let a = pixels[idx + 3];
+                img.put_pixel(x, y, image::Rgba([r, g, b, a]));
+            }
+        }
+
+        // Encode as PNG in memory
+        let mut png_data = Vec::new();
+        if img.write_to(&mut std::io::Cursor::new(&mut png_data), image::ImageFormat::Png).is_ok() {
+            return general_purpose::STANDARD.encode(&png_data);
+        }
+    }
+
+    String::new()
 }
 
 pub fn collect_git_data() -> GitData {
@@ -437,4 +618,182 @@ struct Win32NTLogEvent {
     source_name: Option<String>,
     message: Option<String>,
     time_generated: Option<String>,
+}
+
+pub fn launch_software_by_name(name: &str) -> common::packets::SoftwareActionResult {
+    // Search for the software in the registry to find its executable
+    let roots = [
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_32KEY),
+        (HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+    ];
+
+    for (root, subkey, flag) in roots {
+        let base = RegKey::predef(root);
+        if let Ok(key) = base.open_subkey_with_flags(subkey, KEY_READ | flag) {
+            for subkey_name in key.enum_keys().flatten() {
+                if let Ok(sub) = key.open_subkey(&subkey_name) {
+                    let display_name: String = sub.get_value("DisplayName").unwrap_or_default();
+                    if display_name.is_empty() { continue; }
+                    if !display_name.to_lowercase().contains(&name.to_lowercase()) { continue; }
+
+                    // Try DisplayIcon first, then InstallLocation
+                    let exe_path: String = sub.get_value("DisplayIcon").ok()
+                        .or_else(|| sub.get_value("InstallLocation").ok())
+                        .unwrap_or_default();
+
+                    let path = if exe_path.is_empty() {
+                        find_executable_by_name(&display_name)
+                    } else {
+                        let p = exe_path.split(',').next().unwrap_or(&exe_path);
+                        PathBuf::from(p)
+                    };
+
+                    if path.exists() {
+                        match std::process::Command::new(&path).spawn() {
+                            Ok(_) => {
+                                return common::packets::SoftwareActionResult {
+                                    name: display_name,
+                                    success: true,
+                                    message: format!("Launched {}", path.display()),
+                                };
+                            }
+                            Err(e) => {
+                                return common::packets::SoftwareActionResult {
+                                    name: display_name,
+                                    success: false,
+                                    message: format!("Failed to launch: {}", e),
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    common::packets::SoftwareActionResult {
+        name: name.to_string(),
+        success: false,
+        message: "Software not found".to_string(),
+    }
+}
+
+pub fn uninstall_software_by_name(name: &str) -> common::packets::SoftwareActionResult {
+    let roots = [
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_32KEY),
+        (HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+    ];
+
+    for (root, subkey, flag) in roots {
+        let base = RegKey::predef(root);
+        if let Ok(key) = base.open_subkey_with_flags(subkey, KEY_READ | flag) {
+            for subkey_name in key.enum_keys().flatten() {
+                if let Ok(sub) = key.open_subkey(&subkey_name) {
+                    let display_name: String = sub.get_value("DisplayName").unwrap_or_default();
+                    if display_name.is_empty() { continue; }
+                    if !display_name.to_lowercase().contains(&name.to_lowercase()) { continue; }
+
+                    let uninstall_string: String = sub.get_value("UninstallString").unwrap_or_default();
+                    if uninstall_string.is_empty() {
+                        return common::packets::SoftwareActionResult {
+                            name: display_name,
+                            success: false,
+                            message: "No uninstall command found".to_string(),
+                        };
+                    }
+
+                    // Parse the uninstall string - it may contain quoted path + arguments
+                    let parts: Vec<&str> = uninstall_string.splitn(2, ' ').collect();
+                    let (cmd, args) = if parts.len() == 2 {
+                        (parts[0].trim_matches('"'), parts[1])
+                    } else {
+                        (uninstall_string.trim_matches('"'), "")
+                    };
+
+                    // Use cmd.exe /c to handle quoted paths with spaces
+                    let full_cmd = if args.is_empty() {
+                        format!("cmd.exe /c \"{}\"", cmd)
+                    } else {
+                        format!("cmd.exe /c \"{}\" {}", cmd, args)
+                    };
+
+                    match std::process::Command::new("cmd")
+                        .args(&["/c", &full_cmd])
+                        .spawn()
+                    {
+                        Ok(_) => {
+                            return common::packets::SoftwareActionResult {
+                                name: display_name,
+                                success: true,
+                                message: "Uninstaller started".to_string(),
+                            };
+                        }
+                        Err(e) => {
+                            return common::packets::SoftwareActionResult {
+                                name: display_name,
+                                success: false,
+                                message: format!("Failed to start uninstaller: {}", e),
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    common::packets::SoftwareActionResult {
+        name: name.to_string(),
+        success: false,
+        message: "Software not found".to_string(),
+    }
+}
+
+pub fn get_software_icon_by_name(name: &str) -> common::packets::SoftwareIconResult {
+    let roots = [
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+        (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_32KEY),
+        (HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", KEY_WOW64_64KEY),
+    ];
+
+    for (root, subkey, flag) in roots {
+        let base = RegKey::predef(root);
+        if let Ok(key) = base.open_subkey_with_flags(subkey, KEY_READ | flag) {
+            for subkey_name in key.enum_keys().flatten() {
+                if let Ok(sub) = key.open_subkey(&subkey_name) {
+                    let display_name: String = sub.get_value("DisplayName").unwrap_or_default();
+                    if display_name.is_empty() { continue; }
+                    if !display_name.to_lowercase().contains(&name.to_lowercase()) { continue; }
+
+                    let exe_path: String = sub.get_value("DisplayIcon").ok()
+                        .or_else(|| sub.get_value("InstallLocation").ok())
+                        .unwrap_or_default();
+
+                    let path = if exe_path.is_empty() {
+                        find_executable_by_name(&display_name)
+                    } else {
+                        let p = exe_path.split(',').next().unwrap_or(&exe_path);
+                        PathBuf::from(p)
+                    };
+
+                    let icon = if path.exists() {
+                        extract_icon_as_base64(&path)
+                    } else {
+                        String::new()
+                    };
+
+                    return common::packets::SoftwareIconResult {
+                        name: display_name,
+                        icon_base64: icon,
+                    };
+                }
+            }
+        }
+    }
+
+    common::packets::SoftwareIconResult {
+        name: name.to_string(),
+        icon_base64: String::new(),
+    }
 }

