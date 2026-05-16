@@ -29,7 +29,7 @@ import { useLocation } from "react-router-dom";
 
 const TorStartupModalContainer: React.FC = () => {
   const location = useLocation();
-  const isMainAppRoute = /^\/($|logs|worldmap|settings)/.test(location.pathname);
+  const isMainAppRoute = /^\/($|logs|worldmap|settings|onion)/.test(location.pathname);
 
   if (!isMainAppRoute) return null;
   return <TorStartupModal />;
