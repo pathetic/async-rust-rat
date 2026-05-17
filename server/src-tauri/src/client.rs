@@ -140,6 +140,11 @@ impl ClientReaderWrapper {
                     .await;
             }
 
+            RemoteDesktopAudioChunk(chunk) => {
+                self.send_server_packet(ServerCommand::RemoteDesktopAudioChunk(self.addr, chunk))
+                    .await;
+            }
+
             ShellOutput(output) => {
                 self.send_server_packet(ServerCommand::ShellOutput(self.addr, output))
                     .await;
