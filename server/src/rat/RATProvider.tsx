@@ -233,8 +233,11 @@ const openClientWindow = async (
       resizable: true,
       center: true,
       closable: true,
+      decorations: true,
       width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
       height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+      focus: true,
+      ...(type === "hvnc" ? { alwaysOnTop: true, transparent: false } : {}),
     });
 
     webviewWindow.once("tauri://created", function () {

