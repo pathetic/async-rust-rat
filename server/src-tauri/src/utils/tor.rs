@@ -28,7 +28,7 @@ pub struct TorManager {
 }
 
 impl TorManager {
-    pub async fn new(storage_path: PathBuf, app_handle: &tauri::AppHandle) -> Result<Self> {
+    pub async fn new(storage_path: PathBuf, app_handle: &tauri::AppHandle, server_port: Option<u16>) -> Result<Self> {
         let state_dir = storage_path.join("state");
         let cache_dir = storage_path.join("cache");
 
@@ -65,7 +65,7 @@ impl TorManager {
             storage_path: storage_path.clone(),
         };
 
-        manager.load_existing_services(app_handle).await?;
+        manager.load_existing_services(app_handle, server_port).await?;
 
         Ok(manager)
     }
@@ -86,7 +86,7 @@ impl TorManager {
         }
     }
 
-    async fn load_existing_services(&self, app_handle: &tauri::AppHandle) -> Result<()> {
+    async fn load_existing_services(&self, app_handle: &tauri::AppHandle, server_port: Option<u16>) -> Result<()> {
         if !self.storage_path.exists() {
             tokio::fs::create_dir_all(&self.storage_path).await?;
             return Ok(());
@@ -101,13 +101,21 @@ impl TorManager {
             let saved_services: Vec<OnionServiceInfo> = serde_json::from_str(&data)?;
 
             for info in saved_services {
+                // Use the current server port if provided, otherwise use the stored port
+                let port_to_use = server_port.unwrap_or(info.port);
+                if server_port.is_some() && info.port != port_to_use {
+                    println!(
+                        "[TorManager] Updating service '{}' port from {} to {} (current server port)",
+                        info.nickname, info.port, port_to_use
+                    );
+                }
                 match self
-                    .create_onion_service(&info.nickname, info.port, app_handle)
+                    .create_onion_service(&info.nickname, port_to_use, app_handle)
                     .await
                 {
                     Ok(svc) => println!(
-                        "[TorManager] Restored onion service '{}' at {}.onion",
-                        svc.nickname, svc.onion_address
+                        "[TorManager] Restored onion service '{}' at {} (forwarding to port {})",
+                        svc.nickname, svc.onion_address, port_to_use
                     ),
                     Err(e) => {
                         eprintln!("[TorManager] Failed to restore '{}': {}", info.nickname, e)

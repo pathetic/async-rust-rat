@@ -1472,11 +1472,21 @@ pub async fn init_tor(
         }
     }
 
+    // Get the current server port if the server is running
+    let server_port = {
+        let state = tauri_state.0.lock().unwrap();
+        if state.running {
+            state.port.parse::<u16>().ok()
+        } else {
+            None
+        }
+    };
+
     // Slow path
     let exe_dir = get_exe_dir()?;
     let tor_dir = exe_dir.join("tor_data");
     let manager = Arc::new(
-        TorManager::new(tor_dir, &app_handle)
+        TorManager::new(tor_dir, &app_handle, server_port)
             .await
             .map_err(|e| e.to_string())?,
     );
@@ -1496,16 +1506,34 @@ pub async fn create_onion(
     tauri_state: State<'_, SharedTauriState>,
     app_handle: AppHandle,
 ) -> Result<OnionServiceInfo, String> {
-    let manager = {
+    let (manager, server_port, is_running) = {
         let state = tauri_state.0.lock().unwrap();
-        state
+        let manager = state
             .tor_manager
             .clone()
-            .ok_or("Tor manager not initialized")?
+            .ok_or("Tor manager not initialized")?;
+        let server_port = state.port.parse::<u16>().unwrap_or(1337);
+        let is_running = state.running;
+        (manager, server_port, is_running)
     };
 
+    // Warn if server is not running
+    if !is_running {
+        return Err("Server is not running. Start the server before creating an onion service.".to_string());
+    }
+
+    // Use the server's actual port instead of the user-provided port
+    // This ensures the onion service forwards to where the server is listening
+    let actual_port = server_port;
+    if port != actual_port {
+        println!(
+            "[TorManager] Note: Using server's listening port {} instead of requested port {}",
+            actual_port, port
+        );
+    }
+
     manager
-        .create_onion_service(&nickname, port, &app_handle)
+        .create_onion_service(&nickname, actual_port, &app_handle)
         .await
         .map_err(|e| e.to_string())
 }
