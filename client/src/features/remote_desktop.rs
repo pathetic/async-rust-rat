@@ -116,7 +116,10 @@ pub fn capture_screen(display_index: i32) -> Option<(Vec<u8>, usize, usize)> {
             bmiColors: [RGBQUAD { rgbBlue: 0, rgbGreen: 0, rgbRed: 0, rgbReserved: 0 }; 1],
         };
 
-        let mut buffer = vec![0u8; (width * height * 3) as usize];
+        // Calculate 4-byte aligned stride for 24-bit bitmap
+        let stride = ((width * 3 + 3) & !3) as usize;
+        let mut buffer = vec![0u8; stride * (height as usize)];
+        
         GetDIBits(
             hdc_mem,
             hbitmap,
@@ -132,7 +135,13 @@ pub fn capture_screen(display_index: i32) -> Option<(Vec<u8>, usize, usize)> {
         DeleteDC(hdc_mem);
         ReleaseDC(null_mut(), hdc_screen);
 
-        Some((buffer, width as usize, height as usize))
+        // Strip the padding from each row so the output is exactly width * height * 3
+        let mut unpadded = Vec::with_capacity((width * height * 3) as usize);
+        for row in buffer.chunks_exact(stride) {
+            unpadded.extend_from_slice(&row[..(width * 3) as usize]);
+        }
+
+        Some((unpadded, width as usize, height as usize))
     }
 }
 

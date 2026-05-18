@@ -166,7 +166,8 @@ fn capture_hvnc_screen() -> Option<(Vec<u8>, usize, usize)> {
             bmiColors: [zeroed()],
         };
 
-        let mut buffer = vec![0u8; (width * height * 3) as usize];
+        let stride = ((width * 3 + 3) & !3) as usize;
+        let mut buffer = vec![0u8; stride * (height as usize)];
         let result = GetDIBits(
             hdc_mem,
             hbitmap,
@@ -186,7 +187,12 @@ fn capture_hvnc_screen() -> Option<(Vec<u8>, usize, usize)> {
             return None;
         }
 
-        Some((buffer, width as usize, height as usize))
+        let mut unpadded = Vec::with_capacity((width * height * 3) as usize);
+        for row in buffer.chunks_exact(stride) {
+            unpadded.extend_from_slice(&row[..(width * 3) as usize]);
+        }
+
+        Some((unpadded, width as usize, height as usize))
     }
 }
 

