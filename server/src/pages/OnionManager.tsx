@@ -158,26 +158,28 @@ const ServiceCard = ({
 interface CreateModalProps {
   onCreated: (info: OnionServiceInfo) => void;
   onClose: () => void;
+  serverPort: string;
+  serverRunning: boolean;
 }
 
-const CreateModal = ({ onCreated, onClose }: CreateModalProps) => {
+const CreateModal = ({ onCreated, onClose, serverPort, serverRunning }: CreateModalProps) => {
   const [nickname, setNickname] = useState("");
-  const [port, setPort] = useState("1337");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const portNum = parseInt(serverPort) || 1337;
+
   const handleCreate = async () => {
+    if (!serverRunning) {
+      setError("Server must be running before creating an onion service");
+      return;
+    }
     if (!nickname.trim()) {
       setError("Nickname is required");
       return;
     }
     if (!/^[a-zA-Z0-9-]+$/.test(nickname)) {
       setError("Only letters, numbers and dashes allowed");
-      return;
-    }
-    const portNum = parseInt(port);
-    if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
-      setError("Port must be 1–65535");
       return;
     }
 
@@ -224,18 +226,22 @@ const CreateModal = ({ onCreated, onClose }: CreateModalProps) => {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-accenttext">Forward to local port</label>
-            <input
-              type="number"
-              className="bg-primarybg border border-accentx rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-white/40 transition"
-              placeholder="1337"
-              value={port}
-              onChange={(e) => setPort(e.target.value)}
-            />
+            <label className="text-xs text-accenttext">Server Port</label>
+            <div className="bg-primarybg border border-accentx rounded-xl px-3 py-2 text-white text-sm flex items-center justify-between">
+              <span className="font-mono">{portNum}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${serverRunning ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>
+                {serverRunning ? 'Server Running' : 'Server Stopped'}
+              </span>
+            </div>
             <p className="text-xs text-accenttext">
-              Tor traffic will be forwarded to <span className="text-white font-mono">127.0.0.1:{port}</span>
+              Tor traffic will be forwarded to <span className="text-white font-mono">127.0.0.1:{portNum}</span>
             </p>
           </div>
+          {!serverRunning && (
+            <div className="text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-xl px-3 py-2">
+              ⚠️ Start the server first before creating an onion service
+            </div>
+          )}
           {error && (
             <div className="text-xs text-red-400 bg-red-400/10 border border-red-400/30 rounded-xl px-3 py-2">
               {error}
@@ -252,7 +258,7 @@ const CreateModal = ({ onCreated, onClose }: CreateModalProps) => {
           </button>
           <button
             onClick={handleCreate}
-            disabled={loading}
+            disabled={loading || !serverRunning}
             className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? (
@@ -276,7 +282,7 @@ const CreateModal = ({ onCreated, onClose }: CreateModalProps) => {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const OnionManager = () => {
-  const { clientList } = useContext(RATContext)!;
+  const { clientList, port, running } = useContext(RATContext)!;
   const [services, setServices] = useState<OnionServiceInfo[]>([]);
   const [serviceStatuses, setServiceStatuses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -356,6 +362,8 @@ export const OnionManager = () => {
         <CreateModal
           onCreated={handleCreated}
           onClose={() => setShowCreate(false)}
+          serverPort={port}
+          serverRunning={running}
         />
       )}
 
