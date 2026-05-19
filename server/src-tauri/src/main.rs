@@ -11,6 +11,20 @@ use handlers::{tauri::*, SharedTauriState, TauriState};
 
 #[tokio::main(worker_threads = 3)]
 async fn main() {
+    // Print arti/tor internal tracing to the terminal running the server.
+    // Shows bootstrap progress, circuit builds, HSDir fetches, and protocol events.
+    // Filter: arti/tor crates at DEBUG, everything else at WARN to avoid noise.
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::new(
+                "warn,arti_client=debug,tor_circmgr=debug,tor_dirmgr=debug,tor_hsdir=debug,tor_proto=debug"
+            )
+        )
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_file(false)
+        .init();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
@@ -83,6 +97,7 @@ async fn main() {
             init_tor,
             create_onion,
             delete_onion,
+            check_onion_reachability,
             start_keylogger,
             stop_keylogger,
             get_offline_logs,

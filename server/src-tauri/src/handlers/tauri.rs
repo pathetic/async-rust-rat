@@ -1557,6 +1557,50 @@ pub async fn delete_onion(
         .map_err(|e| e.to_string())
 }
 
+/// Probe whether an onion service is reachable on the Tor network.
+///
+/// Opens a fresh Tor circuit to `onion_address:port` using the already-bootstrapped
+/// TorClient held by TorManager, then immediately closes it.  Returns the round-trip
+/// latency in milliseconds on success, or an error string on failure.
+///
+/// This is intentionally separate from the arti status-event stream: arti reports
+/// "Running" as soon as the descriptor is *published*, but the service may not yet
+/// be reachable by other Tor clients.  This command performs an actual end-to-end
+/// probe so the UI can show confirmed reachability.
+#[tauri::command]
+pub async fn check_onion_reachability(
+    onion_address: String,
+    port: u16,
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<u64, String> {
+    use arti_client::{StreamPrefs};
+    use arti_client::config::BoolOrAuto;
+    use std::time::Instant;
+
+    // Borrow the already-bootstrapped TorClient from TorManager so we don't
+    // need to bootstrap a second time (which would take ~30 s).
+    let client = {
+        let state = tauri_state.0.lock().unwrap();
+        state
+            .tor_manager
+            .as_ref()
+            .ok_or("Tor manager not initialized — call init_tor first")?
+            .get_tor_client()
+    };
+
+    let mut prefs = StreamPrefs::new();
+    prefs.connect_to_onion_services(BoolOrAuto::Explicit(true));
+
+    let start = Instant::now();
+    let _stream = client
+        .connect_with_prefs((onion_address.as_str(), port), &prefs)
+        .await
+        .map_err(|e| format!("Reachability probe failed: {e}"))?;
+    let latency_ms = start.elapsed().as_millis() as u64;
+
+    Ok(latency_ms)
+}
+
 #[tauri::command]
 pub async fn send_troll_command(
     addr: &str,

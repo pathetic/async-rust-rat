@@ -441,6 +441,17 @@ export const deleteOnionCmd = async (nickname: string): Promise<void> => {
   return invoke("delete_onion", { nickname });
 };
 
+/**
+ * Probe whether an onion service is actually reachable on the Tor network.
+ * Returns round-trip latency in milliseconds on success, throws on failure.
+ */
+export const checkOnionReachabilityCmd = async (
+  onionAddress: string,
+  port: number
+): Promise<number> => {
+  return invoke("check_onion_reachability", { onionAddress, port });
+};
+
 export const sendTrollCommand = async (
   addr: string | undefined,
   command: TrollCommand

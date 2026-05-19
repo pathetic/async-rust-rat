@@ -41,6 +41,13 @@ impl TorManager {
             .cache_dir(arti_client::config::CfgPath::new(
                 cache_dir.to_string_lossy().into_owned(),
             ));
+
+        // Increase the primary guard pool so arti has more candidates when
+        // some guards are unreachable.  The default of 3 means a single bad
+        // guard can stall all onion circuit builds for 30 seconds at a time.
+        builder.override_net_params().insert("guard-n-primary-guards".to_string(), 6);
+        builder.override_net_params().insert("guard-n-primary-guards-to-use-if-max-filtered".to_string(), 6);
+
         let config = builder.build()?;
 
         let client = TorClient::builder()
@@ -247,6 +254,12 @@ impl TorManager {
         });
 
         Ok(info)
+    }
+
+    /// Returns a clone of the underlying TorClient so callers can open new
+    /// circuits without needing to bootstrap again.
+    pub fn get_tor_client(&self) -> TorClient<PreferredRuntime> {
+        self.client.clone()
     }
 
     pub fn get_services(&self) -> Vec<OnionServiceInfo> {

