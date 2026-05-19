@@ -1,0 +1,67 @@
+name: Build and Release Server
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v1.0, v2.1, etc.
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  build-server:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install SQLite3 (Required for Arti/Tor)
+        run: vcpkg install sqlite3:x64-windows
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm install
+
+      - name: Build client
+        run: cargo build -p client --release
+        env:
+          VCPKG_ROOT: ${{ env.VCPKG_INSTALLATION_ROOT }}
+
+      - name: Run prepare_prod_build.bat
+        run: .\prepare_prod_build.bat
+
+      - name: Build Tauri app
+        working-directory: ./server
+        run: npm run tauri build
+        env:
+          VCPKG_ROOT: ${{ env.VCPKG_INSTALLATION_ROOT }}
+
+      - name: Prepare Release Artifacts
+        run: |
+          mkdir release_artifacts
+          # Assuming the MSI installer is the primary output you want
+          copy "server\src-tauri\target\release\bundle\msi\*.msi" release_artifacts\
+          # Also grab the standalone executable if needed
+          copy "server\src-tauri\target\release\server.exe" release_artifacts\
+        shell: cmd
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: release_artifacts/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

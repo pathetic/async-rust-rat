@@ -28,4 +28,7 @@ pub struct ClientConfig {
     pub mutex: String,
 
     pub unattended_mode: bool,
+
+    pub use_tor: bool,
+    pub tor_address: String,
 }

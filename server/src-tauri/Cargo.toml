@@ -11,6 +11,8 @@ tauri = { version = "2", features = ["unstable"]  }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.20.1", features = ["rt", "full"] }
+futures = "0.3"
+safelog = "*"
 base64 = "0.22.0"
 common = { path = "../../common" }
 rsa = "0.9.6"
@@ -27,6 +29,15 @@ image = "0.24.5"
 maxminddb = "0.26.0"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+arti-client = { version = "0.42.0", features = ["tokio", "rustls", "onion-service-service", "onion-service-client"] }
+tor-hsservice = "0.42.0"
+tor-rtcompat = { version = "0.42.0", features = ["tokio", "rustls"] }
+tor-config = "0.42.0"
+tor-cell = "0.42.0"
+rusqlite = { version = "0.36.0", features = ["bundled"] }
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+tauri-plugin-fs = "2"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

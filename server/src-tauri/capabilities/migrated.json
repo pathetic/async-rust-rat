@@ -2,7 +2,9 @@
   "identifier": "migrated",
   "description": "permissions that were migrated from v1",
   "local": true,
-  "windows": ["*"],
+  "windows": [
+    "*"
+  ],
   "permissions": [
     "core:default",
     "core:window:default",
@@ -62,6 +64,7 @@
     "core:webview:allow-webview-position",
     "core:webview:allow-webview-show",
     "core:webview:allow-webview-size",
-    "core:window:allow-destroy"
+    "core:window:allow-destroy",
+    "fs:default"
   ]
 }

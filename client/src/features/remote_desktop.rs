@@ -35,13 +35,11 @@ use winapi::um::winuser::{
 };
 
 use winapi::um::wingdi::*;
-use winapi::um::winuser::*;
+// use winapi::um::winuser::*;
 use winapi::um::winnt::HANDLE;
-use winapi::um::winuser::GetSystemMetrics;
 use winapi::um::winuser::ReleaseDC;
 use winapi::um::winuser::GetDC;
-use image::{ImageOutputFormat, RgbImage};
-
+use image::RgbImage;
 
 use std::mem::zeroed;
 
@@ -51,18 +49,55 @@ tokio::task_local! {
 
 static STREAMING_ACTIVE: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
-pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
+struct MonitorInfo {
+    index: i32,
+    rect: winapi::shared::windef::RECT,
+}
+
+unsafe extern "system" fn monitor_enum_proc(
+    hmonitor: winapi::shared::windef::HMONITOR,
+    _: winapi::shared::windef::HDC,
+    _: winapi::shared::windef::LPRECT,
+    lparam: winapi::shared::minwindef::LPARAM,
+) -> winapi::shared::minwindef::BOOL {
+    let monitors = &mut *(lparam as *mut Vec<MonitorInfo>);
+    let mut info: winapi::um::winuser::MONITORINFO = std::mem::zeroed();
+    info.cbSize = std::mem::size_of::<winapi::um::winuser::MONITORINFO>() as u32;
+    
+    if winapi::um::winuser::GetMonitorInfoA(hmonitor, &mut info as *mut _ as *mut _) != 0 {
+        monitors.push(MonitorInfo {
+            index: monitors.len() as i32,
+            rect: info.rcMonitor,
+        });
+    }
+    1
+}
+
+pub fn capture_screen(display_index: i32) -> Option<(Vec<u8>, usize, usize)> {
     unsafe {
+        let mut monitors: Vec<MonitorInfo> = Vec::new();
+        winapi::um::winuser::EnumDisplayMonitors(
+            null_mut(),
+            null_mut(),
+            Some(monitor_enum_proc),
+            &mut monitors as *mut _ as winapi::shared::minwindef::LPARAM,
+        );
+
+        let monitor = monitors.iter().find(|m| m.index == display_index)
+            .or_else(|| monitors.get(0))?;
+
+        let x = monitor.rect.left;
+        let y = monitor.rect.top;
+        let width = (monitor.rect.right - monitor.rect.left).abs();
+        let height = (monitor.rect.bottom - monitor.rect.top).abs();
+
         let hdc_screen = GetDC(null_mut());
         let hdc_mem = CreateCompatibleDC(hdc_screen);
-
-        let width = GetSystemMetrics(SM_CXSCREEN);
-        let height = GetSystemMetrics(SM_CYSCREEN);
 
         let hbitmap = CreateCompatibleBitmap(hdc_screen, width, height);
         let old_obj = SelectObject(hdc_mem, hbitmap as _);
 
-        BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, 0, 0, SRCCOPY);
+        BitBlt(hdc_mem, 0, 0, width, height, hdc_screen, x, y, SRCCOPY);
 
         let mut bmi = BITMAPINFO {
             bmiHeader: BITMAPINFOHEADER {
@@ -81,7 +116,10 @@ pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
             bmiColors: [RGBQUAD { rgbBlue: 0, rgbGreen: 0, rgbRed: 0, rgbReserved: 0 }; 1],
         };
 
-        let mut buffer = vec![0u8; (width * height * 3) as usize];
+        // Calculate 4-byte aligned stride for 24-bit bitmap
+        let stride = ((width * 3 + 3) & !3) as usize;
+        let mut buffer = vec![0u8; stride * (height as usize)];
+        
         GetDIBits(
             hdc_mem,
             hbitmap,
@@ -97,14 +135,20 @@ pub fn capture_screen() -> Option<(Vec<u8>, usize, usize)> {
         DeleteDC(hdc_mem);
         ReleaseDC(null_mut(), hdc_screen);
 
-        Some((buffer, width as usize, height as usize))
+        // Strip the padding from each row so the output is exactly width * height * 3
+        let mut unpadded = Vec::with_capacity((width * height * 3) as usize);
+        for row in buffer.chunks_exact(stride) {
+            unpadded.extend_from_slice(&row[..(width * 3) as usize]);
+        }
+
+        Some((unpadded, width as usize, height as usize))
     }
 }
 
 pub async fn take_screenshot(display: String) {
-    let _display_number = display.parse::<i32>().unwrap();
+    let display_number = display.parse::<i32>().unwrap_or(0);
 
-    if let Some((raw_data, w, h)) = capture_screen() {
+    if let Some((raw_data, w, h)) = capture_screen(display_number) {
         let mut rgb_data = Vec::with_capacity(w * h * 3);
         for chunk in raw_data.chunks(3) {
             let b = chunk[0];
@@ -117,10 +161,8 @@ pub async fn take_screenshot(display: String) {
             .expect("Failed to create RGB image");
 
         let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
-        if img
-            .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(75))
-            .is_err()
-        {
+        let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, 80);
+        if encoder.encode_image(&img).is_err() {
             eprintln!("❌ JPEG compression failed (screenshot)");
             return;
         }
@@ -149,18 +191,23 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
     let frame_delay = Duration::from_millis(1000 / fps as u64);
     let config_clone = config;
 
+    println!("[RemoteDesktop] Starting stream: display={}, quality={}, fps={}",
+        config_clone.display, config_clone.quality, fps);
+
     thread::spawn(move || {
-        let rt = tokio::runtime::Builder::new_current_thread()
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(2)
             .enable_all()
             .build()
             .expect("Failed to create Tokio runtime");
 
         let stop_flag = STREAMING_ACTIVE.lock().unwrap().as_ref().unwrap().clone();
+        let mut frame_count = 0u64;
 
         while !stop_flag.load(Ordering::Relaxed) {
             let start_time = SystemTime::now();
 
-            if let Some((raw_data, w, h)) = capture_screen() {
+            if let Some((raw_data, w, h)) = capture_screen(config_clone.display as i32) {
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
@@ -179,10 +226,8 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 let img = RgbImage::from_raw(w as u32, h as u32, rgb_data)
                     .expect("Failed to create RGB image");
                 let mut jpeg_bytes = Cursor::new(Vec::with_capacity(w * h / 3));
-                if img
-                    .write_to(&mut jpeg_bytes, ImageOutputFormat::Jpeg(config_clone.quality))
-                    .is_err()
-                {
+                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, config_clone.quality);
+                if encoder.encode_image(&img).is_err() {
                     eprintln!("❌ JPEG compression failed");
                     continue;
                 }
@@ -198,7 +243,12 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 let packet = ServerboundPacket::RemoteDesktopFrame(frame);
 
                 if let Err(e) = rt.block_on(send_packet(packet)) {
-                    eprintln!("❌ Failed to send remote desktop frame: {}", e);
+                    eprintln!("❌ [RemoteDesktop] Failed to send frame #{}: {}", frame_count, e);
+                } else {
+                    frame_count += 1;
+                    if frame_count % 30 == 0 {
+                        println!("[RemoteDesktop] Sent {} frames so far", frame_count);
+                    }
                 }
             }
 
@@ -207,7 +257,11 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 thread::sleep(frame_delay - elapsed);
             }
         }
+
+        println!("[RemoteDesktop] Streaming stopped after {} frames", frame_count);
     });
+
+    println!("[RemoteDesktop] Capture thread spawned");
 }
 
 pub fn stop_remote_desktop() {
@@ -215,7 +269,6 @@ pub fn stop_remote_desktop() {
         flag.store(true, Ordering::Relaxed);
     }
 }
-
 
 pub fn mouse_click(click_data: MouseClickData) {
     // Set cursor position
@@ -396,4 +449,4 @@ pub fn keyboard_input(input_data: KeyboardInputData) {
             }
         }
     }
-} 
+}

