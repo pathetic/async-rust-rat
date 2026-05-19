@@ -6,7 +6,9 @@ use std::mem::size_of;
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use crate::handler::send_packet;
 use crate::handler::send_packet_sync;
+use tokio::sync::oneshot;
 
 static MIC_LIVE_ACTIVE: Lazy<Arc<AtomicBool>> = Lazy::new(|| Arc::new(AtomicBool::new(false)));
 static MIC_RECORD_ACTIVE: Lazy<Arc<AtomicBool>> = Lazy::new(|| Arc::new(AtomicBool::new(false)));
@@ -74,29 +76,61 @@ fn get_mic_device() -> Option<String> {
     MIC_DEVICE.lock().unwrap().clone()
 }
 
-pub fn send_mic_device_list() {
-    let host = cpal::default_host();
-    let devices = match host.input_devices() {
-        Ok(input_devices) => input_devices
-            .filter_map(|device| match device.name() {
-                Ok(name) => Some(common::packets::MicDeviceInfo {
-                    id: name.clone(),
-                    name,
-                }),
-                Err(_) => None,
-            })
-            .collect::<Vec<_>>(),
-        Err(_) => Vec::new(),
-    };
+pub async fn send_mic_device_list() {
+    let (tx, rx) = oneshot::channel::<Vec<common::packets::MicDeviceInfo>>();
 
-    if let Err(err) = send_packet_sync(ServerboundPacket::MicDeviceList(devices)) {
-        eprintln!("Failed to send mic device list: {}", err);
+    thread::spawn(move || {
+        let mut devices = Vec::new();
+        let host = cpal::default_host();
+        match host.input_devices() {
+            Ok(input_devices) => {
+                for device in input_devices {
+                    match device.name() {
+                        Ok(name) => {
+                            println!("[Mic] Found input device: {}", name);
+                            devices.push(common::packets::MicDeviceInfo {
+                                id: name.clone(),
+                                name,
+                            });
+                        }
+                        Err(e) => {
+                            eprintln!("[Mic] Failed to get device name: {}", e);
+                        }
+                    }
+                }
+                println!("[Mic] Total input devices found: {}", devices.len());
+            }
+            Err(e) => {
+                eprintln!("[Mic] Failed to enumerate input devices: {}", e);
+
+                // Fallback: try the default input device name directly
+                if let Some(default_dev) = host.default_input_device() {
+                    if let Ok(name) = default_dev.name() {
+                        println!("[Mic] Using default input device as fallback: {}", name);
+                        devices.push(common::packets::MicDeviceInfo {
+                            id: name.clone(),
+                            name,
+                        });
+                    }
+                }
+            }
+        }
+        let _ = tx.send(devices);
+    });
+
+    let devices = rx.await.unwrap_or_else(|e| {
+        eprintln!("[Mic] Failed to receive device list from thread: {}", e);
+        Vec::new()
+    });
+
+    if let Err(err) = send_packet(ServerboundPacket::MicDeviceList(devices)).await {
+        eprintln!("[Mic] Failed to send mic device list: {}", err);
     }
 }
 
-fn send_mic_recording_file(name: String, data: Vec<u8>) {
+async fn send_mic_recording_file(name: String, data: Vec<u8>) {
     let payload = FileData { name, data };
-    if let Err(err) = send_packet_sync(ServerboundPacket::MicRecordingFile(payload)) {
+    if let Err(err) = send_packet(ServerboundPacket::MicRecordingFile(payload)).await {
         eprintln!("Failed to send mic recording file: {}", err);
     }
 }
@@ -289,7 +323,7 @@ pub fn start_mic_recording(device_id: String) {
     MIC_BUFFER.lock().unwrap().clear();
 }
 
-pub fn stop_mic_recording() {
+pub async fn stop_mic_recording() {
     MIC_RECORD_ACTIVE.store(false, Ordering::Relaxed);
 
     let params = MIC_PARAMS.lock().unwrap().clone();
@@ -302,7 +336,7 @@ pub fn stop_mic_recording() {
             wav
         };
         let name = format!("mic_recording_{}.wav", SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs());
-        send_mic_recording_file(name, wav);
+        send_mic_recording_file(name, wav).await;
     }
 
     maybe_stop_mic_thread();
