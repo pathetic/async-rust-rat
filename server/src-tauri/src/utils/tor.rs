@@ -63,7 +63,75 @@ impl TorManager {
             }
         });
 
-        client.bootstrap().await?;
+        let client = match client.bootstrap().await {
+            Ok(()) => client,
+            Err(e) => {
+                let err_msg = format!("{}", e);
+                eprintln!(
+                    "[TorManager] Initial bootstrap failed: {}. Clearing cache and guard state...",
+                    err_msg
+                );
+
+                // Clear cache and guard state to force fresh guard discovery
+                let _ = tokio::fs::remove_dir_all(&cache_dir).await;
+                if let Ok(mut entries) = tokio::fs::read_dir(&state_dir).await {
+                    while let Ok(Some(entry)) = entries.next_entry().await {
+                        let name = entry.file_name();
+                        let name_str = name.to_string_lossy();
+                        // Keep hidden service keys (hss/) but remove guard/consensus state
+                        if name_str == "hss" {
+                            continue;
+                        }
+                        let path = entry.path();
+                        if path.is_dir() {
+                            let _ = tokio::fs::remove_dir_all(&path).await;
+                        } else {
+                            let _ = tokio::fs::remove_file(&path).await;
+                        }
+                    }
+                }
+
+                let mut retry_builder = TorClientConfig::builder();
+                retry_builder
+                    .storage()
+                    .state_dir(arti_client::config::CfgPath::new(
+                        state_dir.to_string_lossy().into_owned(),
+                    ))
+                    .cache_dir(arti_client::config::CfgPath::new(
+                        cache_dir.to_string_lossy().into_owned(),
+                    ));
+                let retry_config = retry_builder.build()?;
+
+                let retry_client = TorClient::builder()
+                    .config(retry_config)
+                    .create_unbootstrapped()
+                    .map_err(|e| {
+                        anyhow::anyhow!(
+                            "Failed to create Tor client after state reset: {}. \
+                             Try deleting tor_data/ manually.",
+                            e
+                        )
+                    })?;
+
+                let mut retry_events = retry_client.bootstrap_events();
+                let app_h = app_handle.clone();
+                tokio::spawn(async move {
+                    while let Some(status) = retry_events.next().await {
+                        let _ = app_h.emit("tor_bootstrap", status.as_frac());
+                    }
+                });
+
+                retry_client.bootstrap().await.map_err(|e| {
+                    anyhow::anyhow!(
+                        "Tor bootstrap failed even after clearing state: {}. \
+                         This usually means Tor guard relays are unreachable from your network. \
+                         Check your firewall, internet connection, and system clock.",
+                        e
+                    )
+                })?;
+                retry_client
+            }
+        };
 
         let manager = Self {
             client,
@@ -313,6 +381,8 @@ impl TorManager {
             .insert(nickname.to_string(), service);
         let _ = self.save_services().await;
 
+        let nickname_owned = nickname.to_string();
+
         // Handle requests
         tokio::spawn(async move {
             let mut stream_requests = tor_hsservice::handle_rend_requests(requests);
@@ -322,16 +392,37 @@ impl TorManager {
                     .await
                 {
                     Ok(s) => s,
-                    Err(_) => continue,
+                    Err(e) => {
+                        eprintln!("[OnionService '{}'] Failed to accept rendezvous stream: {}", nickname_owned, e);
+                        continue;
+                    }
                 };
 
+                let svc_port = port;
+                let svc_nick = nickname_owned.clone();
                 tokio::spawn(async move {
                     let mut target =
-                        match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port)).await {
+                        match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", svc_port)).await {
                             Ok(t) => t,
-                            Err(_) => return,
+                            Err(e) => {
+                                eprintln!(
+                                    "[OnionService '{}'] Failed to connect to local server port {}: {}",
+                                    svc_nick, svc_port, e
+                                );
+                                return;
+                            }
                         };
-                    let _ = tokio::io::copy_bidirectional(&mut stream, &mut target).await;
+                    match tokio::io::copy_bidirectional(&mut stream, &mut target).await {
+                        Ok((to_target, from_target)) => {
+                            println!(
+                                "[OnionService '{}'] Stream closed: {} bytes sent, {} bytes received",
+                                svc_nick, to_target, from_target
+                            );
+                        }
+                        Err(e) => {
+                            eprintln!("[OnionService '{}'] Stream error: {}", svc_nick, e);
+                        }
+                    }
                 });
             }
         });

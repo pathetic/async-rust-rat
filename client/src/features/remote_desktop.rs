@@ -191,13 +191,18 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
     let frame_delay = Duration::from_millis(1000 / fps as u64);
     let config_clone = config;
 
+    println!("[RemoteDesktop] Starting stream: display={}, quality={}, fps={}",
+        config_clone.display, config_clone.quality, fps);
+
     thread::spawn(move || {
-        let rt = tokio::runtime::Builder::new_current_thread()
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(2)
             .enable_all()
             .build()
             .expect("Failed to create Tokio runtime");
 
         let stop_flag = STREAMING_ACTIVE.lock().unwrap().as_ref().unwrap().clone();
+        let mut frame_count = 0u64;
 
         while !stop_flag.load(Ordering::Relaxed) {
             let start_time = SystemTime::now();
@@ -238,7 +243,12 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 let packet = ServerboundPacket::RemoteDesktopFrame(frame);
 
                 if let Err(e) = rt.block_on(send_packet(packet)) {
-                    eprintln!("❌ Failed to send remote desktop frame: {}", e);
+                    eprintln!("❌ [RemoteDesktop] Failed to send frame #{}: {}", frame_count, e);
+                } else {
+                    frame_count += 1;
+                    if frame_count % 30 == 0 {
+                        println!("[RemoteDesktop] Sent {} frames so far", frame_count);
+                    }
                 }
             }
 
@@ -247,7 +257,11 @@ pub fn start_remote_desktop(config: RemoteDesktopConfig) {
                 thread::sleep(frame_delay - elapsed);
             }
         }
+
+        println!("[RemoteDesktop] Streaming stopped after {} frames", frame_count);
     });
+
+    println!("[RemoteDesktop] Capture thread spawned");
 }
 
 pub fn stop_remote_desktop() {

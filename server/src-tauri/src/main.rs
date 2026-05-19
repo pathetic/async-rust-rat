@@ -17,7 +17,7 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::new(
-                "warn,arti_client=debug,tor_circmgr=debug,tor_dirmgr=debug,tor_hsdir=debug,tor_proto=debug"
+                "warn,arti_client=info,tor_circmgr=info,tor_dirmgr=info"
             )
         )
         .with_target(true)

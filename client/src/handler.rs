@@ -339,11 +339,11 @@ pub fn send_packet_sync(packet: ServerboundPacket) -> Result<(), String> {
         let sender_guard = PACKET_SENDER.lock().unwrap();
         sender_guard.clone()
     };
-    
+
     if let Some(sender) = sender_opt {
-        return sender.try_send(packet).map_err(|e| e.to_string());
+        return sender.blocking_send(packet).map_err(|e| e.to_string());
     }
-    
+
     Err("Packet sender not initialized".to_string())
 }
 

