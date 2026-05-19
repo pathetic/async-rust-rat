@@ -82,7 +82,6 @@ async fn main() {
         // some guards are unreachable.  The default of 3 means a single bad
         // guard stalls all onion circuit builds for 30 seconds at a time.
         tor_config_builder.override_net_params().insert("guard-n-primary-guards".to_string(), 6);
-        tor_config_builder.override_net_params().insert("guard-n-primary-guards-to-use-if-max-filtered".to_string(), 6);
         let tor_config = tor_config_builder.build().expect("Failed to build TorClientConfig");
 
         // Retry bootstrap indefinitely — a single failure (e.g. clock skew, cold
@@ -99,9 +98,8 @@ async fn main() {
                     tokio::spawn(async move {
                         while let Some(status) = events.next().await {
                             println!(
-                                "[Tor bootstrap] {:.0}% — {:?}",
-                                status.as_frac() * 100.0,
-                                status
+                                "[Tor bootstrap] {:.0}%",
+                                status.as_frac() * 100.0
                             );
                         }
                     });

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   IconCircleFilled,
   IconCopy,
@@ -11,6 +11,7 @@ import {
   IconRadar,
   IconCheck,
   IconX,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { listen } from "@tauri-apps/api/event";
@@ -81,6 +82,19 @@ const ServiceCard = ({
     : `${info.onion_address}.onion`;
 
   const [reachability, setReachability] = useState<ReachabilityResult>({ state: "idle" });
+  const prevStatus = useRef<string>("");
+
+  // Auto-probe reachability when status transitions to "Running".
+  // "Running" only means descriptors are published — this confirms end-to-end connectivity.
+  useEffect(() => {
+    if (status === "Running" && prevStatus.current !== "Running") {
+      setReachability({ state: "probing" });
+      checkOnionReachabilityCmd(fullAddress, info.port)
+        .then((latencyMs) => setReachability({ state: "ok", latencyMs }))
+        .catch((e: any) => setReachability({ state: "fail", error: String(e) }));
+    }
+    prevStatus.current = status;
+  }, [status, fullAddress, info.port]);
 
   const handleProbe = async () => {
     setReachability({ state: "probing" });
@@ -92,24 +106,46 @@ const ServiceCard = ({
     }
   };
 
+  // Dot color + label based on status
+  const statusDot = (() => {
+    switch (status) {
+      case "Running":
+        return reachability.state === "ok"
+          ? "text-green-400"          // confirmed reachable
+          : reachability.state === "fail"
+          ? "text-orange-400"         // running but probe failed
+          : "text-yellow-400 animate-pulse"; // running, probe pending
+      case "CircuitsBuilding":
+        return "text-yellow-400 animate-pulse";
+      case "Bootstrapping":
+        return "text-blue-400 animate-pulse";
+      case "Shutdown":
+        return "text-gray-500";
+      default:
+        return "text-red-400";
+    }
+  })();
+
+  const statusLabel = (() => {
+    switch (status) {
+      case "CircuitsBuilding": return "Building circuits…";
+      case "Running":
+        if (reachability.state === "ok") return "Running · Reachable";
+        if (reachability.state === "fail") return "Running · Probe failed";
+        if (reachability.state === "probing") return "Running · Probing…";
+        return "Running";
+      default: return status;
+    }
+  })();
+
   return (
     <div className="group rounded-2xl border border-accentx bg-secondarybg p-5 flex flex-col gap-4 transition hover:border-white/20">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0" title={`Status: ${status}`}>
-          <IconCircleFilled
-            size={10}
-            className={`shrink-0 ${
-              status === "Running"
-                ? "text-green-400"
-                : status === "Bootstrapping"
-                ? "text-yellow-400 animate-pulse"
-                : status === "Shutdown"
-                ? "text-gray-500"
-                : "text-red-400"
-            }`}
-          />
+        <div className="flex items-center gap-2 min-w-0" title={`Status: ${statusLabel}`}>
+          <IconCircleFilled size={10} className={`shrink-0 ${statusDot}`} />
           <span className="font-semibold text-white truncate">{info.nickname}</span>
+          <span className="text-xs text-accenttext truncate">{statusLabel}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xs text-accenttext bg-primarybg border border-accentx px-2 py-0.5 rounded-full">
@@ -129,6 +165,14 @@ const ServiceCard = ({
           </button>
         </div>
       </div>
+
+      {/* CircuitsBuilding warning banner */}
+      {status === "CircuitsBuilding" && (
+        <div className="flex items-center gap-2 text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-xl px-3 py-2">
+          <IconAlertTriangle size={13} className="shrink-0" />
+          <span>Building onion circuits — clients cannot connect yet. This takes 30–60 s after bootstrap.</span>
+        </div>
+      )}
 
       {/* Address row */}
       <div className="flex items-center gap-2 bg-primarybg rounded-xl px-3 py-2 border border-accentx/50">
@@ -343,11 +387,15 @@ export const OnionManager = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [deletingNick, setDeletingNick] = useState<string | null>(null);
+  // Warmup countdown: null = not warming up, 0 = done, N = seconds remaining
+  const [warmup, setWarmup] = useState<{ remaining: number; total: number; attempt: number } | null>(null);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    const setupListener = async () => {
-      unlisten = await listen<{ nickname: string; status: string }>(
+    let unlistenStatus: (() => void) | undefined;
+    let unlistenWarmup: (() => void) | undefined;
+
+    const setupListeners = async () => {
+      unlistenStatus = await listen<{ nickname: string; status: string }>(
         "tor_service_status",
         (event) => {
           setServiceStatuses((prev) => ({
@@ -356,10 +404,24 @@ export const OnionManager = () => {
           }));
         }
       );
+
+      unlistenWarmup = await listen<{ remaining: number; total: number; attempt: number }>(
+        "tor_hspool_warmup",
+        (event) => {
+          if (event.payload.remaining === 0) {
+            setWarmup({ remaining: 0, total: event.payload.total, attempt: event.payload.attempt });
+            setTimeout(() => setWarmup(null), 3000);
+          } else {
+            setWarmup(event.payload);
+          }
+        }
+      );
     };
-    setupListener();
+
+    setupListeners();
     return () => {
-      if (unlisten) unlisten();
+      unlistenStatus?.();
+      unlistenWarmup?.();
     };
   }, []);
 
@@ -452,6 +514,28 @@ export const OnionManager = () => {
           </button>
         </div>
       </div>
+
+      {/* Circuit pool warmup banner */}
+      {warmup !== null && (
+        <div className="flex items-center gap-3 bg-yellow-400/10 border border-yellow-400/30 rounded-2xl px-4 py-3">
+          <IconLoader2 size={16} className={`text-yellow-400 shrink-0 ${warmup.remaining > 0 ? "animate-spin" : ""}`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-yellow-400 font-medium">
+              {warmup.remaining > 0
+                ? `Probing onion circuit — attempt ${warmup.attempt + 1}, ${warmup.remaining}s elapsed (3 min timeout)`
+                : `Circuit pool ready after ${warmup.attempt} probe${warmup.attempt !== 1 ? "s" : ""} — onion service is now accepting connections`}
+            </p>
+            {warmup.remaining > 0 && (
+              <div className="mt-1.5 w-full bg-primarybg rounded-full h-1.5 border border-accentx/30 overflow-hidden">
+                <div
+                  className="bg-yellow-400 h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${((warmup.total - warmup.remaining) / warmup.total) * 100}%` }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-3">

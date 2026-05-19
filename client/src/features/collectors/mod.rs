@@ -10,17 +10,60 @@ pub mod displays;
 
 use common::client_info::{ClientInfo, ClientData};
 
+/// Fetch the client's real public IP via my-ip.io.
+/// Goes through the clearnet (not Tor) so we get the exit node's IP when
+/// connecting via Tor, which is what the server needs for display/GeoIP.
+/// Returns None on any error so the server falls back to socket address.
+async fn fetch_public_ip() -> Option<String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .build()
+        .ok()?;
+
+    #[derive(serde::Deserialize)]
+    struct MyIpResponse {
+        ip: String,
+    }
+
+    let resp = client
+        .get("https://api.my-ip.io/v2/ip.json")
+        .header("Accept", "application/json")
+        .send()
+        .await
+        .ok()?;
+
+    let body: MyIpResponse = resp.json().await.ok()?;
+    Some(body.ip)
+}
+
 pub async fn client_info(group: String) -> ClientInfo {
-    let client_data = ClientData::init(group);
-    let system_info = system::collect_system_info().await;
-    let ram_info = ram::collect_ram_info().await;
-    let cpu_info = cpu::collect_cpu_info().await;
-    let bios_info = bios::collect_bios_info().await;
-    let gpus_info = gpu::collect_gpu_info().await;
+    // Fetch public IP concurrently with the other collectors
+    let (
+        public_ip,
+        system_info,
+        ram_info,
+        cpu_info,
+        bios_info,
+        gpus_info,
+        drives_info,
+        unique_info,
+        security_info,
+    ) = tokio::join!(
+        fetch_public_ip(),
+        system::collect_system_info(),
+        ram::collect_ram_info(),
+        cpu::collect_cpu_info(),
+        bios::collect_bios_info(),
+        gpu::collect_gpu_info(),
+        drives::collect_physical_drives(),
+        unique::collect_unique_info(),
+        security::collect_security_info(),
+    );
+
     let displays_info = displays::get_display_count();
-    let drives_info = drives::collect_physical_drives().await;
-    let unique_info = unique::collect_unique_info().await;
-    let security_info = security::collect_security_info().await;
+
+    let mut client_data = ClientData::init(group);
+    client_data.addr = public_ip; // None → server falls back to socket addr
 
     ClientInfo {
         data: client_data,

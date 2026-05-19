@@ -190,8 +190,26 @@ impl ServerWrapper {
                 RegisterClient(tx, addr, mut client_info) => {
                     self.txs.insert(addr, tx);
                     client_info.data.uuidv4 = Some(uuid::Uuid::new_v4().to_string());
-                    client_info.data.addr = Some(addr.to_string());
-                    client_info.data.country_code = self.get_country_code(&addr).await;
+
+                    // Prefer the IP the client self-reported (fetched via my-ip.io).
+                    // This gives the real public IP even when the connection comes
+                    // through Tor (where the socket addr is always 127.0.0.1).
+                    // Fall back to the socket address only if the client didn't send one.
+                    let display_addr = match &client_info.data.addr {
+                        Some(ip) if !ip.is_empty() && ip != "127.0.0.1" && ip != "::1" => {
+                            // Client sent a real IP — use it for display and GeoIP.
+                            // Append the socket port so the addr format stays consistent.
+                            format!("{}:{}", ip, addr.port())
+                        }
+                        _ => addr.to_string(),
+                    };
+                    client_info.data.addr = Some(display_addr.clone());
+
+                    // GeoIP lookup against the IP portion of display_addr
+                    let geoip_addr: std::net::SocketAddr = display_addr
+                        .parse()
+                        .unwrap_or(addr);
+                    client_info.data.country_code = self.get_country_code(&geoip_addr).await;
 
                     self.connected_users.insert(addr, client_info.clone());
 

@@ -45,8 +45,9 @@ impl TorManager {
         // Increase the primary guard pool so arti has more candidates when
         // some guards are unreachable.  The default of 3 means a single bad
         // guard can stall all onion circuit builds for 30 seconds at a time.
+        // Note: guard-n-primary-guards-to-use-if-max-filtered is NOT a valid
+        // consensus param in arti 0.42 — only guard-n-primary-guards is.
         builder.override_net_params().insert("guard-n-primary-guards".to_string(), 6);
-        builder.override_net_params().insert("guard-n-primary-guards-to-use-if-max-filtered".to_string(), 6);
 
         let config = builder.build()?;
 
@@ -73,6 +74,66 @@ impl TorManager {
         };
 
         manager.load_existing_services(app_handle, server_port).await?;
+
+        // Spawn the circuit-pool probe as a background task so TorManager::new()
+        // returns immediately and the frontend is unblocked.  The probe runs
+        // independently and emits tor_hspool_warmup events as it goes.
+        {
+            use arti_client::StreamPrefs;
+            use arti_client::config::BoolOrAuto;
+
+            let services_snapshot = manager.get_services();
+            let probe_client = manager.get_tor_client();
+            let app_handle_bg = app_handle.clone();
+
+            tokio::spawn(async move {
+                if let Some(first_svc) = services_snapshot.first() {
+                    let onion_addr = first_svc.onion_address.clone();
+                    let port = first_svc.port;
+
+                    println!("[TorManager] Background probe started for {}:{}", onion_addr, port);
+
+                    let timeout_secs: u64 = 180;
+                    let start = std::time::Instant::now();
+                    let mut attempt = 0u32;
+
+                    loop {
+                        let elapsed = start.elapsed().as_secs();
+
+                        if elapsed >= timeout_secs {
+                            println!("[TorManager] Probe timed out after {}s — service may still become reachable.", timeout_secs);
+                            app_handle_bg.emit("tor_hspool_warmup", serde_json::json!({
+                                "remaining": 0, "total": timeout_secs, "attempt": attempt,
+                            })).ok();
+                            break;
+                        }
+
+                        let mut prefs = StreamPrefs::new();
+                        prefs.connect_to_onion_services(BoolOrAuto::Explicit(true));
+
+                        match probe_client.connect_with_prefs((onion_addr.as_str(), port), &prefs).await {
+                            Ok(_) => {
+                                println!("[TorManager] Onion service reachable after {}s ({} attempts).", elapsed, attempt + 1);
+                                app_handle_bg.emit("tor_hspool_warmup", serde_json::json!({
+                                    "remaining": 0, "total": timeout_secs, "attempt": attempt + 1,
+                                })).ok();
+                                break;
+                            }
+                            Err(e) => {
+                                attempt += 1;
+                                let remaining = timeout_secs.saturating_sub(elapsed);
+                                println!("[TorManager] Probe attempt {} failed ({}s elapsed): {}", attempt, elapsed, e);
+                                app_handle_bg.emit("tor_hspool_warmup", serde_json::json!({
+                                    "remaining": remaining, "total": timeout_secs, "attempt": attempt,
+                                })).ok();
+                                // Wait before retrying — don't hammer the circuit manager
+                                tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         Ok(manager)
     }
@@ -180,20 +241,42 @@ impl TorManager {
         let status_cache_clone = self.status_cache.clone();
         tokio::spawn(async move {
             while let Some(status) = status_events.next().await {
-                let state_str = format!("{:?}", status.state());
+                // Map arti's internal debug state to a human-readable string.
+                // arti's "Running" only means descriptors are published locally —
+                // it does NOT mean the service is reachable by clients yet.
+                // We add a "CircuitsBuilding" intermediate state to make this clear.
+                let raw = format!("{:?}", status.state());
+                let display_status = match raw.as_str() {
+                    s if s.contains("Bootstrapping") => "Bootstrapping".to_string(),
+                    s if s.contains("Running") => {
+                        // Check if there are any introduction points established.
+                        // If the ipts field is present and non-empty, circuits are up.
+                        // Otherwise we're still building them.
+                        if s.contains("ipts: []") || s.contains("ipts: None") {
+                            "CircuitsBuilding".to_string()
+                        } else {
+                            "Running".to_string()
+                        }
+                    }
+                    s if s.contains("Shutdown") || s.contains("Dead") => "Shutdown".to_string(),
+                    other => other.to_string(),
+                };
+
                 if let Ok(mut cache) = status_cache_clone.lock() {
-                    cache.insert(nickname_clone.clone(), state_str.clone());
+                    cache.insert(nickname_clone.clone(), display_status.clone());
                 }
                 #[derive(Serialize, Clone)]
                 struct OnionStatusEvent {
                     nickname: String,
                     status: String,
+                    raw_status: String,
                 }
                 let _ = app_handle_clone.emit(
                     "tor_service_status",
                     OnionStatusEvent {
                         nickname: nickname_clone.clone(),
-                        status: state_str,
+                        status: display_status,
+                        raw_status: raw,
                     },
                 );
             }
